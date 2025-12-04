@@ -13,7 +13,7 @@ import {
 import BackButton from "../components/backButton";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { RootStackParamList } from "../types/navigation";
-
+import { useDeviceGroup } from "../context/DeviceGroupContext";
 function formatDate(value: any) {
     if (!value) return "-";
 
@@ -35,6 +35,7 @@ const { width } = Dimensions.get("window");
 const CARD_SIZE = (width - 60) / 2;
 
 export default function DevicesScreen({ navigation }: Props) {
+    const { deviceGroups, setDeviceGroups } = useDeviceGroup();
     const [tables, setTables] = useState<{ name: string }[]>([]);
     const [loading, setLoading] = useState(true);
     const [modalVisible, setModalVisible] = useState(false);
@@ -44,14 +45,18 @@ export default function DevicesScreen({ navigation }: Props) {
     const [maintenanceHistory, setMaintenanceHistory] = useState<any[]>([]);
 
     useEffect(() => {
-        fetchTables();
-    }, []);
+        if (!deviceGroups || deviceGroups.length === 0) {
+            fetchTables();
+        } else {
+            setLoading(false);
+        }
+    }, [deviceGroups]);
 
     const fetchTables = async () => {
         try {
             const res = await fetch(`${API_BASE}?action=getalltables`);
             const json = await res.json();
-            setTables(json);
+            setDeviceGroups(json);
         } catch (err) {
             console.error("❌ Lỗi fetch tables:", err);
         } finally {
@@ -65,20 +70,20 @@ export default function DevicesScreen({ navigation }: Props) {
                 `${API_BASE}?action=gettabledata&sheet=${sheetName}`
             );
             const json = await res.json();
-
+            console.log(json);
             if (!json.rows || !Array.isArray(json.rows)) return;
             setDevices(json.rows);
-            setCurrentSheet(sheetName.replace(/^_/, ""));
+            setCurrentSheet(sheetName);
             setModalVisible(true);
         } catch (err) {
             console.error("❌ Lỗi fetch table data:", err);
         }
     };
 
-    const fetchMaintenanceHistory = async (deviceAndSheet: string) => {
+    const fetchMaintenanceHistory = async (deviceName: string) => {
         try {
             const res = await fetch(
-                `${API_BASE}?action=getMaintenanceHistory&device_name=${deviceAndSheet}`
+                `${API_BASE}?action=getMaintenanceHistory&device_name=${deviceName}`
             );
             const json = await res.json();
             console.log(json);
@@ -86,18 +91,25 @@ export default function DevicesScreen({ navigation }: Props) {
                 console.error("❌ Lỗi khi lấy lịch sử:", json.message);
                 return;
             }
-            setMaintenanceHistory(json.rows || []);
+
+            const sortedRows = json.rows.sort(
+                (a: { date: string }, b: { date: string }) => {
+                    const dateA = new Date(a.date); 
+                    const dateB = new Date(b.date);
+                    return dateB.getTime() - dateA.getTime(); 
+                }
+            );
+
+            setMaintenanceHistory(sortedRows);
         } catch (err) {
             console.error("❌ Lỗi fetch maintenance history:", err);
         }
     };
 
-    const handleDevicePress = (deviceName: string, sheetName: string) => {
-        const deviceAndSheet = `${deviceName}_${sheetName}`;
-        console.log("Chuỗi thiết bị và nhóm được chọn: ", deviceAndSheet);
+    const handleDevicePress = (deviceName: string) => {
         setDevice_name(deviceName);
         setModalVisible(false);
-        fetchMaintenanceHistory(deviceAndSheet);
+        fetchMaintenanceHistory(deviceName);
     };
 
     if (loading) {
@@ -117,7 +129,7 @@ export default function DevicesScreen({ navigation }: Props) {
             <Text style={styles.header}>Danh sách nhóm thiết bị</Text>
 
             <FlatList
-                data={tables}
+                data={deviceGroups}
                 keyExtractor={(item, index) => item.name + index}
                 numColumns={2}
                 columnWrapperStyle={styles.row}
@@ -167,42 +179,35 @@ export default function DevicesScreen({ navigation }: Props) {
                                                 const rowWithoutId =
                                                     row.slice(1);
                                                 const deviceName = row[1];
+
                                                 return (
                                                     <TouchableOpacity
                                                         key={rowIndex}
                                                         style={styles.tableRow}
                                                         onPress={() =>
                                                             handleDevicePress(
-                                                                deviceName,
-                                                                currentSheet
+                                                                deviceName
                                                             )
                                                         }
                                                     >
                                                         {rowWithoutId.map(
                                                             (col, colIndex) => {
-                                                                const formatted =
-                                                                    colIndex ===
-                                                                        1 ||
-                                                                    colIndex ===
-                                                                        2
-                                                                        ? formatDate(
-                                                                              col
-                                                                          )
-                                                                        : col ||
-                                                                          "-";
-
                                                                 return (
                                                                     <Text
                                                                         key={
                                                                             colIndex
                                                                         }
-                                                                        style={
-                                                                            styles.rowText
-                                                                        }
+                                                                        style={[
+                                                                            styles.rowText,
+                                                                            colIndex ===
+                                                                                0 &&
+                                                                                styles.firstColumn,
+                                                                            colIndex ===
+                                                                                1 &&
+                                                                                styles.secondColumn, // Apply second column style
+                                                                        ]}
                                                                     >
-                                                                        {
-                                                                            formatted
-                                                                        }
+                                                                        {col}
                                                                     </Text>
                                                                 );
                                                             }
@@ -248,9 +253,7 @@ export default function DevicesScreen({ navigation }: Props) {
                                         style={styles.historyItem}
                                     >
                                         <Text style={styles.historyText}>
-                                            {`Ngày: ${formatDate(
-                                                item.date
-                                            )}\nNội dung: ${item.content}`}
+                                            {`Ngày: ${item.date}\nNội dung: ${item.content}`}
                                         </Text>
                                     </View>
                                 ))}
@@ -359,20 +362,6 @@ const styles = StyleSheet.create({
         color: "#1E293B",
     },
 
-    tableRow: {
-        flexDirection: "row",
-        backgroundColor: "#F8FAFC",
-        padding: 10,
-        borderRadius: 8,
-        marginBottom: 6,
-    },
-
-    rowText: {
-        flex: 1,
-        fontSize: 14,
-        color: "#334155",
-    },
-
     noData: {
         color: "#555",
         textAlign: "center",
@@ -400,5 +389,28 @@ const styles = StyleSheet.create({
     historyText: {
         color: "#334155",
         fontSize: 14,
+    },
+    tableRow: {
+        flexDirection: "row",
+        backgroundColor: "#F8FAFC",
+        padding: 10,
+        borderRadius: 8,
+        marginBottom: 6,
+    },
+
+    // General row text style
+    rowText: {
+        fontSize: 14,
+        color: "#334155",
+    },
+
+    // Custom styles for the first column
+    firstColumn: {
+        flex: 2, // First column takes more space
+    },
+
+    // Custom styles for the second column
+    secondColumn: {
+        flex: 1, // Second column is narrower
     },
 });

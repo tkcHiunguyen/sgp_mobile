@@ -11,37 +11,49 @@ import LinearGradient from "react-native-linear-gradient";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import { useNavigation } from "@react-navigation/native";
 
+// Thêm thuộc tính `isReady` vào các tính năng
 const features = [
     {
         id: "scan",
         title: "Quét mã QR",
         icon: "qr-code-outline",
         route: "Scanner",
+        isReady: true, // Đã sẵn sàng
     },
     {
         id: "device",
         title: "Quản lý thiết bị",
         icon: "server-outline",
         route: "Devices",
+        isReady: true, // Chưa sẵn sàng
     },
-    { id: "history", title: "Lịch sử", icon: "time-outline", route: "History" },
+    {
+        id: "history",
+        title: "Lịch sử",
+        icon: "time-outline",
+        route: "History",
+        isReady: true, // Đã sẵn sàng
+    },
     {
         id: "tools",
         title: "Công cụ",
         icon: "construct-outline",
         route: "Tools",
+        isReady: false, // Đã sẵn sàng
     },
     {
         id: "info",
         title: "Thông tin",
         icon: "information-circle-outline",
         route: "Info",
+        isReady: true, // Đã sẵn sàng
     },
     {
         id: "database",
         title: "Cơ sở dữ liệu",
         icon: "analytics-outline",
         route: "Database",
+        isReady: false, // Chưa sẵn sàng
     },
 ] as const;
 
@@ -69,26 +81,55 @@ function FeatureTile({ item }: { item: FeatureItem }) {
         }).start();
     };
 
-    const handlePress = () => navigation.navigate(item.route);
+    const handlePress = () => {
+        if (item.isReady) {
+            navigation.navigate(item.route);
+        }
+    };
 
     return (
         <Pressable
             onPressIn={handlePressIn}
             onPressOut={handlePressOut}
             onPress={handlePress}
-            style={{ borderRadius: 20, overflow: "hidden", width: "48%" }}
+            style={{
+                borderRadius: 20,
+                overflow: "hidden",
+                width: "48%",
+                backgroundColor: item.isReady ? "#1E293B" : "#333", 
+                opacity: item.isReady ? 1 : 0.5, 
+            }}
+            disabled={!item.isReady}
         >
             <Animated.View style={{ transform: [{ scale }] }}>
                 <LinearGradient
                     colors={["#1E293B", "#0F172A"]}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 1 }}
-                    style={styles.tile}
+                    style={[
+                        styles.tile,
+                        {
+                            borderColor: item.isReady
+                                ? "rgba(78,168,255,0.15)"
+                                : "#555", // Đổi màu viền tùy vào trạng thái
+                        },
+                    ]}
                 >
                     <View style={styles.iconContainer}>
-                        <Ionicons name={item.icon} size={28} color="#4EA8FF" />
+                        <Ionicons
+                            name={item.icon}
+                            size={28}
+                            color={item.isReady ? "#4EA8FF" : "#B0B0B0"}
+                        />
                     </View>
-                    <Text style={styles.tileText}>{item.title}</Text>
+                    <Text
+                        style={[
+                            styles.tileText,
+                            { color: item.isReady ? "#BBDFFF" : "#B0B0B0" },
+                        ]}
+                    >
+                        {item.title}
+                    </Text>
                 </LinearGradient>
             </Animated.View>
         </Pressable>

@@ -2,121 +2,170 @@ import React, { useEffect, useState } from "react";
 import {
     View,
     Text,
-    StyleSheet,
     FlatList,
     ActivityIndicator,
+    StyleSheet,
+    TouchableOpacity,
+    Modal,
     ScrollView,
 } from "react-native";
-import { blue } from "react-native-reanimated/lib/typescript/Colors";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { useDeviceGroup } from "../context/DeviceGroupContext";
 
-const API_URL =
-    "https://script.google.com/macros/s/AKfycbwUEEm_Eo30rDi-v-9O3V1vhel8eztYhgAkcU6jj-MfS7syQPBb4BrNYJMcsy9OSMQ/exec?action=getHistory";
+const API_BASE =
+    "https://script.google.com/macros/s/AKfycbwUEEm_Eo30rDi-v-9O3V1vhel8eztYhgAkcU6jj-MfS7syQPBb4BrNYJMcsy9OSMQ/exec";
 
-export default function MaintenanceHistory() {
-    const [data, setData] = useState<any[]>([]);
-    const [loading, setLoading] = useState(true);
+export default function HistoryScreen() {
+    const { deviceGroups, setDeviceGroups } = useDeviceGroup();
+    const [loading, setLoading] = useState(false);
+    const [selectedGroup, setSelectedGroup] = useState("");
+    const [tables, setTables] = useState<any[]>([]);
+    const [modalVisible, setModalVisible] = useState(false);
+    const [historyData, setHistoryData] = useState<any[]>([]); // Lưu dữ liệu lịch sử của nhóm thiết bị
 
     useEffect(() => {
-        fetchHistory();
-    }, []);
+        if (!deviceGroups || deviceGroups.length === 0) {
+            fetchDeviceGroups();
+        }
+    }, [deviceGroups]);
 
-    const fetchHistory = async () => {
+    const fetchDeviceGroups = async () => {
+        setLoading(true);
         try {
-            const res = await fetch(API_URL);
+            const res = await fetch(`${API_BASE}?action=getalltables`);
             const json = await res.json();
-            setData(json.rows || []);
+            setDeviceGroups(json);
+            setTables(json);
         } catch (err) {
-            console.log("❌ Lỗi tải lịch sử:", err);
-            setData([]);
+            console.error("❌ Lỗi fetch device groups:", err);
         } finally {
             setLoading(false);
         }
     };
 
-    const formatDate = (dateString: string) => {
-        if (!dateString) return "";
+    const handleDeviceGroupPress = async (groupName: string) => {
+        setSelectedGroup(groupName); // Cập nhật nhóm thiết bị đã chọn
+        setModalVisible(false); // Đóng modal sau khi chọn
 
-        const isISO8601 = dateString.includes("T") && dateString.includes("Z");
+        // Clear previous history data and show loading indicator
+        setHistoryData([]); // Clear the current list
+        setLoading(true); // Show loading circle
 
-        let dateObj;
-        if (isISO8601) {
-            dateObj = new Date(dateString);
-        } else {
-            const [day, month, year] = dateString.split("/");
-            if (!day || !month || !year) {
-                return "";
-            }
-            dateObj = new Date(
-                `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`
+        try {
+            const response = await fetch(
+                `${API_BASE}?action=getGroupHistory&groupName=${groupName}`
             );
+            const data = await response.json();
+
+            // Sắp xếp dữ liệu theo ngày từ gần đến xa
+            const sortedData = data.rows.sort(
+                (a: { date: string }, b: { date: string }) => {
+                    const dateA = new Date(a.date);
+                    const dateB = new Date(b.date);
+                    return dateB.getTime() - dateA.getTime(); // Sắp xếp từ gần đến xa (mới nhất trước)
+                }
+            );
+
+            // Cập nhật dữ liệu đã sắp xếp vào state và ẩn loading indicator
+            setHistoryData(sortedData);
+        } catch (error) {
+            console.error("Lỗi khi gọi API lấy lịch sử nhóm thiết bị:", error);
+        } finally {
+            setLoading(false); // Hide loading circle once the data is loaded
         }
-
-        if (isNaN(dateObj.getTime())) {
-            return "";
-        }
-
-        const formattedDay = String(dateObj.getDate()).padStart(2, "0");
-        const formattedMonth = String(dateObj.getMonth() + 1).padStart(2, "0");
-        const formattedYear = dateObj.getFullYear().toString().slice(2);
-
-        return `${formattedDay}-${formattedMonth}-${formattedYear}`;
     };
-
-    const formatDeviceName = (deviceName: string) => {
-        const parts = deviceName.split("_");
-        const mainName = parts[0];
-        const extraName = parts.slice(1).join("_");
-
-        return (
-            <View>
-                <Text style={styles.device}>{mainName}</Text>
-                {extraName && (
-                    <Text style={styles.deviceExtra}>{extraName}</Text>
-                )}
-            </View>
-        );
-    };
-
-    if (loading) {
-        return (
-            <View style={styles.center}>
-                <ActivityIndicator size="large" color="#4EA8FF" />
-                <Text style={styles.loadingText}>Đang tải lịch sử...</Text>
-            </View>
-        );
-    }
 
     return (
-        <View style={styles.container}>
-            <Text style={styles.header}>Lịch sử sửa chữa</Text>
+        <SafeAreaView style={styles.container}>
+            <Text style={styles.header}>Chọn lịch sử nhóm thiết bị</Text>
 
-            <FlatList
-                data={data}
-                keyExtractor={(item, index) => index.toString()}
-                contentContainerStyle={{ paddingBottom: 80 }}
-                renderItem={({ item }) => (
-                    <View style={styles.card}>
-                        <View style={styles.leftSection}>
-                            <Text style={styles.deviceName}>
-                                {formatDeviceName(item.device)}
-                            </Text>
+            <TouchableOpacity
+                style={styles.dropdownButton}
+                onPress={() => setModalVisible(true)}
+            >
+                <Text style={styles.dropdownText}>
+                    {selectedGroup || "Chọn nhóm thiết bị"}{" "}
+                </Text>
+            </TouchableOpacity>
 
-                            <Text style={styles.date}>
-                                {formatDate(item.date)}
-                            </Text>
-                        </View>
-
-                        <View style={styles.rightSection}>
-                            <ScrollView style={styles.scrollableContent}>
-                                <Text style={styles.desc}>
-                                    {item.content || "Không có mô tả"}
-                                </Text>
-                            </ScrollView>
-                        </View>
+            <Modal
+                visible={modalVisible}
+                transparent={true}
+                animationType="fade"
+                onRequestClose={() => setModalVisible(false)}
+            >
+                <View style={styles.modalOverlay}>
+                    <View style={styles.modalContent}>
+                        <Text style={styles.modalTitle}>
+                            Chọn nhóm thiết bị
+                        </Text>
+                        <FlatList
+                            data={deviceGroups}
+                            renderItem={({ item }) => (
+                                <TouchableOpacity
+                                    style={styles.deviceItem}
+                                    onPress={() =>
+                                        handleDeviceGroupPress(item.name)
+                                    }
+                                >
+                                    <Text style={styles.deviceText}>
+                                        {item.name}
+                                    </Text>
+                                </TouchableOpacity>
+                            )}
+                            keyExtractor={(item) => item.name}
+                        />
+                        <TouchableOpacity
+                            style={styles.closeButton}
+                            onPress={() => setModalVisible(false)}
+                        >
+                            <Text style={styles.closeButtonText}>Đóng</Text>
+                        </TouchableOpacity>
                     </View>
-                )}
-            />
-        </View>
+                </View>
+            </Modal>
+
+            {loading ? (
+                // Show loading circle while data is being fetched
+                <View style={styles.center}>
+                    <ActivityIndicator size="large" color="#4EA8FF" />
+                    <Text style={styles.loadingText}>Đang tải dữ liệu...</Text>
+                </View>
+            ) : historyData.length === 0 ? (
+                // Show message if no history data available
+                <View style={styles.center}>
+                    <Text style={styles.noDataText}>
+                        Không có bản ghi lịch sử cho nhóm thiết bị này
+                    </Text>
+                </View>
+            ) : (
+                // Show the history list when data is available
+                <FlatList
+                    data={historyData}
+                    renderItem={({ item }) => (
+                        <View style={styles.historyItem}>
+                            <View style={styles.historyItemLeft}>
+                                <Text style={styles.deviceName}>
+                                    {item.name.split("_")[1]}
+                                </Text>
+                                <Text style={styles.deviceGroup}>
+                                    {item.name.split("_")[0]}
+                                </Text>
+                                <Text style={styles.date}>{item.date}</Text>
+                            </View>
+                            <View style={styles.historyItemRight}>
+                                <ScrollView style={styles.contentWrapper}>
+                                    <Text style={styles.content}>
+                                        {item.content}
+                                    </Text>
+                                </ScrollView>
+                            </View>
+                        </View>
+                    )}
+                    keyExtractor={(item, index) => index.toString()}
+                />
+            )}
+        </SafeAreaView>
     );
 }
 
@@ -125,18 +174,12 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: "#0A0F1C",
         padding: 20,
-        paddingTop: 60,
     },
     center: {
-        backgroundColor: "#0A0F1C",
         flex: 1,
         justifyContent: "center",
         alignItems: "center",
-    },
-    loadingText: {
-        marginTop: 10,
-        color: "#9CCAFF",
-        fontSize: 14,
+        backgroundColor: "#0A0F1C",
     },
     header: {
         fontSize: 24,
@@ -145,55 +188,109 @@ const styles = StyleSheet.create({
         marginBottom: 20,
         textAlign: "center",
     },
-    card: {
-        backgroundColor: "#1E293B",
-        padding: 16,
-        borderRadius: 12,
-        marginBottom: 14,
-        borderWidth: 1,
-        borderColor: "#334155",
-        flexDirection: "row",
-        alignItems: "flex-start",
+    loadingText: {
+        color: "#9CCAFF",
+        fontSize: 14,
     },
-    leftSection: {
-        flex: 1,
+    noDataText: {
+        color: "#9CCAFF",
+        fontSize: 16,
+        fontWeight: "700",
+        textAlign: "center",
+    },
+    dropdownButton: {
         backgroundColor: "#2D3B4F",
-        padding: 12,
+        padding: 16,
         borderRadius: 8,
-        marginRight: 10,
+        marginBottom: 20,
     },
-    rightSection: {
-        flex: 2,
+    dropdownText: {
+        color: "#BBDFFF",
+        fontSize: 16,
+        textAlign: "center",
+    },
+    modalOverlay: {
+        flex: 1,
+        justifyContent: "center",
+        alignItems: "center",
+        backgroundColor: "rgba(0, 0, 0, 0.5)",
+    },
+    modalContent: {
+        backgroundColor: "#1E293B",
+        padding: 20,
+        borderRadius: 12,
+        width: "80%",
+        maxHeight: "80%",
+    },
+    modalTitle: {
+        fontSize: 18,
+        color: "#E0F2FF",
+        marginBottom: 10,
+        textAlign: "center",
+    },
+    deviceItem: {
+        backgroundColor: "#2D3B4F",
+        padding: 16,
+        marginVertical: 8,
+        borderRadius: 8,
+    },
+    deviceText: {
+        color: "#BBDFFF",
+        fontSize: 16,
+        textAlign: "center",
+    },
+    closeButton: {
         backgroundColor: "#40709fff",
         padding: 12,
         borderRadius: 8,
+        marginTop: 20,
+    },
+    closeButtonText: {
+        color: "#FFF",
+        fontSize: 16,
+        textAlign: "center",
+    },
+    historyItem: {
+        marginVertical: 10,
+        flexDirection: "row",
+        padding: 10,
+        backgroundColor: "#1E293B",
+        borderRadius: 8,
+    },
+    historyItemLeft: {
+        flex: 1,
+        justifyContent: "center",
+        paddingRight: 20,
+        backgroundColor: "#2D3B4F",
+        borderRadius: 8,
+        padding: 10,
+    },
+    historyItemRight: {
+        flex: 2,
+        justifyContent: "center",
+        paddingLeft: 10,
     },
     deviceName: {
-        color: "#E0F2FF",
-        fontSize: 17,
+        color: "#BBDFFF",
+        fontSize: 16,
         fontWeight: "700",
     },
-    deviceExtra: {
+    deviceGroup: {
         color: "#BBDFFF",
         fontSize: 14,
-        fontWeight: "400",
+        marginTop: 5,
     },
     date: {
         color: "#9CCAFF",
         fontSize: 14,
-        marginBottom: 6,
+        marginTop: 5,
     },
-    scrollableContent: {
-        maxHeight: 120,
+    contentWrapper: {
+        maxHeight: 100,
     },
-    desc: {
+    content: {
         color: "#D7E9FF",
-        fontSize: 15,
-        lineHeight: 20,
-    },
-    device: {
-        color: "#E0F2FF",
         fontSize: 14,
-        fontWeight: "bold",
+        paddingRight: 10,
     },
 });
