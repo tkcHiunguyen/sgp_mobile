@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useMemo, useState } from "react";
 import {
     View,
     Text,
@@ -6,411 +6,429 @@ import {
     ActivityIndicator,
     FlatList,
     TouchableOpacity,
-    Dimensions,
     Modal,
     ScrollView,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import BackButton from "../components/backButton";
+import DataSyncIndicator from "../components/DataSyncIndicator";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { RootStackParamList } from "../types/navigation";
 import { useDeviceGroup } from "../context/DeviceGroupContext";
-function formatDate(value: any) {
-    if (!value) return "-";
-
-    const date = new Date(value);
-    if (isNaN(date.getTime())) return String(value);
-
-    const yy = String(date.getFullYear()).slice(2);
-    const mm = String(date.getMonth() + 1).padStart(2, "0");
-    const dd = String(date.getDate()).padStart(2, "0");
-
-    return `${dd}-${mm}-${yy}`;
-}
-
-const API_BASE =
-    "https://script.google.com/macros/s/AKfycbwUEEm_Eo30rDi-v-9O3V1vhel8eztYhgAkcU6jj-MfS7syQPBb4BrNYJMcsy9OSMQ/exec";
 
 type Props = NativeStackScreenProps<RootStackParamList, "Devices">;
-const { width } = Dimensions.get("window");
-const CARD_SIZE = (width - 60) / 2;
+
+// helper: parse "dd-MM-yy" -> Date
+const parseDate = (value: string): Date => {
+    const [dd, mm, yy] = value.split("-");
+    const day = parseInt(dd, 10);
+    const month = parseInt(mm, 10) - 1;
+    const year = 2000 + parseInt(yy, 10); // "25" -> 2025
+    return new Date(year, month, day);
+};
+
+interface DeviceRow {
+    id: number;
+    name: string;
+    freq: string | number | null;
+}
+
+interface HistoryRow {
+    deviceName: string;
+    date: string;
+    content: string;
+}
 
 export default function DevicesScreen({ navigation }: Props) {
-    const { deviceGroups, setDeviceGroups } = useDeviceGroup();
-    const [tables, setTables] = useState<{ name: string }[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [modalVisible, setModalVisible] = useState(false);
-    const [devices, setDevices] = useState<any[][]>([]);
-    const [currentSheet, setCurrentSheet] = useState("");
-    const [device_name, setDevice_name] = useState("");
-    const [maintenanceHistory, setMaintenanceHistory] = useState<any[]>([]);
+    const { deviceGroups } = useDeviceGroup();
 
-    useEffect(() => {
-        if (!deviceGroups || deviceGroups.length === 0) {
-            fetchTables();
-        } else {
-            setLoading(false);
-        }
-    }, [deviceGroups]);
+    const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
+    const [deviceModalVisible, setDeviceModalVisible] = useState(false);
 
-    const fetchTables = async () => {
-        try {
-            const res = await fetch(`${API_BASE}?action=getalltables`);
-            const json = await res.json();
-            setDeviceGroups(json);
-        } catch (err) {
-            console.error("❌ Lỗi fetch tables:", err);
-        } finally {
-            setLoading(false);
-        }
+    const [selectedDeviceName, setSelectedDeviceName] = useState<string | null>(
+        null
+    );
+    const [historyModalVisible, setHistoryModalVisible] = useState(false);
+    const [maintenanceHistory, setMaintenanceHistory] = useState<HistoryRow[]>(
+        []
+    );
+
+    const isLoading = !deviceGroups || deviceGroups.length === 0;
+
+    // Lấy data group đang chọn
+    const selectedGroupData = useMemo(
+        () => deviceGroups.find((g: any) => g.table === selectedGroup),
+        [deviceGroups, selectedGroup]
+    );
+
+    const devicesInGroup: DeviceRow[] =
+        (selectedGroupData?.devices?.rows as DeviceRow[]) || [];
+
+    const handleOpenGroup = (groupName: string) => {
+        setSelectedGroup(groupName);
+        setDeviceModalVisible(true);
     };
 
-    const fetchDevicesInGroup = async (sheetName: string) => {
-        try {
-            const res = await fetch(
-                `${API_BASE}?action=gettabledata&sheet=${sheetName}`
-            );
-            const json = await res.json();
-            console.log(json);
-            if (!json.rows || !Array.isArray(json.rows)) return;
-            setDevices(json.rows);
-            setCurrentSheet(sheetName);
-            setModalVisible(true);
-        } catch (err) {
-            console.error("❌ Lỗi fetch table data:", err);
-        }
+    const handleOpenDeviceHistory = (deviceName: string) => {
+        if (!selectedGroupData || !selectedGroupData.history) return;
+
+        const allHistory: HistoryRow[] =
+            (selectedGroupData.history.rows as HistoryRow[]) || [];
+
+        const filtered = allHistory.filter((h) => h.deviceName === deviceName);
+
+        const sorted = [...filtered].sort(
+            (a, b) => parseDate(b.date).getTime() - parseDate(a.date).getTime()
+        );
+
+        setSelectedDeviceName(deviceName);
+        setMaintenanceHistory(sorted);
+        setHistoryModalVisible(true);
     };
 
-    const fetchMaintenanceHistory = async (deviceName: string) => {
-        try {
-            const res = await fetch(
-                `${API_BASE}?action=getMaintenanceHistory&device_name=${deviceName}`
-            );
-            const json = await res.json();
-            console.log(json);
-            if (json.error) {
-                console.error("❌ Lỗi khi lấy lịch sử:", json.message);
-                return;
-            }
-
-            const sortedRows = json.rows.sort(
-                (a: { date: string }, b: { date: string }) => {
-                    const dateA = new Date(a.date); 
-                    const dateB = new Date(b.date);
-                    return dateB.getTime() - dateA.getTime(); 
-                }
-            );
-
-            setMaintenanceHistory(sortedRows);
-        } catch (err) {
-            console.error("❌ Lỗi fetch maintenance history:", err);
-        }
-    };
-
-    const handleDevicePress = (deviceName: string) => {
-        setDevice_name(deviceName);
-        setModalVisible(false);
-        fetchMaintenanceHistory(deviceName);
-    };
-
-    if (loading) {
+    if (isLoading) {
         return (
-            <View style={styles.center}>
-                <ActivityIndicator size="large" color="#4EA8FF" />
-                <Text style={styles.loadingText}>
-                    Đang tải danh sách bảng...
-                </Text>
-            </View>
+            <SafeAreaView style={styles.safeArea}>
+                <View style={styles.center}>
+                    <ActivityIndicator size="large" color="#4EA8FF" />
+                    <Text style={styles.loadingText}>
+                        Đang tải danh sách nhóm thiết bị...
+                    </Text>
+                </View>
+            </SafeAreaView>
         );
     }
 
     return (
-        <View style={styles.container}>
+        <SafeAreaView style={styles.safeArea}>
             <BackButton onPress={() => navigation.goBack()} />
-            <Text style={styles.header}>Danh sách nhóm thiết bị</Text>
+            <DataSyncIndicator />
 
-            <FlatList
-                data={deviceGroups}
-                keyExtractor={(item, index) => item.name + index}
-                numColumns={2}
-                columnWrapperStyle={styles.row}
-                contentContainerStyle={{ paddingBottom: 80 }}
-                renderItem={({ item }) => (
-                    <TouchableOpacity
-                        style={styles.card}
-                        onPress={() => fetchDevicesInGroup(item.name)} // When pressed, show devices in the group
-                    >
-                        <Text style={styles.cardText}>
-                            {item.name.replace(/^_/, "")}
-                        </Text>
-                    </TouchableOpacity>
-                )}
-            />
+            <View style={styles.container}>
+                <Text style={styles.header}>Danh sách nhóm thiết bị</Text>
 
-            {/* MODAL: DANH SÁCH THIẾT BỊ */}
-            <Modal visible={modalVisible} transparent animationType="fade">
-                <View style={styles.modalOverlay}>
-                    <View style={styles.modalBox}>
-                        <Text style={styles.modalTitle}>
-                            Thiết bị trong nhóm {currentSheet}
-                        </Text>
-
-                        {devices.length > 1 ? (
-                            <ScrollView style={styles.modalScroll}>
-                                {(() => {
-                                    const header = devices[0].slice(1);
-                                    const body = devices.slice(1);
-
-                                    return (
-                                        <View>
-                                            <View style={styles.tableHeader}>
-                                                {header.map((h, idx) => (
-                                                    <Text
-                                                        key={idx}
-                                                        style={
-                                                            styles.headerText
-                                                        }
-                                                    >
-                                                        {h}
-                                                    </Text>
-                                                ))}
-                                            </View>
-
-                                            {body.map((row, rowIndex) => {
-                                                const rowWithoutId =
-                                                    row.slice(1);
-                                                const deviceName = row[1];
-
-                                                return (
-                                                    <TouchableOpacity
-                                                        key={rowIndex}
-                                                        style={styles.tableRow}
-                                                        onPress={() =>
-                                                            handleDevicePress(
-                                                                deviceName
-                                                            )
-                                                        }
-                                                    >
-                                                        {rowWithoutId.map(
-                                                            (col, colIndex) => {
-                                                                return (
-                                                                    <Text
-                                                                        key={
-                                                                            colIndex
-                                                                        }
-                                                                        style={[
-                                                                            styles.rowText,
-                                                                            colIndex ===
-                                                                                0 &&
-                                                                                styles.firstColumn,
-                                                                            colIndex ===
-                                                                                1 &&
-                                                                                styles.secondColumn, // Apply second column style
-                                                                        ]}
-                                                                    >
-                                                                        {col}
-                                                                    </Text>
-                                                                );
-                                                            }
-                                                        )}
-                                                    </TouchableOpacity>
-                                                );
-                                            })}
-                                        </View>
-                                    );
-                                })()}
-                            </ScrollView>
-                        ) : (
-                            <Text style={styles.noData}>Không có dữ liệu</Text>
-                        )}
-
+                <FlatList
+                    data={deviceGroups}
+                    keyExtractor={(item: any, index) =>
+                        `${item.table}-${index}`
+                    }
+                    numColumns={2}
+                    columnWrapperStyle={styles.row}
+                    contentContainerStyle={{ paddingBottom: 80 }}
+                    showsVerticalScrollIndicator={false}
+                    renderItem={({ item }: { item: any }) => (
                         <TouchableOpacity
-                            style={styles.closeBtn}
-                            onPress={() => setModalVisible(false)}
+                            style={styles.cardWrapper}
+                            onPress={() => handleOpenGroup(item.table)}
                         >
-                            <Text style={styles.closeBtnText}>Đóng</Text>
+                            <View style={styles.card}>
+                                <Text style={styles.cardText}>
+                                    {item.table}
+                                </Text>
+                            </View>
                         </TouchableOpacity>
-                    </View>
-                </View>
-            </Modal>
+                    )}
+                />
+            </View>
 
-            {/* MODAL: LỊCH SỬ BẢO TRÌ */}
+            {/* MODAL: DANH SÁCH THIẾT BỊ TRONG NHÓM */}
             <Modal
-                visible={maintenanceHistory.length > 0}
+                visible={deviceModalVisible}
                 transparent
                 animationType="fade"
+                onRequestClose={() => setDeviceModalVisible(false)}
             >
                 <View style={styles.modalOverlay}>
                     <View style={styles.modalBox}>
                         <Text style={styles.modalTitle}>
-                            Lịch sử bảo trì của {device_name}
+                            Thiết bị trong nhóm {selectedGroup}
                         </Text>
 
-                        {maintenanceHistory.length > 0 ? (
-                            <ScrollView style={styles.modalScroll}>
-                                {maintenanceHistory.map((item, index) => (
-                                    <View
-                                        key={index}
-                                        style={styles.historyItem}
+                        {devicesInGroup.length > 0 ? (
+                            <ScrollView
+                                style={styles.modalScroll}
+                                showsVerticalScrollIndicator={false}
+                            >
+                                {devicesInGroup.map((dev) => (
+                                    <TouchableOpacity
+                                        key={dev.id}
+                                        style={styles.deviceRow}
+                                        onPress={() =>
+                                            handleOpenDeviceHistory(dev.name)
+                                        }
                                     >
-                                        <Text style={styles.historyText}>
-                                            {`Ngày: ${item.date}\nNội dung: ${item.content}`}
-                                        </Text>
-                                    </View>
+                                        <View style={styles.deviceRowLeft}>
+                                            <Text style={styles.deviceName}>
+                                                {dev.name}
+                                            </Text>
+                                            <Text style={styles.deviceSubLabel}>
+                                                ID: {dev.id}
+                                            </Text>
+                                        </View>
+                                        <View style={styles.deviceRowRight}>
+                                            <Text style={styles.freqLabel}>
+                                                Tần suất:
+                                            </Text>
+                                            <Text style={styles.freqValue}>
+                                                {dev.freq || "-"}
+                                            </Text>
+                                        </View>
+                                    </TouchableOpacity>
                                 ))}
                             </ScrollView>
                         ) : (
                             <Text style={styles.noData}>
-                                Không có lịch sử bảo trì
+                                Nhóm này chưa có thiết bị.
                             </Text>
                         )}
 
                         <TouchableOpacity
                             style={styles.closeBtn}
-                            onPress={() => setMaintenanceHistory([])}
+                            onPress={() => setDeviceModalVisible(false)}
                         >
                             <Text style={styles.closeBtnText}>Đóng</Text>
                         </TouchableOpacity>
                     </View>
                 </View>
             </Modal>
-        </View>
+
+            {/* MODAL: LỊCH SỬ BẢO TRÌ CỦA TỪNG THIẾT BỊ */}
+            <Modal
+                visible={historyModalVisible}
+                transparent
+                animationType="fade"
+                onRequestClose={() => setHistoryModalVisible(false)}
+            >
+                <View style={styles.modalOverlay}>
+                    <View style={styles.modalBox}>
+                        <Text style={styles.modalTitle}>
+                            Lịch sử bảo trì của {selectedDeviceName}
+                        </Text>
+
+                        {maintenanceHistory.length > 0 ? (
+                            <ScrollView
+                                style={styles.modalScroll}
+                                showsVerticalScrollIndicator={false}
+                            >
+                                {maintenanceHistory.map((item, index) => (
+                                    <View
+                                        key={`${item.date}-${index}`}
+                                        style={styles.historyItem}
+                                    >
+                                        <View style={styles.historyItemLeft}>
+                                            <Text style={styles.historyDate}>
+                                                {item.date}
+                                            </Text>
+                                        </View>
+                                        <View style={styles.historyItemRight}>
+                                            <Text style={styles.historyContent}>
+                                                {item.content}
+                                            </Text>
+                                        </View>
+                                    </View>
+                                ))}
+                            </ScrollView>
+                        ) : (
+                            <Text style={styles.noData}>
+                                Không có lịch sử bảo trì cho thiết bị này.
+                            </Text>
+                        )}
+
+                        <TouchableOpacity
+                            style={styles.closeBtn}
+                            onPress={() => {
+                                setHistoryModalVisible(false);
+                                setMaintenanceHistory([]);
+                                setSelectedDeviceName(null);
+                            }}
+                        >
+                            <Text style={styles.closeBtnText}>Đóng</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            </Modal>
+        </SafeAreaView>
     );
 }
 
 const styles = StyleSheet.create({
+    safeArea: {
+        flex: 1,
+        backgroundColor: "#020617",
+    },
     container: {
         flex: 1,
-        backgroundColor: "#0A0F1C",
-        padding: 20,
+        paddingHorizontal: 20,
         paddingTop: 60,
     },
     center: {
-        backgroundColor: "#0A0F1C",
         flex: 1,
         justifyContent: "center",
         alignItems: "center",
+        backgroundColor: "#020617",
     },
-    loadingText: { marginTop: 10, color: "#9CCAFF" },
-
+    loadingText: {
+        marginTop: 10,
+        color: "#9CCAFF",
+        fontSize: 14,
+    },
     header: {
-        fontSize: 24,
+        fontSize: 26,
         fontWeight: "900",
-        color: "#E0F2FF",
+        color: "#E5F2FF",
         marginBottom: 20,
         textAlign: "center",
+        letterSpacing: 0.8,
     },
-
-    row: { justifyContent: "space-between", marginBottom: 16 },
-
+    row: {
+        justifyContent: "space-between",
+        marginBottom: 16,
+    },
+    cardWrapper: {
+        flexBasis: "48%",
+    },
     card: {
-        backgroundColor: "#1E293B",
-        width: CARD_SIZE,
-        padding: 20,
-        borderRadius: 14,
+        backgroundColor: "#0F172A",
+        paddingVertical: 22,
+        borderRadius: 16,
         borderWidth: 1,
-        borderColor: "rgba(78,168,255,0.15)",
+        borderColor: "rgba(59,130,246,0.45)",
         justifyContent: "center",
         alignItems: "center",
+        shadowColor: "#1D4ED8",
+        shadowOpacity: 0.18,
+        shadowRadius: 8,
+        elevation: 4,
     },
-
     cardText: {
-        color: "#BBDFFF",
+        color: "#E5F2FF",
         fontSize: 16,
         fontWeight: "700",
     },
 
-    /* MODAL */
+    // MODAL CHUNG
     modalOverlay: {
         flex: 1,
         justifyContent: "center",
         alignItems: "center",
-        backgroundColor: "rgba(0,0,0,0.5)",
+        backgroundColor: "rgba(0,0,0,0.6)",
     },
-
     modalBox: {
         width: "90%",
         maxHeight: "80%",
-        backgroundColor: "#FFF",
-        borderRadius: 14,
-        padding: 20,
+        backgroundColor: "#020617",
+        borderRadius: 16,
+        padding: 18,
+        borderWidth: 1,
+        borderColor: "rgba(59,130,246,0.7)",
     },
-
     modalTitle: {
-        fontSize: 20,
+        fontSize: 18,
         fontWeight: "800",
-        marginBottom: 15,
+        color: "#E5F2FF",
+        marginBottom: 12,
         textAlign: "center",
     },
-
     modalScroll: {
-        maxHeight: "90%",
-        marginBottom: 20,
+        // maxHeight: "75%",
+        marginBottom: 16,
     },
-
-    /* TABLE */
-    tableHeader: {
-        flexDirection: "row",
-        backgroundColor: "#E2E8F0",
-        padding: 10,
-        borderRadius: 8,
-        marginBottom: 6,
-    },
-    headerText: {
-        flex: 1,
-        fontWeight: "700",
-        fontSize: 14,
-        color: "#1E293B",
-    },
-
     noData: {
-        color: "#555",
+        paddingBottom: 20,
+        color: "#9CA3AF",
         textAlign: "center",
         marginTop: 20,
+        fontSize: 14,
     },
-
     closeBtn: {
-        backgroundColor: "#1E293B",
-        padding: 12,
+        backgroundColor: "#1D4ED8",
+        paddingVertical: 10,
         borderRadius: 10,
         alignItems: "center",
     },
     closeBtnText: {
         color: "#FFF",
-        fontSize: 16,
+        fontSize: 14,
         fontWeight: "700",
     },
 
-    historyItem: {
-        backgroundColor: "#F1F5F9",
-        padding: 12,
-        marginBottom: 6,
-        borderRadius: 8,
-    },
-    historyText: {
-        color: "#334155",
-        fontSize: 14,
-    },
-    tableRow: {
+    // DANH SÁCH THIẾT BỊ TRONG NHÓM
+    deviceRow: {
         flexDirection: "row",
-        backgroundColor: "#F8FAFC",
-        padding: 10,
-        borderRadius: 8,
-        marginBottom: 6,
+        backgroundColor: "#0F172A",
+        borderRadius: 12,
+        padding: 12,
+        marginBottom: 10,
+        borderWidth: 1,
+        borderColor: "rgba(75,85,99,0.9)",
     },
-
-    // General row text style
-    rowText: {
+    deviceRowLeft: {
+        flex: 3,
+        paddingRight: 8,
+    },
+    deviceRowRight: {
+        flex: 1.5,
+        alignItems: "flex-end",
+        justifyContent: "center",
+    },
+    deviceName: {
+        color: "#E5F2FF",
         fontSize: 14,
-        color: "#334155",
+        fontWeight: "700",
+    },
+    deviceSubLabel: {
+        color: "#9CA3AF",
+        fontSize: 12,
+        marginTop: 2,
+    },
+    freqLabel: {
+        color: "#9CA3AF",
+        fontSize: 11,
+    },
+    freqValue: {
+        color: "#60A5FA",
+        fontSize: 13,
+        fontWeight: "600",
+        marginTop: 2,
     },
 
-    // Custom styles for the first column
-    firstColumn: {
-        flex: 2, // First column takes more space
+    // LỊCH SỬ BẢO TRÌ THIẾT BỊ
+    historyItem: {
+        flexDirection: "row",
+        padding: 10,
+        backgroundColor: "#0F172A",
+        borderRadius: 12,
+        marginBottom: 8,
+        borderWidth: 1,
+        borderColor: "rgba(55,65,81,0.9)",
     },
-
-    // Custom styles for the second column
-    secondColumn: {
-        flex: 1, // Second column is narrower
+    historyItemLeft: {
+        width: 90,
+        justifyContent: "center",
+        padding: 8,
+        marginRight: 8,
+        borderRadius: 10,
+        backgroundColor: "#111827",
+        borderWidth: 1,
+        borderColor: "rgba(96,165,250,0.6)",
+        shadowColor: "#1E3A8A",
+        shadowOpacity: 0.25,
+        shadowRadius: 6,
+        elevation: 3,
+    },
+    historyItemRight: {
+        flex: 1,
+        justifyContent: "center",
+    },
+    historyDate: {
+        color: "#60A5FA",
+        fontSize: 13,
+        fontWeight: "700",
+        textAlign: "center",
+    },
+    historyContent: {
+        color: "#CBD5F5",
+        fontSize: 13,
+        lineHeight: 18,
     },
 });

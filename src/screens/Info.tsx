@@ -4,6 +4,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { RootStackParamList } from "../types/navigation";
 import BackButton from "../components/backButton";
+import DataSyncIndicator from "../components/DataSyncIndicator";
 
 const infoData = [
     {
@@ -44,11 +45,16 @@ type Props = NativeStackScreenProps<RootStackParamList, "Info">;
 export default function InfoScreen({ navigation }: Props) {
     return (
         <SafeAreaView style={styles.safeArea}>
+            {/* Back ở góc trái */}
             <BackButton onPress={() => navigation.goBack()} />
+
+            {/* Icon đồng bộ ở góc phải */}
+            <DataSyncIndicator />
 
             <ScrollView
                 style={styles.container}
                 contentContainerStyle={styles.contentContainer}
+                showsVerticalScrollIndicator={false}
             >
                 <Text style={styles.header}>Thông tin</Text>
 
@@ -66,53 +72,51 @@ export default function InfoScreen({ navigation }: Props) {
 }
 
 const styles = StyleSheet.create({
-    safeArea: { flex: 1, backgroundColor: "#0A0F1C" },
-
+    safeArea: {
+        flex: 1,
+        backgroundColor: "#020617",
+    },
     container: {
         flex: 1,
+        backgroundColor: "#020617",
         paddingHorizontal: 20,
+        paddingTop: 20,
     },
-
     contentContainer: {
         paddingBottom: 80,
+        paddingTop: 20,
     },
-
     header: {
-        marginTop: 80,
-        fontSize: 28,
+        fontSize: 26,
         fontWeight: "900",
-        color: "#E0F2FF",
-        marginBottom: 30,
+        color: "#E5F2FF",
+        marginBottom: 24,
         textAlign: "center",
-        letterSpacing: 1,
-        textShadowColor: "rgba(78,168,255,0.6)",
-        textShadowOffset: { width: 0, height: 2 },
-        textShadowRadius: 4,
+        letterSpacing: 0.8, // giống Index
     },
 
+    // Card trong Info giữ nguyên
     card: {
-        backgroundColor: "#1E293B",
-        padding: 20,
+        backgroundColor: "#0F172A",
+        padding: 18,
         borderRadius: 16,
-        marginBottom: 20,
-        shadowColor: "#4EA8FF",
-        shadowOpacity: 0.2,
-        shadowRadius: 6,
-        elevation: 4,
+        marginBottom: 16,
         borderWidth: 1,
-        borderColor: "rgba(78,168,255,0.1)",
+        borderColor: "rgba(59,130,246,0.35)",
+        shadowColor: "#1D4ED8",
+        shadowOpacity: 0.18,
+        shadowRadius: 8,
+        elevation: 4,
     },
-
     title: {
-        fontSize: 18,
+        fontSize: 16,
         fontWeight: "700",
-        color: "#BBDFFF",
-        marginBottom: 8,
+        color: "#E5F2FF",
+        marginBottom: 6,
     },
-
     description: {
-        fontSize: 14,
-        color: "#D7E9FF",
+        fontSize: 13,
+        color: "#CBD5F5",
         lineHeight: 20,
     },
 });
