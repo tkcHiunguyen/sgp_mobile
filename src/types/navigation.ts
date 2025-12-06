@@ -14,4 +14,6 @@ export type RootStackParamList = {
         name: string;
     };
     Data: undefined;
+    Settings: undefined;
+    Loading: undefined;
 };

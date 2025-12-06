@@ -12,7 +12,7 @@ import ToolsScreen from "./src/screens/Tools";
 import InfoScreen from "./src/screens/Info";
 import WebViewerScreen from "./src/screens/WebViewerScreen";
 import SystemManager from "./src/screens/SystemManager";
-
+import SettingsScreen from "./src/screens/Settings";
 const Stack = createNativeStackNavigator();
 
 export default function App() {
@@ -35,6 +35,7 @@ export default function App() {
                         name="SystemManager"
                         component={SystemManager}
                     />
+                    <Stack.Screen name="Settings" component={SettingsScreen} />
                 </Stack.Navigator>
             </NavigationContainer>
         </DeviceGroupProvider>

@@ -1,23 +1,14 @@
 import React, { createContext, useState, useContext, useCallback } from "react";
-import { createMMKV } from "react-native-mmkv";
+import {
+    storage,
+    getApiBase,
+    getSheetId,
+    KEY_ALL_DATA,
+} from "../config/apiConfig";
 
-const API_BASE =
-    "https://script.google.com/macros/s/AKfycbwUEEm_Eo30rDi-v-9O3V1vhel8eztYhgAkcU6jj-MfS7syQPBb4BrNYJMcsy9OSMQ/exec";
-
-const MMKV = createMMKV();
-
-// ----------- KIỂU DỮ LIỆU CHO CONTEXT -----------
 interface DeviceGroupContextType {
     deviceGroups: any[];
     setDeviceGroups: (groups: any[]) => void;
-
-    loadingDeviceGroups: boolean;
-    fetchDeviceGroups: () => Promise<void>;
-
-    selectedDeviceName: string | null;
-    maintenanceHistory: any[];
-    loadingMaintenanceHistory: boolean;
-    fetchMaintenanceHistory: (deviceName: string) => Promise<void>;
 
     isDataFromCache: boolean;
     setIsDataFromCache: (fromCache: boolean) => void;
@@ -42,65 +33,8 @@ export const DeviceGroupProvider: React.FC<{ children: React.ReactNode }> = ({
     children,
 }) => {
     const [deviceGroups, setDeviceGroups] = useState<any[]>([]);
-    const [loadingDeviceGroups, setLoadingDeviceGroups] = useState(false);
-
-    const [selectedDeviceName, setSelectedDeviceName] = useState<string | null>(
-        null
-    );
-    const [maintenanceHistory, setMaintenanceHistory] = useState<any[]>([]);
-    const [loadingMaintenanceHistory, setLoadingMaintenanceHistory] =
-        useState(false);
-
     const [isDataFromCache, setIsDataFromCache] = useState<boolean>(false);
     const [isSyncing, setIsSyncing] = useState<boolean>(false);
-
-    const fetchDeviceGroups = useCallback(async () => {
-        if (loadingDeviceGroups) return;
-
-        try {
-            setLoadingDeviceGroups(true);
-            const res = await fetch(`${API_BASE}?action=getalltables`);
-            const json = await res.json();
-            setDeviceGroups(json);
-            // Có thể coi đây là dữ liệu mới
-            setIsDataFromCache(false);
-        } catch (err) {
-            console.error("❌ Error fetching device groups:", err);
-        } finally {
-            setLoadingDeviceGroups(false);
-        }
-    }, [loadingDeviceGroups]);
-
-    const fetchMaintenanceHistory = useCallback(async (deviceName: string) => {
-        try {
-            setSelectedDeviceName(deviceName);
-            setLoadingMaintenanceHistory(true);
-            setMaintenanceHistory([]);
-
-            const res = await fetch(
-                `${API_BASE}?action=getMaintenanceHistory&device_name=${encodeURIComponent(
-                    deviceName
-                )}`
-            );
-            const json = await res.json();
-
-            if (json.error) {
-                console.error("❌ Lỗi khi lấy lịch sử:", json.message);
-                return;
-            }
-
-            const sorted = json.rows.sort(
-                (a: any, b: any) =>
-                    new Date(b.date).getTime() - new Date(a.date).getTime()
-            );
-
-            setMaintenanceHistory(sorted);
-        } catch (err) {
-            console.error("❌ Error fetching history:", err);
-        } finally {
-            setLoadingMaintenanceHistory(false);
-        }
-    }, []);
 
     const refreshAllData = useCallback(async () => {
         if (isSyncing) return;
@@ -112,10 +46,38 @@ export const DeviceGroupProvider: React.FC<{ children: React.ReactNode }> = ({
         try {
             setIsSyncing(true);
 
-            const res = await fetch(`${API_BASE}?action=getAllData`);
-            const allData = await res.json();
+            const apiBase = getApiBase();
+            const sheetId = getSheetId();
 
-            MMKV.set("allData", JSON.stringify(allData));
+            const res = await fetch(
+                `${apiBase}?action=getAllData&sheetId=${encodeURIComponent(
+                    sheetId
+                )}`,
+                {
+                    method: "GET",
+                }
+            );
+
+            const result = await res.json();
+            console.log("📌 [SYNC] Raw result:", result);
+
+            const totalTable = result.totalTable ?? 0;
+            const validTable = result.validTable ?? [];
+            const errTable = result.errTable ?? [];
+
+            const allData = result.data ?? [];
+
+            console.log("📌 [SYNC] allData:", allData);
+            console.log("🔎 [SYNC] Meta:", {
+                totalTable,
+                validTable,
+                errTable,
+            });
+
+            storage.set(KEY_ALL_DATA, JSON.stringify(allData));
+            // OPTIONAL: lưu meta
+            // storage.set(KEY_TABLE_META, JSON.stringify({ totalTable, validTable, errTable }));
+
             setDeviceGroups(allData);
             setIsDataFromCache(false);
 
@@ -131,14 +93,6 @@ export const DeviceGroupProvider: React.FC<{ children: React.ReactNode }> = ({
     const value: DeviceGroupContextType = {
         deviceGroups,
         setDeviceGroups,
-
-        loadingDeviceGroups,
-        fetchDeviceGroups,
-
-        selectedDeviceName,
-        maintenanceHistory,
-        loadingMaintenanceHistory,
-        fetchMaintenanceHistory,
 
         isDataFromCache,
         setIsDataFromCache,

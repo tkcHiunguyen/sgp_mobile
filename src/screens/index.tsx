@@ -55,6 +55,14 @@ const features = [
         route: "Database",
         isReady: false,
     },
+    // 👇 mục mới: Cài đặt
+    {
+        id: "settings",
+        title: "Cài đặt",
+        icon: "settings-outline",
+        route: "Settings",
+        isReady: true,
+    },
 ] as const;
 
 type FeatureItem = (typeof features)[number];

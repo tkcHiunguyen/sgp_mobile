@@ -8,13 +8,15 @@ import {
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { useDeviceGroup } from "../context/DeviceGroupContext";
-import { createMMKV } from "react-native-mmkv";
 import Ionicons from "react-native-vector-icons/Ionicons";
 
-const API_BASE =
-    "https://script.google.com/macros/s/AKfycbwUEEm_Eo30rDi-v-9O3V1vhel8eztYhgAkcU6jj-MfS7syQPBb4BrNYJMcsy9OSMQ/exec";
-
-const MMKV = createMMKV();
+// 🔹 DÙNG CONFIG CHUNG
+import {
+    storage,
+    getApiBase,
+    getSheetId,
+    KEY_ALL_DATA,
+} from "../config/apiConfig";
 
 type Status = "checking" | "loadingNew" | "ready";
 
@@ -27,28 +29,57 @@ export default function LoadingScreen() {
     const opacity = useRef(new Animated.Value(1)).current;
     const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
+    // 👉 state để hiển thị meta từ API
+    const [totalTable, setTotalTable] = useState<number | null>(null);
+    const [validTable, setValidTable] = useState<string[]>([]);
+    const [errTable, setErrTable] = useState<string[]>([]);
+
     const fetchAllData = async () => {
         setStatus("loadingNew");
 
         try {
-            const res = await fetch(`${API_BASE}?action=getAllData`);
-            const allData = await res.json();
+            const apiBase = getApiBase();
+            const sheetId = getSheetId();
+
+            const res = await fetch(
+                `${apiBase}?action=getAllData&sheetId=${encodeURIComponent(
+                    sheetId
+                )}`,
+                {
+                    method: "GET",
+                }
+            );
+
+            const result = await res.json();
+            console.log("📌 Raw getAllData result:", result);
+
+            // 👇 Trích xuất meta mới
+            const total = result.totalTable ?? 0;
+            const valid = result.validTable ?? [];
+            const err = result.errTable ?? [];
+
+            // 👇 Đây mới là mảng nhóm thiết bị dùng trong app
+            const allData = result.data ?? [];
+
             console.log(
                 "📌 Dữ liệu tất cả các bảng (mới) đã được lấy:",
                 allData
             );
+            console.log("🔎 Meta:", { total, valid, err });
 
-            // Lưu mới vào bộ nhớ
-            MMKV.set("allData", JSON.stringify(allData));
+            // lưu state meta để hiển thị trên UI
+            setTotalTable(total);
+            setValidTable(valid);
+            setErrTable(err);
+
+            storage.set(KEY_ALL_DATA, JSON.stringify(allData));
             setDeviceGroups(allData);
 
-            // Dữ liệu hiện tại là dữ liệu mới (không phải từ cache)
             setHasLocalData(false);
             setIsDataFromCache(false);
             setStatus("ready");
         } catch (err) {
             console.error("❌ Lỗi khi lấy dữ liệu tất cả các bảng:", err);
-            // TODO: tuỳ bạn muốn xử lý lỗi, có thể hiển thị thông báo hoặc cho retry
         }
     };
 
@@ -57,23 +88,49 @@ export default function LoadingScreen() {
             try {
                 setStatus("checking");
 
-                const savedData = MMKV.getString("allData");
+                const savedData = storage.getString(KEY_ALL_DATA);
 
                 if (savedData) {
-                    // ✅ ĐÃ CÓ DỮ LIỆU TRONG LOCAL (dữ liệu cũ)
-                    const allData = JSON.parse(savedData);
-                    console.log("📌 Dữ liệu lấy từ bộ nhớ (CŨ):", allData);
+                    let allData: any = null;
+                    let isEmpty = false;
 
-                    setDeviceGroups(allData);
-                    setHasLocalData(true);
-                    setIsDataFromCache(true); // flag cho các screen sau
+                    try {
+                        allData = JSON.parse(savedData);
 
-                    // Đã có data (cũ nhưng dùng được) -> cho vào app luôn
-                    setStatus("ready");
-                    return;
+                        if (Array.isArray(allData)) {
+                            isEmpty = allData.length === 0;
+                        } else if (allData && typeof allData === "object") {
+                            isEmpty = Object.keys(allData).length === 0;
+                        } else {
+                            isEmpty = true;
+                        }
+                    } catch (e) {
+                        console.warn(
+                            "⚠️ Lỗi parse allData từ storage, sẽ tải mới:",
+                            e
+                        );
+                        isEmpty = true;
+                    }
+
+                    if (!isEmpty) {
+                        console.log(
+                            "📌 Dữ liệu lấy từ bộ nhớ (CŨ, có nội dung):",
+                            allData
+                        );
+
+                        setDeviceGroups(allData);
+                        setHasLocalData(true);
+                        setIsDataFromCache(true); // dùng cache + auto sync sau
+                        setStatus("ready");
+                        return;
+                    }
+
+                    console.log(
+                        "ℹ️ allData trong storage rỗng -> sẽ tải dữ liệu mới"
+                    );
                 }
 
-                // ❌ CHƯA CÓ DỮ LIỆU -> PHẢI TẢI MỚI Ở LOADING SCREEN
+                // Không có savedData hoặc rỗng -> tải mới
                 await fetchAllData();
             } catch (error) {
                 console.error("Lỗi khi bootstrap dữ liệu:", error);
@@ -87,7 +144,6 @@ export default function LoadingScreen() {
         };
     }, [navigation, setDeviceGroups, setIsDataFromCache]);
 
-    // Chỉ cần CÓ dữ liệu (cũ hoặc mới) -> status = "ready" -> auto fade + sang Home
     useEffect(() => {
         if (status === "ready") {
             timeoutRef.current = setTimeout(() => {
@@ -113,6 +169,8 @@ export default function LoadingScreen() {
 
     const isDone = status === "ready";
 
+    const hasMeta = totalTable !== null;
+
     return (
         <View style={styles.container}>
             <Animated.View
@@ -122,7 +180,6 @@ export default function LoadingScreen() {
                     justifyContent: "center",
                 }}
             >
-                {/* Vòng tròn ở giữa */}
                 <View style={styles.circle}>
                     {isDone ? (
                         <Ionicons
@@ -135,7 +192,6 @@ export default function LoadingScreen() {
                     )}
                 </View>
 
-                {/* Text trạng thái */}
                 <Text style={styles.title}>{renderTitle()}</Text>
 
                 {isDone && hasLocalData && (
@@ -145,9 +201,29 @@ export default function LoadingScreen() {
                 )}
 
                 {isDone && !hasLocalData && (
-                    <Text style={styles.subText}>
-                        Dữ liệu mới đã sẵn sàng, chuyển đến trang chính...
-                    </Text>
+                    <>
+                        <Text style={styles.subText}>
+                            Dữ liệu mới đã sẵn sàng, chuyển đến trang chính...
+                        </Text>
+
+                        {/* 👇 Hiển thị meta khi vừa tải mới từ server */}
+                        {hasMeta && (
+                            <>
+                                <Text style={styles.metaText}>
+                                    Tổng số bảng: {totalTable}
+                                </Text>
+                                <Text style={styles.metaText}>
+                                    Bảng hợp lệ: {validTable.length} | Bảng lỗi:{" "}
+                                    {errTable.length}
+                                </Text>
+                                {errTable.length > 0 && (
+                                    <Text style={styles.metaTextSmall}>
+                                        Bảng lỗi: {errTable.join(", ")}
+                                    </Text>
+                                )}
+                            </>
+                        )}
+                    </>
                 )}
 
                 {!isDone && status === "loadingNew" && (
@@ -188,6 +264,18 @@ const styles = StyleSheet.create({
         marginTop: 8,
         color: "#9CA3AF",
         fontSize: 14,
+        textAlign: "center",
+    },
+    metaText: {
+        marginTop: 4,
+        color: "#93C5FD",
+        fontSize: 13,
+        textAlign: "center",
+    },
+    metaTextSmall: {
+        marginTop: 2,
+        color: "#FCA5A5",
+        fontSize: 12,
         textAlign: "center",
     },
 });
