@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "543015202324",
+    "project_id": "sgp-server",
+    "storage_bucket": "sgp-server.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:543015202324:android:a4c45eb414b033fecc0101",
+        "android_client_info": {
+          "package_name": "com.qr3"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBJqqVmj7-FYGaf1qng1FZgflMvGpOeDxc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

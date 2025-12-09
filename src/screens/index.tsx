@@ -11,7 +11,29 @@ import LinearGradient from "react-native-linear-gradient";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import { useNavigation } from "@react-navigation/native";
 import DataSyncIndicator from "../components/DataSyncIndicator";
+import notifee, { AndroidImportance } from "@notifee/react-native";
 
+// ====== HÀM TEST THÔNG BÁO ======
+async function triggerTestNotification() {
+    await notifee.requestPermission();
+
+    const channelId = await notifee.createChannel({
+        id: "test-channel",
+        name: "Test Channel",
+        importance: AndroidImportance.HIGH,
+    });
+
+    await notifee.displayNotification({
+        title: "🔔 Test thông báo",
+        body: "Nếu bạn thấy cái này thì Notifee đã hoạt động!",
+        android: {
+            channelId,
+            smallIcon: "ic_launcher",
+        },
+    });
+}
+
+// ====== DANH SÁCH CHỨC NĂNG ======
 const features = [
     {
         id: "scan",
@@ -55,7 +77,6 @@ const features = [
         route: "Database",
         isReady: false,
     },
-    // 👇 mục mới: Cài đặt
     {
         id: "settings",
         title: "Cài đặt",
@@ -63,6 +84,13 @@ const features = [
         route: "Settings",
         isReady: true,
     },
+    // {
+    //     id: "test-noti",
+    //     title: "Test thông báo",
+    //     icon: "notifications-outline",
+    //     route: null,
+    //     isReady: true,
+    // },
 ] as const;
 
 type FeatureItem = (typeof features)[number];
@@ -90,7 +118,14 @@ function FeatureTile({ item }: { item: FeatureItem }) {
     };
 
     const handlePress = () => {
-        if (item.isReady) {
+        if (!item.isReady) return;
+
+        if (item.id === "test-noti") {
+            triggerTestNotification();
+            return;
+        }
+
+        if (item.route) {
             navigation.navigate(item.route);
         }
     };
@@ -145,10 +180,7 @@ function FeatureTile({ item }: { item: FeatureItem }) {
 export default function IndexScreen() {
     return (
         <View style={styles.container}>
-            {/* Indicator sync góc phải */}
             <DataSyncIndicator />
-
-            {/* Tiêu đề giữa màn hình, không phụ đề, không icon */}
             <Text style={styles.header}>Industrial Manager</Text>
 
             <FlatList
@@ -186,12 +218,11 @@ const styles = StyleSheet.create({
         justifyContent: "space-between",
         marginBottom: 18,
     },
-    // Wrapper để các ô có cùng kích cỡ, 2 cột đều
     tileWrapper: {
         flexBasis: "48%",
     },
     tile: {
-        minHeight: 120, // đảm bảo ô cùng chiều cao
+        minHeight: 120,
         borderRadius: 18,
         justifyContent: "center",
         alignItems: "center",

@@ -2,6 +2,7 @@ import React from "react";
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { DeviceGroupProvider } from "./src/context/DeviceGroupContext"; // Import the provider
+import { useFirebaseNotifications } from "./src/hooks/useFirebaseNotifications";
 
 import LoadingScreen from "./src/screens/LoadingScreen";
 import IndexScreen from "./src/screens/index";
@@ -11,11 +12,11 @@ import HistoryScreen from "./src/screens/History";
 import ToolsScreen from "./src/screens/Tools";
 import InfoScreen from "./src/screens/Info";
 import WebViewerScreen from "./src/screens/WebViewerScreen";
-import SystemManager from "./src/screens/SystemManager";
 import SettingsScreen from "./src/screens/Settings";
 const Stack = createNativeStackNavigator();
 
 export default function App() {
+    useFirebaseNotifications();
     return (
         <DeviceGroupProvider>
             <NavigationContainer>
@@ -30,10 +31,6 @@ export default function App() {
                     <Stack.Screen
                         name="WebViewer"
                         component={WebViewerScreen}
-                    />
-                    <Stack.Screen
-                        name="SystemManager"
-                        component={SystemManager}
                     />
                     <Stack.Screen name="Settings" component={SettingsScreen} />
                 </Stack.Navigator>

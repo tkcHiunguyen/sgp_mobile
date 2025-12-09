@@ -25,19 +25,11 @@ export const getSheetId = (): string => {
     return saved && saved.trim().length > 0 ? saved.trim() : DEFAULT_SHEET_ID;
 };
 
-/**
- * "Reset" cấu hình & dữ liệu:
- * - Ghi API base về mặc định
- * - Ghi Sheet ID về mặc định
- * - Xoá dữ liệu cache bằng cách set allData thành mảng rỗng
- *
- * Không đụng deleteMMKV để tránh crash app.
- */
 export const resetConfig = () => {
     try {
         storage.set(KEY_API_BASE, DEFAULT_API_BASE);
         storage.set(KEY_SHEET_ID, DEFAULT_SHEET_ID);
-        storage.set(KEY_ALL_DATA, JSON.stringify([])); 
+        storage.set(KEY_ALL_DATA, JSON.stringify([]));
         return true;
     } catch (e) {
         console.warn("resetConfig error:", e);
@@ -62,3 +54,6 @@ export const setSheetId = (value: string | null) => {
         storage.set(KEY_SHEET_ID, v);
     }
 };
+
+export const API_BASE_URL = "https://sgp.skybot.id.vn/";
+export const VERSION = "1.0.5";

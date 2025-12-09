@@ -1,4 +1,5 @@
 // src/screens/Settings.tsx
+
 import React, { useEffect, useState } from "react";
 import {
     View,
@@ -28,13 +29,28 @@ import {
     DEFAULT_SHEET_ID,
     resetConfig,
     KEY_ALL_DATA,
+    VERSION, // 🔹 lấy VERSION từ config
 } from "../config/apiConfig";
 
+import {
+    fetchLatestOta,
+    isNewerVersion,
+    downloadAndInstallApk,
+    type OtaInfo,
+    OtaError,
+} from "../services/otaService";
+
 type Props = NativeStackScreenProps<RootStackParamList, "Settings">;
+
+// key lưu version đã tải OTA (client-side)
+const KEY_APP_VERSION = "APP_VERSION";
 
 export default function SettingsScreen({ navigation }: Props) {
     const [apiBase, setApiBaseInput] = useState<string>("");
     const [sheetId, setSheetIdInput] = useState<string>("");
+
+    // phiên bản để hiển thị trên UI
+    const [appVersion, setAppVersion] = useState<string>(VERSION);
 
     // sheet ban đầu để biết có đổi không
     const [initialSheetId, setInitialSheetId] = useState<string>("");
@@ -43,6 +59,10 @@ export default function SettingsScreen({ navigation }: Props) {
     const [showDoneResetModal, setShowDoneResetModal] = useState(false);
     const [showSaveSuccessModal, setShowSaveSuccessModal] = useState(false);
     const [showSaveErrorModal, setShowSaveErrorModal] = useState(false);
+
+    const [downloadProgress, setDownloadProgress] = useState<number | null>(
+        null
+    );
 
     // Sau khi lưu xong có cần về Loading không
     const [shouldGoToLoadingAfterSave, setShouldGoToLoadingAfterSave] =
@@ -58,6 +78,18 @@ export default function SettingsScreen({ navigation }: Props) {
         "api" | "sheet" | null
     >(null);
 
+    // trạng thái OTA
+    const [checkingUpdate, setCheckingUpdate] = useState(false);
+    const [downloadingUpdate, setDownloadingUpdate] = useState(false);
+
+    const [otaModalVisible, setOtaModalVisible] = useState(false);
+    const [otaModalType, setOtaModalType] = useState<
+        "info" | "error" | "confirm"
+    >("info");
+    const [otaModalTitle, setOtaModalTitle] = useState("");
+    const [otaModalMessage, setOtaModalMessage] = useState("");
+    const [pendingOta, setPendingOta] = useState<OtaInfo | null>(null);
+
     useEffect(() => {
         try {
             const currentApiBase = getApiBase();
@@ -66,6 +98,24 @@ export default function SettingsScreen({ navigation }: Props) {
             setApiBaseInput(currentApiBase);
             setSheetIdInput(currentSheetId);
             setInitialSheetId(currentSheetId);
+
+            // Đọc version đã lưu trong storage (nếu có)
+            try {
+                const storedVersion =
+                    typeof storage.getString === "function"
+                        ? storage.getString(KEY_APP_VERSION)
+                        : null;
+
+                if (storedVersion && typeof storedVersion === "string") {
+                    setAppVersion(storedVersion);
+                } else {
+                    // nếu chưa có thì dùng VERSION mặc định
+                    setAppVersion(VERSION);
+                }
+            } catch (e) {
+                console.warn("Không đọc được phiên bản từ storage:", e);
+                setAppVersion(VERSION);
+            }
         } catch (e) {
             console.warn("Không đọc được config:", e);
         }
@@ -135,8 +185,6 @@ export default function SettingsScreen({ navigation }: Props) {
                 index: 0,
                 routes: [{ name: "Loading" }],
             });
-        } else {
-            // không làm gì, chỉ đóng modal
         }
     };
 
@@ -172,6 +220,175 @@ export default function SettingsScreen({ navigation }: Props) {
     const cancelUnlockDangerField = () => {
         setPendingUnlockField(null);
         setShowDangerEditModal(false);
+    };
+
+    // ---------- OTA ----------
+    const openOtaModal = (
+        type: "info" | "error" | "confirm",
+        title: string,
+        message: string
+    ) => {
+        setOtaModalType(type);
+        setOtaModalTitle(title);
+        setOtaModalMessage(message);
+        setOtaModalVisible(true);
+    };
+
+    const handleCheckOta = async () => {
+        if (checkingUpdate || downloadingUpdate) return;
+
+        try {
+            setCheckingUpdate(true);
+
+            const ota = await fetchLatestOta();
+
+            if (!ota) {
+                openOtaModal("info", "Cập nhật", "Không có bản cập nhật mới.");
+                return;
+            }
+
+            // So sánh version server với VERSION hiện tại của app
+            const hasNew = isNewerVersion(ota.version, VERSION);
+            if (!hasNew) {
+                openOtaModal(
+                    "info",
+                    "Cập nhật",
+                    `Bạn đang dùng phiên bản mới nhất (${VERSION}).`
+                );
+                return;
+            }
+
+            // Có bản mới
+            setPendingOta(ota);
+            openOtaModal(
+                "confirm",
+                `Có bản cập nhật ${ota.version}`,
+                ota.changelog && ota.changelog.trim().length > 0
+                    ? ota.changelog
+                    : "Có bản cập nhật mới cho ứng dụng. Bạn có muốn tải và cài đặt ngay không?"
+            );
+        } catch (e: any) {
+            if (e instanceof OtaError) {
+                if (e.kind === "NETWORK") {
+                    openOtaModal(
+                        "error",
+                        "Không thể kết nối",
+                        "Không kết nối được tới server cập nhật.\n\nHãy kiểm tra lại Wi-Fi/4G hoặc địa chỉ API Base URL trong phần Cài đặt."
+                    );
+                } else if (e.kind === "HTTP") {
+                    const statusText =
+                        e.status === 404
+                            ? "Server không tìm thấy endpoint /ota/latest. Hãy kiểm tra lại cấu hình route trên Node.js."
+                            : `Server OTA trả về lỗi (HTTP ${e.status}). Vui lòng kiểm tra log server.`;
+
+                    openOtaModal("error", "Lỗi server OTA", statusText);
+                } else {
+                    openOtaModal(
+                        "error",
+                        "Lỗi",
+                        e.message || "Có lỗi xảy ra khi kiểm tra cập nhật."
+                    );
+                }
+            } else {
+                openOtaModal(
+                    "error",
+                    "Lỗi",
+                    "Có lỗi không xác định khi kiểm tra cập nhật. Hãy thử lại sau."
+                );
+            }
+        } finally {
+            setCheckingUpdate(false);
+        }
+    };
+
+    const handleConfirmDownloadUpdate = async () => {
+        if (!pendingOta) {
+            setOtaModalVisible(false);
+            return;
+        }
+
+        setOtaModalVisible(false);
+        try {
+            setDownloadingUpdate(true);
+            setDownloadProgress(0); // reset progress
+
+            // truyền callback onProgress vào service
+            await downloadAndInstallApk(pendingOta, {
+                onProgress: (fraction: number) => {
+                    const percent = Math.round(fraction * 100);
+                    setDownloadProgress(percent);
+                },
+            });
+
+            // lưu version OTA đã tải vào storage + state
+            try {
+                // @ts-ignore: tuỳ implementation của storage
+                if (typeof storage.set === "function") {
+                    storage.set(KEY_APP_VERSION, pendingOta.version);
+                }
+                setAppVersion(pendingOta.version);
+            } catch (e) {
+                console.warn("Không lưu được version vào storage:", e);
+            }
+
+            openOtaModal(
+                "info",
+                "Đã tải bản cập nhật",
+                "Hệ thống sẽ mở màn hình cài đặt APK. Nếu không thấy, hãy kiểm tra trong thư mục Tải xuống (Download)."
+            );
+            setPendingOta(null);
+        } catch (e: any) {
+            console.error("Lỗi tải/cài đặt OTA:", e);
+
+            if (e instanceof OtaError) {
+                if (e.kind === "NETWORK") {
+                    openOtaModal(
+                        "error",
+                        "Lỗi mạng",
+                        "Không tải được file cập nhật. Vui lòng kiểm tra lại kết nối mạng."
+                    );
+                } else if (e.kind === "HTTP") {
+                    openOtaModal(
+                        "error",
+                        "Lỗi tải file",
+                        `Server trả về lỗi khi tải file cập nhật (HTTP ${e.status}). Hãy kiểm tra lại server Node.js.`
+                    );
+                } else if (e.kind === "DOWNLOAD") {
+                    openOtaModal(
+                        "error",
+                        "Không mở được file",
+                        e.message ||
+                            "Tải xong nhưng không mở được file cài đặt. Hãy thử mở file APK trong thư mục Download."
+                    );
+                } else if (e.kind === "PLATFORM") {
+                    openOtaModal(
+                        "error",
+                        "Nền tảng không hỗ trợ",
+                        "Chức năng OTA chỉ hỗ trợ trên Android."
+                    );
+                } else {
+                    openOtaModal(
+                        "error",
+                        "Lỗi",
+                        e.message ||
+                            "Có lỗi xảy ra khi tải/cài đặt bản cập nhật."
+                    );
+                }
+            } else {
+                openOtaModal(
+                    "error",
+                    "Lỗi",
+                    "Có lỗi không xác định khi tải/cài đặt bản cập nhật."
+                );
+            }
+        } finally {
+            setDownloadingUpdate(false);
+            setDownloadProgress(null);
+        }
+    };
+
+    const handleCloseOtaModal = () => {
+        setOtaModalVisible(false);
     };
 
     return (
@@ -277,6 +494,75 @@ export default function SettingsScreen({ navigation }: Props) {
                         </View>
                     </View>
 
+                    {/* Card: OTA Update */}
+                    <View style={styles.card}>
+                        <Text style={styles.cardTitle}>
+                            Cập nhật ứng dụng (OTA)
+                        </Text>
+                        <Text style={styles.cardDescription}>
+                            Kiểm tra và tải về bản APK mới nhất từ server. Khi
+                            có bản cập nhật, ứng dụng sẽ tải file APK và mở
+                            trình cài đặt hệ thống.
+                        </Text>
+
+                        <View style={styles.otaRow}>
+                            <View style={{ flex: 1 }}>
+                                <Text style={styles.versionLabel}>
+                                    Phiên bản hiện tại
+                                </Text>
+                                <Text style={styles.versionValue}>
+                                    {appVersion}
+                                </Text>
+                                <Text style={styles.versionSubText}>
+                                    Build đang chạy: {VERSION}
+                                </Text>
+                            </View>
+                            <TouchableOpacity
+                                style={[
+                                    styles.otaButton,
+                                    (checkingUpdate || downloadingUpdate) &&
+                                        styles.otaButtonDisabled,
+                                ]}
+                                onPress={handleCheckOta}
+                                disabled={checkingUpdate || downloadingUpdate}
+                            >
+                                <Text style={styles.otaButtonText}>
+                                    {downloadingUpdate
+                                        ? "Đang tải..."
+                                        : checkingUpdate
+                                        ? "Đang kiểm tra..."
+                                        : "Kiểm tra cập nhật"}
+                                </Text>
+                            </TouchableOpacity>
+                        </View>
+
+                        {/* progress bar khi đang tải */}
+                        {downloadingUpdate && (
+                            <View style={styles.progressContainer}>
+                                <View style={styles.progressBarBackground}>
+                                    <View
+                                        style={[
+                                            styles.progressBarFill,
+                                            {
+                                                width: `${
+                                                    downloadProgress != null
+                                                        ? downloadProgress
+                                                        : 0
+                                                }%`,
+                                            },
+                                        ]}
+                                    />
+                                </View>
+                                <Text style={styles.progressText}>
+                                    Đang tải bản cập nhật
+                                    {downloadProgress != null
+                                        ? ` · ${downloadProgress}%`
+                                        : ""}
+                                </Text>
+                            </View>
+                        )}
+                    </View>
+
                     {/* Nút hành động */}
                     <View style={styles.buttonRow}>
                         <TouchableOpacity
@@ -296,6 +582,64 @@ export default function SettingsScreen({ navigation }: Props) {
                     </View>
                 </ScrollView>
             </KeyboardAvoidingView>
+
+            {/* Modal OTA custom */}
+            <Modal
+                visible={otaModalVisible}
+                transparent
+                animationType="fade"
+                onRequestClose={handleCloseOtaModal}
+            >
+                <View style={styles.modalOverlay}>
+                    <View style={styles.modalContainer}>
+                        <Text style={styles.modalTitle}>{otaModalTitle}</Text>
+                        <Text style={styles.modalMessage}>
+                            {otaModalMessage}
+                        </Text>
+
+                        {otaModalType === "confirm" ? (
+                            <View style={styles.modalButtonRow}>
+                                <TouchableOpacity
+                                    style={[
+                                        styles.modalButton,
+                                        styles.modalCancel,
+                                    ]}
+                                    onPress={handleCloseOtaModal}
+                                >
+                                    <Text style={styles.modalButtonText}>
+                                        Để sau
+                                    </Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity
+                                    style={[
+                                        styles.modalButton,
+                                        styles.modalPrimary,
+                                    ]}
+                                    onPress={handleConfirmDownloadUpdate}
+                                >
+                                    <Text style={styles.modalButtonText}>
+                                        Cập nhật ngay
+                                    </Text>
+                                </TouchableOpacity>
+                            </View>
+                        ) : (
+                            <View style={styles.modalButtonRowSingle}>
+                                <TouchableOpacity
+                                    style={[
+                                        styles.modalButton,
+                                        styles.modalPrimary,
+                                    ]}
+                                    onPress={handleCloseOtaModal}
+                                >
+                                    <Text style={styles.modalButtonText}>
+                                        Đã hiểu
+                                    </Text>
+                                </TouchableOpacity>
+                            </View>
+                        )}
+                    </View>
+                </View>
+            </Modal>
 
             {/* Modal xác nhận reset */}
             <Modal
@@ -334,7 +678,7 @@ export default function SettingsScreen({ navigation }: Props) {
                 </View>
             </Modal>
 
-            {/* Modal thông báo đã reset xong → yêu cầu tải lại dữ liệu */}
+            {/* Modal thông báo đã reset xong */}
             <Modal
                 visible={showDoneResetModal}
                 transparent
@@ -552,6 +896,7 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: "rgba(148,163,184,0.6)",
     },
+
     buttonRow: {
         flexDirection: "row",
         justifyContent: "space-between",
@@ -574,6 +919,68 @@ const styles = StyleSheet.create({
         color: "#FFFFFF",
         fontSize: 14,
         fontWeight: "700",
+    },
+
+    // OTA
+    otaRow: {
+        flexDirection: "row",
+        alignItems: "center",
+        marginTop: 8,
+    },
+    versionLabel: {
+        fontSize: 12,
+        color: "#9CA3AF",
+    },
+    versionValue: {
+        fontSize: 14,
+        fontWeight: "600",
+        color: "#E5F2FF",
+        marginTop: 2,
+    },
+    versionSubText: {
+        fontSize: 11,
+        color: "#6B7280",
+        marginTop: 2,
+    },
+    otaButton: {
+        paddingVertical: 10,
+        paddingHorizontal: 14,
+        borderRadius: 999,
+        backgroundColor: "#2563EB",
+        marginLeft: 8,
+        minWidth: 140,
+        alignItems: "center",
+        justifyContent: "center",
+    },
+    otaButtonDisabled: {
+        opacity: 0.6,
+    },
+    otaButtonText: {
+        color: "#F9FAFB",
+        fontSize: 13,
+        fontWeight: "700",
+    },
+
+    // Progress bar
+    progressContainer: {
+        marginTop: 12,
+    },
+    progressBarBackground: {
+        height: 6,
+        borderRadius: 999,
+        backgroundColor: "#1F2937",
+        overflow: "hidden",
+    },
+    progressBarFill: {
+        height: "100%",
+        borderRadius: 999,
+        backgroundColor: "#3B82F6",
+    },
+    progressText: {
+        marginTop: 4,
+        fontSize: 12,
+        color: "#9CA3AF",
+        textAlign: "right",
     },
 
     // Modal
@@ -617,7 +1024,7 @@ const styles = StyleSheet.create({
         alignItems: "center",
     },
     modalButton: {
-        width: 100,
+        width: 120,
         paddingVertical: 12,
         borderRadius: 999,
         alignItems: "center",
