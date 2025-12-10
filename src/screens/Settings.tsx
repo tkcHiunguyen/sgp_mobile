@@ -31,7 +31,7 @@ import {
     KEY_ALL_DATA,
     VERSION, // 🔹 lấy VERSION từ config
 } from "../config/apiConfig";
-
+import { useOta } from "../context/OtaContext";
 import {
     fetchLatestOta,
     isNewerVersion,
@@ -42,15 +42,9 @@ import {
 
 type Props = NativeStackScreenProps<RootStackParamList, "Settings">;
 
-// key lưu version đã tải OTA (client-side)
-const KEY_APP_VERSION = "APP_VERSION";
-
 export default function SettingsScreen({ navigation }: Props) {
     const [apiBase, setApiBaseInput] = useState<string>("");
     const [sheetId, setSheetIdInput] = useState<string>("");
-
-    // phiên bản để hiển thị trên UI
-    const [appVersion, setAppVersion] = useState<string>(VERSION);
 
     // sheet ban đầu để biết có đổi không
     const [initialSheetId, setInitialSheetId] = useState<string>("");
@@ -59,11 +53,6 @@ export default function SettingsScreen({ navigation }: Props) {
     const [showDoneResetModal, setShowDoneResetModal] = useState(false);
     const [showSaveSuccessModal, setShowSaveSuccessModal] = useState(false);
     const [showSaveErrorModal, setShowSaveErrorModal] = useState(false);
-
-    const [downloadProgress, setDownloadProgress] = useState<number | null>(
-        null
-    );
-
     // Sau khi lưu xong có cần về Loading không
     const [shouldGoToLoadingAfterSave, setShouldGoToLoadingAfterSave] =
         useState(false);
@@ -80,7 +69,6 @@ export default function SettingsScreen({ navigation }: Props) {
 
     // trạng thái OTA
     const [checkingUpdate, setCheckingUpdate] = useState(false);
-    const [downloadingUpdate, setDownloadingUpdate] = useState(false);
 
     const [otaModalVisible, setOtaModalVisible] = useState(false);
     const [otaModalType, setOtaModalType] = useState<
@@ -89,7 +77,13 @@ export default function SettingsScreen({ navigation }: Props) {
     const [otaModalTitle, setOtaModalTitle] = useState("");
     const [otaModalMessage, setOtaModalMessage] = useState("");
     const [pendingOta, setPendingOta] = useState<OtaInfo | null>(null);
-
+    const {
+        appVersion,
+        buildVersion,
+        isDownloading,
+        downloadProgress,
+        startDownload,
+    } = useOta();
     useEffect(() => {
         try {
             const currentApiBase = getApiBase();
@@ -98,27 +92,10 @@ export default function SettingsScreen({ navigation }: Props) {
             setApiBaseInput(currentApiBase);
             setSheetIdInput(currentSheetId);
             setInitialSheetId(currentSheetId);
-
-            try {
-                const storedVersion =
-                    typeof storage.getString === "function"
-                        ? storage.getString(KEY_APP_VERSION)
-                        : null;
-
-                if (storedVersion && typeof storedVersion === "string") {
-                    setAppVersion(storedVersion);
-                } else {
-                    setAppVersion(VERSION);
-                }
-            } catch (e) {
-                console.warn("Không đọc được phiên bản từ storage:", e);
-                setAppVersion(VERSION);
-            }
         } catch (e) {
             console.warn("Không đọc được config:", e);
         }
     }, []);
-
     const handleSave = () => {
         try {
             const trimmedApiBase = apiBase.trim();
@@ -175,18 +152,6 @@ export default function SettingsScreen({ navigation }: Props) {
         });
     };
 
-    const handleAfterSaveOk = () => {
-        setShowSaveSuccessModal(false);
-
-        if (shouldGoToLoadingAfterSave) {
-            navigation.reset({
-                index: 0,
-                routes: [{ name: "Loading" }],
-            });
-        }
-    };
-
-    // ---------- XỬ LÝ KHÓA FIELD ----------
     const requestUnlockField = (field: "api" | "sheet") => {
         // nếu đang khóa -> hỏi cho phép
         if (
@@ -196,12 +161,22 @@ export default function SettingsScreen({ navigation }: Props) {
             setPendingUnlockField(field);
             setShowDangerEditModal(true);
         } else {
-            // đang mở -> bấm lại để khóa luôn, không hỏi
             if (field === "api") {
                 setApiLocked(true);
             } else {
                 setSheetLocked(true);
             }
+        }
+    };
+
+    const handleAfterSaveOk = () => {
+        setShowSaveSuccessModal(false);
+
+        if (shouldGoToLoadingAfterSave) {
+            navigation.reset({
+                index: 0,
+                routes: [{ name: "Loading" }],
+            });
         }
     };
 
@@ -233,7 +208,7 @@ export default function SettingsScreen({ navigation }: Props) {
     };
 
     const handleCheckOta = async () => {
-        if (checkingUpdate || downloadingUpdate) return;
+        if (checkingUpdate || isDownloading) return;
 
         try {
             setCheckingUpdate(true);
@@ -245,8 +220,7 @@ export default function SettingsScreen({ navigation }: Props) {
                 return;
             }
 
-            // So sánh version server với VERSION hiện tại của app
-            const hasNew = isNewerVersion(ota.version, VERSION);
+            const hasNew = isNewerVersion(ota.version, buildVersion);
             if (!hasNew) {
                 openOtaModal(
                     "info",
@@ -301,34 +275,16 @@ export default function SettingsScreen({ navigation }: Props) {
 
     const handleConfirmDownloadUpdate = async () => {
         if (!pendingOta) {
+            console.log("[OTA] Không có pendingOta, đóng modal.");
             setOtaModalVisible(false);
             return;
         }
-
+        console.log("[OTA] Bắt đầu tải:", pendingOta.version);
         setOtaModalVisible(false);
+
         try {
-            setDownloadingUpdate(true);
-            setDownloadProgress(0); // reset progress
-
-            // truyền callback onProgress vào service
-            await downloadAndInstallApk(pendingOta, {
-                onProgress: (fraction: number) => {
-                    const percent = Math.round(fraction * 100);
-                    setDownloadProgress(percent);
-                },
-            });
-
-            // lưu version OTA đã tải vào storage + state
-            try {
-                // @ts-ignore: tuỳ implementation của storage
-                if (typeof storage.set === "function") {
-                    storage.set(KEY_APP_VERSION, pendingOta.version);
-                }
-                setAppVersion(pendingOta.version);
-            } catch (e) {
-                console.warn("Không lưu được version vào storage:", e);
-            }
-
+            await startDownload(pendingOta);
+            console.log("[OTA] Tải xong, mở modal thông báo.");
             openOtaModal(
                 "info",
                 "Đã tải bản cập nhật",
@@ -379,9 +335,6 @@ export default function SettingsScreen({ navigation }: Props) {
                     "Có lỗi không xác định khi tải/cài đặt bản cập nhật."
                 );
             }
-        } finally {
-            setDownloadingUpdate(false);
-            setDownloadProgress(null);
         }
     };
 
@@ -512,20 +465,20 @@ export default function SettingsScreen({ navigation }: Props) {
                                     {appVersion}
                                 </Text>
                                 <Text style={styles.versionSubText}>
-                                    Build đang chạy: {VERSION}
+                                    Build đang chạy: {buildVersion}
                                 </Text>
                             </View>
                             <TouchableOpacity
                                 style={[
                                     styles.otaButton,
-                                    (checkingUpdate || downloadingUpdate) &&
+                                    (checkingUpdate || isDownloading) &&
                                         styles.otaButtonDisabled,
                                 ]}
                                 onPress={handleCheckOta}
-                                disabled={checkingUpdate || downloadingUpdate}
+                                disabled={checkingUpdate || isDownloading}
                             >
                                 <Text style={styles.otaButtonText}>
-                                    {downloadingUpdate
+                                    {isDownloading
                                         ? "Đang tải..."
                                         : checkingUpdate
                                         ? "Đang kiểm tra..."
@@ -535,7 +488,7 @@ export default function SettingsScreen({ navigation }: Props) {
                         </View>
 
                         {/* progress bar khi đang tải */}
-                        {downloadingUpdate && (
+                        {isDownloading && (
                             <View style={styles.progressContainer}>
                                 <View style={styles.progressBarBackground}>
                                     <View

@@ -56,4 +56,4 @@ export const setSheetId = (value: string | null) => {
 };
 
 export const API_BASE_URL = "https://sgp.skybot.id.vn/";
-export const VERSION = "1.0.5";
+export const VERSION = "1.0.6";

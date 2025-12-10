@@ -1,15 +1,27 @@
 // src/hooks/useFirebaseNotifications.ts
 import { useEffect } from "react";
-import messaging from "@react-native-firebase/messaging";
+import { getApp } from "@react-native-firebase/app";
+import {
+    AuthorizationStatus,
+    getMessaging,
+    getToken,
+    onMessage,
+    requestPermission,
+    subscribeToTopic,
+} from "@react-native-firebase/messaging";
 import { showServerStatusNotification } from "../utils/notifications";
+
+const app = getApp();
+const messaging = getMessaging(app);
 
 export function useFirebaseNotifications() {
     useEffect(() => {
         (async () => {
-            const authStatus = await messaging().requestPermission();
+            // 🔐 Xin quyền
+            const authStatus = await requestPermission(messaging);
             const enabled =
-                authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
-                authStatus === messaging.AuthorizationStatus.PROVISIONAL;
+                authStatus === AuthorizationStatus.AUTHORIZED ||
+                authStatus === AuthorizationStatus.PROVISIONAL;
 
             console.log(
                 "🔔 Notification permission:",
@@ -18,15 +30,18 @@ export function useFirebaseNotifications() {
                 enabled
             );
 
-            await messaging().subscribeToTopic("server-status");
+            // 🔔 Đăng ký topic
+            await subscribeToTopic(messaging, "server-status");
             console.log("✅ Đã subscribe topic server-status");
 
-            const token = await messaging().getToken();
+            // 🔑 Lấy FCM token
+            const token = await getToken(messaging);
             console.log("📲 FCM token:", token);
         })();
 
-        // Khi app đang mở (foreground)
-        const unsubscribeForeground = messaging().onMessage(
+        // 📩 Khi app foreground
+        const unsubscribeForeground = onMessage(
+            messaging,
             async (remoteMessage) => {
                 console.log("📩 FCM (foreground):", remoteMessage);
 

@@ -3,7 +3,6 @@ import {
     View,
     Text,
     StyleSheet,
-    ActivityIndicator,
     FlatList,
     TouchableOpacity,
     Modal,
@@ -15,6 +14,7 @@ import DataSyncIndicator from "../components/DataSyncIndicator";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { RootStackParamList } from "../types/navigation";
 import { useDeviceGroup } from "../context/DeviceGroupContext";
+import { useFocusEffect } from "@react-navigation/native";
 
 type Props = NativeStackScreenProps<RootStackParamList, "Devices">;
 
@@ -42,6 +42,9 @@ interface HistoryRow {
 export default function DevicesScreen({ navigation }: Props) {
     const { deviceGroups } = useDeviceGroup();
 
+    // luôn coi deviceGroups là mảng, tránh undefined
+    const groups = deviceGroups || [];
+
     const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
     const [deviceModalVisible, setDeviceModalVisible] = useState(false);
 
@@ -53,12 +56,23 @@ export default function DevicesScreen({ navigation }: Props) {
         []
     );
 
-    const isLoading = !deviceGroups || deviceGroups.length === 0;
+    // Reset state mỗi lần rời khỏi màn Devices
+    useFocusEffect(
+        React.useCallback(() => {
+            return () => {
+                setSelectedGroup(null);
+                setDeviceModalVisible(false);
+                setSelectedDeviceName(null);
+                setHistoryModalVisible(false);
+                setMaintenanceHistory([]);
+            };
+        }, [])
+    );
 
     // Lấy data group đang chọn
     const selectedGroupData = useMemo(
-        () => deviceGroups.find((g: any) => g.table === selectedGroup),
-        [deviceGroups, selectedGroup]
+        () => groups.find((g: any) => g.table === selectedGroup),
+        [groups, selectedGroup]
     );
 
     const devicesInGroup: DeviceRow[] =
@@ -86,18 +100,17 @@ export default function DevicesScreen({ navigation }: Props) {
         setHistoryModalVisible(true);
     };
 
-    if (isLoading) {
-        return (
-            <SafeAreaView style={styles.safeArea}>
-                <View style={styles.center}>
-                    <ActivityIndicator size="large" color="#4EA8FF" />
-                    <Text style={styles.loadingText}>
-                        Đang tải danh sách nhóm thiết bị...
-                    </Text>
-                </View>
-            </SafeAreaView>
-        );
-    }
+    const closeDeviceModal = () => {
+        setDeviceModalVisible(false);
+        // nếu muốn reset luôn group khi đóng modal, có thể bật dòng dưới
+        // setSelectedGroup(null);
+    };
+
+    const closeHistoryModal = () => {
+        setHistoryModalVisible(false);
+        setMaintenanceHistory([]);
+        setSelectedDeviceName(null);
+    };
 
     return (
         <SafeAreaView style={styles.safeArea}>
@@ -107,28 +120,43 @@ export default function DevicesScreen({ navigation }: Props) {
             <View style={styles.container}>
                 <Text style={styles.header}>Danh sách nhóm thiết bị</Text>
 
-                <FlatList
-                    data={deviceGroups}
-                    keyExtractor={(item: any, index) =>
-                        `${item.table}-${index}`
-                    }
-                    numColumns={2}
-                    columnWrapperStyle={styles.row}
-                    contentContainerStyle={{ paddingBottom: 80 }}
-                    showsVerticalScrollIndicator={false}
-                    renderItem={({ item }: { item: any }) => (
-                        <TouchableOpacity
-                            style={styles.cardWrapper}
-                            onPress={() => handleOpenGroup(item.table)}
-                        >
-                            <View style={styles.card}>
-                                <Text style={styles.cardText}>
-                                    {item.table}
-                                </Text>
-                            </View>
-                        </TouchableOpacity>
-                    )}
-                />
+                {groups.length === 0 ? (
+                    // Trường hợp không có nhóm thiết bị -> hiện một ô
+                    <View style={styles.emptyWrapper}>
+                        <View style={styles.card}>
+                            <Text style={styles.cardText}>
+                                Chưa có nhóm thiết bị
+                            </Text>
+                            <Text style={styles.emptySubText}>
+                                Vui lòng đồng bộ hoặc thêm dữ liệu nhóm thiết
+                                bị.
+                            </Text>
+                        </View>
+                    </View>
+                ) : (
+                    <FlatList
+                        data={groups}
+                        keyExtractor={(item: any, index) =>
+                            `${item.table}-${index}`
+                        }
+                        numColumns={2}
+                        columnWrapperStyle={styles.row}
+                        contentContainerStyle={{ paddingBottom: 80 }}
+                        showsVerticalScrollIndicator={false}
+                        renderItem={({ item }: { item: any }) => (
+                            <TouchableOpacity
+                                style={styles.cardWrapper}
+                                onPress={() => handleOpenGroup(item.table)}
+                            >
+                                <View style={styles.card}>
+                                    <Text style={styles.cardText}>
+                                        {item.table}
+                                    </Text>
+                                </View>
+                            </TouchableOpacity>
+                        )}
+                    />
+                )}
             </View>
 
             {/* MODAL: DANH SÁCH THIẾT BỊ TRONG NHÓM */}
@@ -136,7 +164,7 @@ export default function DevicesScreen({ navigation }: Props) {
                 visible={deviceModalVisible}
                 transparent
                 animationType="fade"
-                onRequestClose={() => setDeviceModalVisible(false)}
+                onRequestClose={closeDeviceModal}
             >
                 <View style={styles.modalOverlay}>
                     <View style={styles.modalBox}>
@@ -184,7 +212,7 @@ export default function DevicesScreen({ navigation }: Props) {
 
                         <TouchableOpacity
                             style={styles.closeBtn}
-                            onPress={() => setDeviceModalVisible(false)}
+                            onPress={closeDeviceModal}
                         >
                             <Text style={styles.closeBtnText}>Đóng</Text>
                         </TouchableOpacity>
@@ -197,7 +225,7 @@ export default function DevicesScreen({ navigation }: Props) {
                 visible={historyModalVisible}
                 transparent
                 animationType="fade"
-                onRequestClose={() => setHistoryModalVisible(false)}
+                onRequestClose={closeHistoryModal}
             >
                 <View style={styles.modalOverlay}>
                     <View style={styles.modalBox}>
@@ -236,11 +264,7 @@ export default function DevicesScreen({ navigation }: Props) {
 
                         <TouchableOpacity
                             style={styles.closeBtn}
-                            onPress={() => {
-                                setHistoryModalVisible(false);
-                                setMaintenanceHistory([]);
-                                setSelectedDeviceName(null);
-                            }}
+                            onPress={closeHistoryModal}
                         >
                             <Text style={styles.closeBtnText}>Đóng</Text>
                         </TouchableOpacity>
@@ -260,17 +284,6 @@ const styles = StyleSheet.create({
         flex: 1,
         paddingHorizontal: 20,
         paddingTop: 40,
-    },
-    center: {
-        flex: 1,
-        justifyContent: "center",
-        alignItems: "center",
-        backgroundColor: "#020617",
-    },
-    loadingText: {
-        marginTop: 10,
-        color: "#9CCAFF",
-        fontSize: 14,
     },
     header: {
         fontSize: 26,
@@ -299,11 +312,26 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.18,
         shadowRadius: 8,
         elevation: 4,
+        paddingHorizontal: 10,
     },
     cardText: {
         color: "#E5F2FF",
         fontSize: 16,
         fontWeight: "700",
+        textAlign: "center",
+    },
+
+    // EMPTY STATE
+    emptyWrapper: {
+        flex: 1,
+        justifyContent: "center",
+        alignItems: "center",
+    },
+    emptySubText: {
+        marginTop: 8,
+        color: "#9CA3AF",
+        fontSize: 13,
+        textAlign: "center",
     },
 
     // MODAL CHUNG
@@ -330,7 +358,6 @@ const styles = StyleSheet.create({
         textAlign: "center",
     },
     modalScroll: {
-        // maxHeight: "75%",
         marginBottom: 16,
     },
     noData: {
