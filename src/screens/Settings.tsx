@@ -99,7 +99,6 @@ export default function SettingsScreen({ navigation }: Props) {
             setSheetIdInput(currentSheetId);
             setInitialSheetId(currentSheetId);
 
-            // Đọc version đã lưu trong storage (nếu có)
             try {
                 const storedVersion =
                     typeof storage.getString === "function"
@@ -109,7 +108,6 @@ export default function SettingsScreen({ navigation }: Props) {
                 if (storedVersion && typeof storedVersion === "string") {
                     setAppVersion(storedVersion);
                 } else {
-                    // nếu chưa có thì dùng VERSION mặc định
                     setAppVersion(VERSION);
                 }
             } catch (e) {
