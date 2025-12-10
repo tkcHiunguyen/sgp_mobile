@@ -88,6 +88,10 @@ type DownloadOptions = {
     onProgress?: (fraction: number) => void;
 };
 
+const APK_PREFIX = "sgp-app-v";
+// xoá cả pattern mới lẫn cũ
+const APK_CLEAN_REGEX = /(sgp-app-v|app-v).*\.apk$/i;
+
 export async function downloadAndInstallApk(
     ota: OtaInfo,
     opts?: DownloadOptions
@@ -103,8 +107,74 @@ export async function downloadAndInstallApk(
               ota.downloadUrl
           }`;
 
-    const fileName = ota.file || "update.apk";
-    const localPath = `${RNFS.DownloadDirectoryPath}/${fileName}`;
+    const fileName =
+        ota.file && ota.file.trim().length > 0
+            ? ota.file.trim()
+            : `${APK_PREFIX}${ota.version}.apk`;
+
+    const downloadsDir = RNFS.DownloadDirectoryPath;
+
+    // 🧹 1) Xoá toàn bộ APK cũ (sgp-app-v*/app-v*) trong Download + subfolder
+    try {
+        // Hàm đệ quy quét mọi thư mục con
+        const scanDir = async (dir: string): Promise<RNFS.ReadDirItem[]> => {
+            let collected: RNFS.ReadDirItem[] = [];
+
+            try {
+                const list = await RNFS.readDir(dir);
+
+                for (const item of list) {
+                    if (item.isFile()) {
+                        if (APK_CLEAN_REGEX.test(item.name)) {
+                            collected.push(item);
+                        }
+                    } else if (item.isDirectory()) {
+                        const deeper = await scanDir(item.path);
+                        collected = collected.concat(deeper);
+                    }
+                }
+            } catch (err) {
+                console.log("⚠️ [OTA] Không đọc được thư mục:", dir, err);
+            }
+
+            return collected;
+        };
+
+        // Log cấp gốc trong Download để tiện debug
+        const rootFiles = await RNFS.readDir(downloadsDir);
+        console.log(
+            "📂 [OTA] Files trong Download (root):",
+            rootFiles.map((f) => ({
+                name: f.name,
+                isFile: f.isFile(),
+                path: f.path,
+            }))
+        );
+
+        const oldApks = await scanDir(downloadsDir);
+
+        if (oldApks.length > 0) {
+            console.log(
+                "🧹 [OTA] Xoá APK cũ tìm thấy:",
+                oldApks.map((f) => f.path)
+            );
+        } else {
+            console.log("🧹 [OTA] Không tìm thấy APK cũ để xoá.");
+        }
+
+        for (const f of oldApks) {
+            try {
+                await RNFS.unlink(f.path);
+                console.log("✅ [OTA] Đã xoá:", f.path);
+            } catch (err) {
+                console.log("⚠️ [OTA] Không xoá được file:", f.path, err);
+            }
+        }
+    } catch (err) {
+        console.log("⚠️ [OTA] Lỗi khi xử lý xoá file APK cũ:", err);
+    }
+
+    const localPath = `${downloadsDir}/${fileName}`;
 
     console.log("⬇️ OTA download from:", downloadUrl);
     console.log("📁 OTA save to:", localPath);
@@ -115,14 +185,12 @@ export async function downloadAndInstallApk(
         const task = RNFS.downloadFile({
             fromUrl: downloadUrl,
             toFile: localPath,
-            // 🆕 callback progress
             progress: (data) => {
                 if (opts?.onProgress && data.contentLength > 0) {
                     const fraction = data.bytesWritten / data.contentLength;
                     opts.onProgress(fraction);
                 }
             },
-            // gọi progress mỗi ~5% để đỡ spam
             progressDivider: 5,
         });
 
