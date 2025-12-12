@@ -16,9 +16,11 @@ import {
 } from "react-native-vision-camera";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
+
 import { RootStackParamList } from "../types/navigation";
 import BackButton from "../components/backButton";
 import { useDeviceGroup } from "../context/DeviceGroupContext";
+import { colors } from "../theme/theme";
 
 type Props = NativeStackScreenProps<RootStackParamList, "Scanner">;
 
@@ -308,11 +310,7 @@ export default function ScannerScreen({ navigation }: Props) {
                 <Text style={styles.content}>{scannedValue}</Text>
                 <View style={styles.singleBtnRow}>
                     <TouchableOpacity
-                        style={[
-                            styles.btnBase,
-                            styles.singleBtn,
-                            styles.okBtn,
-                        ]}
+                        style={[styles.btnBase, styles.singleBtn, styles.okBtn]}
                         onPress={resetPopupState}
                     >
                         <Text style={styles.btnText}>OK</Text>
@@ -344,6 +342,8 @@ export default function ScannerScreen({ navigation }: Props) {
                 codeScanner={codeScanner}
                 torch={flashOn ? "on" : "off"}
             />
+
+            {/* Back nổi trên camera (component dùng chung đã chuẩn hóa position) */}
             <BackButton onPress={() => navigation.goBack()} />
 
             {/* Overlay khung quét */}
@@ -392,7 +392,7 @@ export default function ScannerScreen({ navigation }: Props) {
                 <Ionicons
                     name={flashOn ? "flash" : "flash-off"}
                     size={35}
-                    color="white"
+                    color="#FFFFFF"
                 />
             </TouchableOpacity>
 
@@ -407,26 +407,39 @@ export default function ScannerScreen({ navigation }: Props) {
 }
 
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: "black" },
+    container: {
+        flex: 1,
+        backgroundColor: colors.background,
+    },
+
     overlay: {
         ...StyleSheet.absoluteFillObject,
         justifyContent: "center",
         alignItems: "center",
     },
-    overlayTop: { flex: 1, width: "100%", backgroundColor: "rgba(0,0,0,0.6)" },
+    overlayTop: {
+        flex: 1,
+        width: "100%",
+        backgroundColor: "rgba(0,0,0,0.6)",
+    },
     overlayBottom: {
         flex: 1,
         width: "100%",
         backgroundColor: "rgba(0,0,0,0.6)",
     },
-    overlayCenter: { flexDirection: "row" },
-    overlaySide: { flex: 1, backgroundColor: "rgba(0,0,0,0.6)" },
+    overlayCenter: {
+        flexDirection: "row",
+    },
+    overlaySide: {
+        flex: 1,
+        backgroundColor: "rgba(0,0,0,0.6)",
+    },
 
     scannerBox: {
         width: SCAN_SIZE,
         height: SCAN_SIZE,
         borderWidth: 2,
-        borderColor: "#4CAF50",
+        borderColor: colors.success,
         borderRadius: 20,
         backgroundColor: "transparent",
         position: "relative",
@@ -437,7 +450,7 @@ const styles = StyleSheet.create({
         position: "absolute",
         width: 32,
         height: 32,
-        borderColor: "#22C55E",
+        borderColor: colors.success,
     },
     cornerTL: {
         top: -2,
@@ -479,6 +492,7 @@ const styles = StyleSheet.create({
         justifyContent: "center",
         alignItems: "center",
     },
+
     modalBackground: {
         flex: 1,
         justifyContent: "center",
@@ -489,14 +503,14 @@ const styles = StyleSheet.create({
         width: "90%",
         padding: 26,
         borderRadius: 18,
-        backgroundColor: "#0B1220",
+        backgroundColor: colors.surface,
         shadowColor: "#000",
         shadowOpacity: 0.35,
         shadowRadius: 12,
         shadowOffset: { width: 0, height: 6 },
         elevation: 12,
         borderWidth: 1,
-        borderColor: "rgba(59,130,246,0.6)",
+        borderColor: colors.primarySoftBorder,
         maxHeight: "80%",
     },
     title: {
@@ -504,13 +518,13 @@ const styles = StyleSheet.create({
         fontWeight: "bold",
         marginBottom: 10,
         textAlign: "center",
-        color: "#E0F2FF",
+        color: colors.text,
     },
     content: {
         fontSize: 15,
         marginBottom: 18,
         textAlign: "center",
-        color: "#D7E9FF",
+        color: colors.textSoft,
     },
 
     // BUTTON STYLES
@@ -540,16 +554,16 @@ const styles = StyleSheet.create({
         marginTop: 8,
     },
     okBtn: {
-        backgroundColor: "#16A34A",
+        backgroundColor: colors.success,
     },
     cancelBtn: {
-        backgroundColor: "#DC2626",
+        backgroundColor: colors.danger,
     },
     closeBtn: {
-        backgroundColor: "#DC2626",
+        backgroundColor: colors.danger,
     },
     btnText: {
-        color: "white",
+        color: "#FFFFFF",
         fontWeight: "bold",
         fontSize: 15,
         textAlign: "center",
@@ -559,13 +573,13 @@ const styles = StyleSheet.create({
     deviceNamePopup: {
         fontSize: 18,
         fontWeight: "800",
-        color: "#E5F2FF",
+        color: colors.text,
         textAlign: "center",
         marginBottom: 4,
     },
     deviceGroupPopup: {
         fontSize: 13,
-        color: "#9CA3AF",
+        color: colors.textMuted,
         textAlign: "center",
         marginBottom: 10,
     },
@@ -574,7 +588,7 @@ const styles = StyleSheet.create({
         borderRadius: 12,
         borderWidth: 1,
         borderColor: "rgba(55,65,81,0.9)",
-        backgroundColor: "#020617",
+        backgroundColor: colors.background,
         padding: 10,
         marginBottom: 12,
     },
@@ -583,7 +597,7 @@ const styles = StyleSheet.create({
     },
     noHistoryText: {
         fontSize: 13,
-        color: "#9CA3AF",
+        color: colors.textMuted,
         textAlign: "center",
         paddingVertical: 8,
     },
@@ -595,13 +609,13 @@ const styles = StyleSheet.create({
     },
     historyDate: {
         fontSize: 12,
-        color: "#60A5FA",
+        color: colors.textAccent,
         marginBottom: 2,
         fontWeight: "600",
     },
     historyContent: {
         fontSize: 13,
-        color: "#CBD5F5",
+        color: colors.textSoft,
         lineHeight: 18,
     },
 });

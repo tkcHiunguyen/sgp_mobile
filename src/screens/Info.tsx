@@ -1,10 +1,11 @@
 import React from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
+
 import { RootStackParamList } from "../types/navigation";
-import BackButton from "../components/backButton";
-import DataSyncIndicator from "../components/DataSyncIndicator";
+import { AppScreen } from "../components/ui/AppScreen";
+import HeaderBar from "../components/ui/HeaderBar";
+import { colors } from "../theme/theme";
 
 const infoData = [
     {
@@ -44,20 +45,15 @@ type Props = NativeStackScreenProps<RootStackParamList, "Info">;
 
 export default function InfoScreen({ navigation }: Props) {
     return (
-        <SafeAreaView style={styles.safeArea}>
-            {/* Back ở góc trái */}
-            <BackButton onPress={() => navigation.goBack()} />
-
-            {/* Icon đồng bộ ở góc phải */}
-            <DataSyncIndicator />
+        <AppScreen topPadding={0}>
+            {/* Header: Back + Sync (trong HeaderBar), dưới là title */}
+            <HeaderBar title="Thông tin" onBack={() => navigation.goBack()} />
 
             <ScrollView
                 style={styles.container}
                 contentContainerStyle={styles.contentContainer}
                 showsVerticalScrollIndicator={false}
             >
-                <Text style={styles.header}>Thông tin</Text>
-
                 {infoData.map((item, idx) => (
                     <View key={idx} style={styles.card}>
                         <Text style={styles.title}>{item.title}</Text>
@@ -67,42 +63,28 @@ export default function InfoScreen({ navigation }: Props) {
                     </View>
                 ))}
             </ScrollView>
-        </SafeAreaView>
+        </AppScreen>
     );
 }
 
 const styles = StyleSheet.create({
-    safeArea: {
-        flex: 1,
-        backgroundColor: "#020617",
-    },
     container: {
         flex: 1,
-        backgroundColor: "#020617",
+        backgroundColor: colors.background,
         paddingHorizontal: 20,
-        paddingTop: 20,
+        paddingTop: 8,
     },
     contentContainer: {
         paddingBottom: 80,
-        paddingTop: 20,
+        paddingTop: 12,
     },
-    header: {
-        fontSize: 26,
-        fontWeight: "900",
-        color: "#E5F2FF",
-        marginBottom: 24,
-        textAlign: "center",
-        letterSpacing: 0.8, // giống Index
-    },
-
-    // Card trong Info giữ nguyên
     card: {
-        backgroundColor: "#0F172A",
+        backgroundColor: colors.surface,
         padding: 18,
         borderRadius: 16,
         marginBottom: 16,
         borderWidth: 1,
-        borderColor: "rgba(59,130,246,0.35)",
+        borderColor: colors.primarySoftBorder,
         shadowColor: "#1D4ED8",
         shadowOpacity: 0.18,
         shadowRadius: 8,
@@ -111,12 +93,12 @@ const styles = StyleSheet.create({
     title: {
         fontSize: 16,
         fontWeight: "700",
-        color: "#E5F2FF",
+        color: colors.text,
         marginBottom: 6,
     },
     description: {
         fontSize: 13,
-        color: "#CBD5F5",
+        color: colors.textSoft,
         lineHeight: 20,
     },
 });

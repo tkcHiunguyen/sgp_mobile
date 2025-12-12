@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useRef } from "react";
 import {
     Animated,
     FlatList,
@@ -10,8 +10,12 @@ import {
 import LinearGradient from "react-native-linear-gradient";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import { useNavigation } from "@react-navigation/native";
-import DataSyncIndicator from "../components/DataSyncIndicator";
 import notifee, { AndroidImportance } from "@notifee/react-native";
+
+import DataSyncIndicator from "../components/DataSyncIndicator";
+import { AppScreen } from "../components/ui/AppScreen";
+import { ScreenTitle } from "../components/ui/ScreenTitle";
+import { colors } from "../theme/theme";
 
 // ====== HÀM TEST THÔNG BÁO ======
 async function triggerTestNotification() {
@@ -97,7 +101,7 @@ type FeatureItem = (typeof features)[number];
 
 function FeatureTile({ item }: { item: FeatureItem }) {
     const navigation = useNavigation<any>();
-    const scale = React.useRef(new Animated.Value(1)).current;
+    const scale = useRef(new Animated.Value(1)).current;
 
     const handlePressIn = () => {
         Animated.spring(scale, {
@@ -130,6 +134,12 @@ function FeatureTile({ item }: { item: FeatureItem }) {
         }
     };
 
+    const borderColor = item.isReady
+        ? "rgba(59,130,246,0.4)"
+        : "rgba(75,85,99,0.8)";
+    const iconColor = item.isReady ? "#60A5FA" : "#6B7280";
+    const textColor = item.isReady ? colors.text : colors.textMuted;
+
     return (
         <Pressable
             onPressIn={handlePressIn}
@@ -140,15 +150,13 @@ function FeatureTile({ item }: { item: FeatureItem }) {
         >
             <Animated.View style={{ transform: [{ scale }] }}>
                 <LinearGradient
-                    colors={["#0F172A", "#020617"]}
+                    colors={[colors.surface, colors.background]}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 1 }}
                     style={[
                         styles.tile,
                         {
-                            borderColor: item.isReady
-                                ? "rgba(59,130,246,0.4)"
-                                : "rgba(75,85,99,0.8)",
+                            borderColor,
                             opacity: item.isReady ? 1 : 0.5,
                         },
                     ]}
@@ -157,15 +165,10 @@ function FeatureTile({ item }: { item: FeatureItem }) {
                         <Ionicons
                             name={item.icon}
                             size={26}
-                            color={item.isReady ? "#60A5FA" : "#6B7280"}
+                            color={iconColor}
                         />
                     </View>
-                    <Text
-                        style={[
-                            styles.tileText,
-                            { color: item.isReady ? "#E5F2FF" : "#9CA3AF" },
-                        ]}
-                    >
+                    <Text style={[styles.tileText, { color: textColor }]}>
                         {item.title}
                     </Text>
                     {!item.isReady && (
@@ -179,9 +182,14 @@ function FeatureTile({ item }: { item: FeatureItem }) {
 
 export default function IndexScreen() {
     return (
-        <View style={styles.container}>
-            <DataSyncIndicator />
-            <Text style={styles.header}>Industrial Manager</Text>
+        <AppScreen topPadding={0}>
+            {/* HEADER: Sync trên, tiêu đề dưới */}
+            <View style={styles.header}>
+                <View style={styles.headerTopRow}>
+                    <DataSyncIndicator inline />
+                </View>
+                <ScreenTitle>Industrial Manager</ScreenTitle>
+            </View>
 
             <FlatList
                 data={features}
@@ -189,30 +197,30 @@ export default function IndexScreen() {
                 keyExtractor={(item) => item.id}
                 numColumns={2}
                 columnWrapperStyle={styles.row}
-                contentContainerStyle={styles.content}
+                contentContainerStyle={styles.listContent}
                 showsVerticalScrollIndicator={false}
             />
-        </View>
+        </AppScreen>
     );
 }
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: "#020617",
-        paddingTop: 60,
-        paddingHorizontal: 20,
-    },
     header: {
-        fontSize: 26,
-        fontWeight: "900",
-        color: "#E5F2FF",
-        marginBottom: 24,
-        textAlign: "center",
-        letterSpacing: 0.8,
+        paddingHorizontal: 20,
+        paddingTop: 8,
+        marginBottom: 8,
     },
-    content: {
+    headerTopRow: {
+        flexDirection: "row",
+        justifyContent: "flex-end",
+        alignItems: "center",
+        marginBottom: 4,
+    },
+
+    listContent: {
+        paddingHorizontal: 20,
         paddingBottom: 80,
+        paddingTop: 4,
     },
     row: {
         justifyContent: "space-between",

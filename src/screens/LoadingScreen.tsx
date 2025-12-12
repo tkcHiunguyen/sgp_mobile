@@ -7,16 +7,16 @@ import {
     Animated,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
-import { useDeviceGroup } from "../context/DeviceGroupContext";
 import Ionicons from "react-native-vector-icons/Ionicons";
 
-// 🔹 DÙNG CONFIG CHUNG
+import { useDeviceGroup } from "../context/DeviceGroupContext";
 import {
     storage,
     getApiBase,
     getSheetId,
     KEY_ALL_DATA,
 } from "../config/apiConfig";
+import { colors } from "../theme/theme";
 
 type Status = "checking" | "loadingNew" | "ready";
 
@@ -27,9 +27,11 @@ export default function LoadingScreen() {
     const [status, setStatus] = useState<Status>("checking");
     const [hasLocalData, setHasLocalData] = useState(false);
     const opacity = useRef(new Animated.Value(1)).current;
-    const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-    // 👉 state để hiển thị meta từ API
+    // ✅ kiểu timeout chuẩn cho React Native + TS
+    const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    // meta từ API
     const [totalTable, setTotalTable] = useState<number | null>(null);
     const [validTable, setValidTable] = useState<string[]>([]);
     const [errTable, setErrTable] = useState<string[]>([]);
@@ -41,33 +43,61 @@ export default function LoadingScreen() {
             const apiBase = getApiBase();
             const sheetId = getSheetId();
 
-            const res = await fetch(
-                `${apiBase}?action=getAllData&sheetId=${encodeURIComponent(
-                    sheetId
-                )}`,
-                {
-                    method: "GET",
-                }
+            const url = `${apiBase}?action=getAllData&sheetId=${encodeURIComponent(
+                sheetId
+            )}`;
+
+            console.log("🔧 [Loading] apiBase:", apiBase);
+            console.log("🔧 [Loading] sheetId (client gửi):", sheetId);
+            console.log("🔗 [Loading] Request URL:", url);
+
+            const res = await fetch(url, {
+                method: "GET",
+            });
+
+            console.log(
+                "📡 [Loading] HTTP status:",
+                res.status,
+                "| ok:",
+                res.ok
             );
 
-            const result = await res.json();
-            console.log("📌 Raw getAllData result:", result);
+            // đọc raw text để biết server trả gì
+            const rawText = await res.text();
+            console.log("📨 [Loading] Raw response text từ server:\n", rawText);
 
-            // 👇 Trích xuất meta mới
+            // nếu status không ok thì log thêm, rồi dừng (tuỳ bạn muốn xử lý sao)
+            if (!res.ok) {
+                console.error(
+                    "❌ [Loading] Response không OK, status =",
+                    res.status
+                );
+                // có thể set state báo lỗi ở đây nếu cần
+                return;
+            }
+
+            let result: any;
+            try {
+                result = JSON.parse(rawText);
+            } catch (parseErr) {
+                console.error(
+                    "⚠️ [Loading] Lỗi parse JSON từ rawText:",
+                    parseErr
+                );
+                // ở đây dừng lại luôn vì không parse được JSON
+                return;
+            }
+
+            console.log("📌 [Loading] Parsed JSON result:", result);
+
             const total = result.totalTable ?? 0;
             const valid = result.validTable ?? [];
             const err = result.errTable ?? [];
-
-            // 👇 Đây mới là mảng nhóm thiết bị dùng trong app
             const allData = result.data ?? [];
 
-            console.log(
-                "📌 Dữ liệu tất cả các bảng (mới) đã được lấy:",
-                allData
-            );
-            console.log("🔎 Meta:", { total, valid, err });
+            console.log("📌 [Loading] Dữ liệu tất cả các bảng (mới):", allData);
+            console.log("🔎 [Loading] Meta:", { total, valid, err });
 
-            // lưu state meta để hiển thị trên UI
             setTotalTable(total);
             setValidTable(valid);
             setErrTable(err);
@@ -79,7 +109,10 @@ export default function LoadingScreen() {
             setIsDataFromCache(false);
             setStatus("ready");
         } catch (err) {
-            console.error("❌ Lỗi khi lấy dữ liệu tất cả các bảng:", err);
+            console.error(
+                "❌ [Loading] Lỗi khi lấy dữ liệu tất cả các bảng:",
+                err
+            );
         }
     };
 
@@ -140,9 +173,11 @@ export default function LoadingScreen() {
         bootstrap();
 
         return () => {
-            if (timeoutRef.current) clearTimeout(timeoutRef.current);
+            if (timeoutRef.current) {
+                clearTimeout(timeoutRef.current);
+            }
         };
-    }, [navigation, setDeviceGroups, setIsDataFromCache]);
+    }, [setDeviceGroups, setIsDataFromCache]);
 
     useEffect(() => {
         if (status === "ready") {
@@ -168,27 +203,23 @@ export default function LoadingScreen() {
     };
 
     const isDone = status === "ready";
-
     const hasMeta = totalTable !== null;
 
     return (
         <View style={styles.container}>
-            <Animated.View
-                style={{
-                    opacity,
-                    alignItems: "center",
-                    justifyContent: "center",
-                }}
-            >
+            <Animated.View style={[styles.inner, { opacity }]}>
                 <View style={styles.circle}>
                     {isDone ? (
                         <Ionicons
                             name="checkmark-done-circle-outline"
                             size={80}
-                            color="#4ADE80"
+                            color={colors.success}
                         />
                     ) : (
-                        <ActivityIndicator size="large" color="#4EA8FF" />
+                        <ActivityIndicator
+                            size="large"
+                            color={colors.primary}
+                        />
                     )}
                 </View>
 
@@ -206,7 +237,6 @@ export default function LoadingScreen() {
                             Dữ liệu mới đã sẵn sàng, chuyển đến trang chính...
                         </Text>
 
-                        {/* 👇 Hiển thị meta khi vừa tải mới từ server */}
                         {hasMeta && (
                             <>
                                 <Text style={styles.metaText}>
@@ -239,7 +269,11 @@ export default function LoadingScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: "#0A0F1C",
+        backgroundColor: colors.background, // thay #0A0F1C
+        alignItems: "center",
+        justifyContent: "center",
+    },
+    inner: {
         alignItems: "center",
         justifyContent: "center",
     },
@@ -251,30 +285,30 @@ const styles = StyleSheet.create({
         borderColor: "rgba(78,168,255,0.4)",
         alignItems: "center",
         justifyContent: "center",
-        backgroundColor: "rgba(15,23,42,0.9)",
+        backgroundColor: colors.surfaceAlt,
     },
     title: {
         marginTop: 24,
-        color: "#E0F2FF",
+        color: colors.text,
         fontSize: 18,
         fontWeight: "700",
         textAlign: "center",
     },
     subText: {
         marginTop: 8,
-        color: "#9CA3AF",
+        color: colors.textMuted,
         fontSize: 14,
         textAlign: "center",
     },
     metaText: {
         marginTop: 4,
-        color: "#93C5FD",
+        color: colors.textAccent,
         fontSize: 13,
         textAlign: "center",
     },
     metaTextSmall: {
         marginTop: 2,
-        color: "#FCA5A5",
+        color: colors.danger,
         fontSize: 12,
         textAlign: "center",
     },

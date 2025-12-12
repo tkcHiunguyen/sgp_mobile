@@ -10,15 +10,11 @@ import {
     KeyboardAvoidingView,
     Platform,
     ScrollView,
-    Modal,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { RootStackParamList } from "../types/navigation";
-import BackButton from "../components/backButton";
-import DataSyncIndicator from "../components/DataSyncIndicator";
 import Ionicons from "react-native-vector-icons/Ionicons";
 
+import { RootStackParamList } from "../types/navigation";
 import {
     storage,
     getApiBase,
@@ -29,47 +25,47 @@ import {
     DEFAULT_SHEET_ID,
     resetConfig,
     KEY_ALL_DATA,
-    VERSION, // 🔹 lấy VERSION từ config
+    VERSION,
 } from "../config/apiConfig";
 import { useOta } from "../context/OtaContext";
 import {
     fetchLatestOta,
     isNewerVersion,
-    downloadAndInstallApk,
     type OtaInfo,
     OtaError,
 } from "../services/otaService";
 
+// UI chung
+import { AppScreen } from "../components/ui/AppScreen";
+import HeaderBar from "../components/ui/HeaderBar";
+import { BaseModal } from "../components/ui/BaseModal";
+import { AppButton } from "../components/ui/AppButton";
+import { colors } from "../theme/theme";
+import { useTheme } from "../context/ThemeContext";
+import { Switch } from "react-native";
 type Props = NativeStackScreenProps<RootStackParamList, "Settings">;
 
 export default function SettingsScreen({ navigation }: Props) {
     const [apiBase, setApiBaseInput] = useState<string>("");
     const [sheetId, setSheetIdInput] = useState<string>("");
-
-    // sheet ban đầu để biết có đổi không
     const [initialSheetId, setInitialSheetId] = useState<string>("");
-
     const [showConfirmResetModal, setShowConfirmResetModal] = useState(false);
     const [showDoneResetModal, setShowDoneResetModal] = useState(false);
     const [showSaveSuccessModal, setShowSaveSuccessModal] = useState(false);
     const [showSaveErrorModal, setShowSaveErrorModal] = useState(false);
-    // Sau khi lưu xong có cần về Loading không
     const [shouldGoToLoadingAfterSave, setShouldGoToLoadingAfterSave] =
         useState(false);
-
-    // 🔒 trạng thái khóa cho từng field
+    // lock từng field
     const [apiLocked, setApiLocked] = useState<boolean>(true);
     const [sheetLocked, setSheetLocked] = useState<boolean>(true);
-
-    // Modal cảnh báo "nội dung nguy hiểm" cho unlock
+    // Modal cảnh báo trước khi unlock
     const [showDangerEditModal, setShowDangerEditModal] = useState(false);
     const [pendingUnlockField, setPendingUnlockField] = useState<
         "api" | "sheet" | null
     >(null);
 
-    // trạng thái OTA
+    // OTA state
     const [checkingUpdate, setCheckingUpdate] = useState(false);
-
     const [otaModalVisible, setOtaModalVisible] = useState(false);
     const [otaModalType, setOtaModalType] = useState<
         "info" | "error" | "confirm"
@@ -84,6 +80,7 @@ export default function SettingsScreen({ navigation }: Props) {
         downloadProgress,
         startDownload,
     } = useOta();
+    const { mode, toggleTheme, colors } = useTheme();
     useEffect(() => {
         try {
             const currentApiBase = getApiBase();
@@ -96,6 +93,7 @@ export default function SettingsScreen({ navigation }: Props) {
             console.warn("Không đọc được config:", e);
         }
     }, []);
+
     const handleSave = () => {
         try {
             const trimmedApiBase = apiBase.trim();
@@ -145,7 +143,6 @@ export default function SettingsScreen({ navigation }: Props) {
 
     const handleGoToLoadingAfterReset = () => {
         setShowDoneResetModal(false);
-
         navigation.reset({
             index: 0,
             routes: [{ name: "Loading" }],
@@ -153,7 +150,6 @@ export default function SettingsScreen({ navigation }: Props) {
     };
 
     const requestUnlockField = (field: "api" | "sheet") => {
-        // nếu đang khóa -> hỏi cho phép
         if (
             (field === "api" && apiLocked) ||
             (field === "sheet" && sheetLocked)
@@ -343,9 +339,9 @@ export default function SettingsScreen({ navigation }: Props) {
     };
 
     return (
-        <SafeAreaView style={styles.safeArea}>
-            <BackButton onPress={() => navigation.goBack()} />
-            <DataSyncIndicator />
+        <AppScreen topPadding={0}>
+            {/* Header chung: Back + Sync + title 2 hàng */}
+            <HeaderBar title="Cài đặt" onBack={() => navigation.goBack()} />
 
             <KeyboardAvoidingView
                 style={{ flex: 1 }}
@@ -356,8 +352,6 @@ export default function SettingsScreen({ navigation }: Props) {
                     contentContainerStyle={styles.contentContainer}
                     keyboardShouldPersistTaps="handled"
                 >
-                    <Text style={styles.header}>Cài đặt</Text>
-
                     {/* Card: API Base URL */}
                     <View style={styles.card}>
                         <Text style={styles.cardTitle}>API Base URL</Text>
@@ -373,7 +367,7 @@ export default function SettingsScreen({ navigation }: Props) {
                                     apiLocked && styles.inputDisabled,
                                 ]}
                                 placeholder="https://script.google.com/macros/s/....../exec"
-                                placeholderTextColor="#64748B"
+                                placeholderTextColor={colors.textMuted}
                                 value={apiBase}
                                 editable={!apiLocked}
                                 selectTextOnFocus={!apiLocked}
@@ -417,7 +411,7 @@ export default function SettingsScreen({ navigation }: Props) {
                                     sheetLocked && styles.inputDisabled,
                                 ]}
                                 placeholder="Nhập Sheet ID hoặc mã cấu hình"
-                                placeholderTextColor="#64748B"
+                                placeholderTextColor={colors.textMuted}
                                 value={sheetId}
                                 editable={!sheetLocked}
                                 selectTextOnFocus={!sheetLocked}
@@ -487,7 +481,6 @@ export default function SettingsScreen({ navigation }: Props) {
                             </TouchableOpacity>
                         </View>
 
-                        {/* progress bar khi đang tải */}
                         {isDownloading && (
                             <View style={styles.progressContainer}>
                                 <View style={styles.progressBarBackground}>
@@ -513,7 +506,37 @@ export default function SettingsScreen({ navigation }: Props) {
                             </View>
                         )}
                     </View>
+                    {/* Card: Giao diện (Dark / Light)
+                    <View style={styles.card}>
+                        <Text style={styles.cardTitle}>Giao diện</Text>
+                        <Text style={styles.cardDescription}>
+                            Chọn chế độ hiển thị sáng hoặc tối cho ứng dụng.
+                        </Text>
 
+                        <View style={styles.themeRow}>
+                            <View>
+                                <Text style={styles.themeLabel}>
+                                    {mode === "dark"
+                                        ? "Chế độ tối"
+                                        : "Chế độ sáng"}
+                                </Text>
+                                <Text style={styles.themeHint}>
+                                    Nhấn nút gạt để chuyển chế độ.
+                                </Text>
+                            </View>
+                            <Switch
+                                value={mode === "dark"}
+                                onValueChange={toggleTheme}
+                                thumbColor={
+                                    mode === "dark" ? "#facc15" : "#e5e7eb"
+                                }
+                                trackColor={{
+                                    false: "#9CA3AF",
+                                    true: "#4B5563",
+                                }}
+                            />
+                        </View>
+                    </View> */}
                     {/* Nút hành động */}
                     <View style={styles.buttonRow}>
                         <TouchableOpacity
@@ -534,270 +557,177 @@ export default function SettingsScreen({ navigation }: Props) {
                 </ScrollView>
             </KeyboardAvoidingView>
 
-            {/* Modal OTA custom */}
-            <Modal
+            {/* OTA modal */}
+            <BaseModal
                 visible={otaModalVisible}
-                transparent
-                animationType="fade"
                 onRequestClose={handleCloseOtaModal}
             >
-                <View style={styles.modalOverlay}>
-                    <View style={styles.modalContainer}>
-                        <Text style={styles.modalTitle}>{otaModalTitle}</Text>
-                        <Text style={styles.modalMessage}>
-                            {otaModalMessage}
-                        </Text>
+                <Text style={styles.modalTitle}>{otaModalTitle}</Text>
+                <Text style={styles.modalMessage}>{otaModalMessage}</Text>
 
-                        {otaModalType === "confirm" ? (
-                            <View style={styles.modalButtonRow}>
-                                <TouchableOpacity
-                                    style={[
-                                        styles.modalButton,
-                                        styles.modalCancel,
-                                    ]}
-                                    onPress={handleCloseOtaModal}
-                                >
-                                    <Text style={styles.modalButtonText}>
-                                        Để sau
-                                    </Text>
-                                </TouchableOpacity>
-                                <TouchableOpacity
-                                    style={[
-                                        styles.modalButton,
-                                        styles.modalPrimary,
-                                    ]}
-                                    onPress={handleConfirmDownloadUpdate}
-                                >
-                                    <Text style={styles.modalButtonText}>
-                                        Cập nhật ngay
-                                    </Text>
-                                </TouchableOpacity>
-                            </View>
-                        ) : (
-                            <View style={styles.modalButtonRowSingle}>
-                                <TouchableOpacity
-                                    style={[
-                                        styles.modalButton,
-                                        styles.modalPrimary,
-                                    ]}
-                                    onPress={handleCloseOtaModal}
-                                >
-                                    <Text style={styles.modalButtonText}>
-                                        Đã hiểu
-                                    </Text>
-                                </TouchableOpacity>
-                            </View>
-                        )}
+                {otaModalType === "confirm" ? (
+                    <View style={styles.modalButtonRow}>
+                        <AppButton
+                            title="Để sau"
+                            variant="secondary"
+                            onPress={handleCloseOtaModal}
+                            style={{ flex: 1, marginRight: 4 }}
+                        />
+                        <AppButton
+                            title="Cập nhật ngay"
+                            variant="primary"
+                            onPress={handleConfirmDownloadUpdate}
+                            style={{ flex: 1, marginLeft: 4 }}
+                        />
                     </View>
-                </View>
-            </Modal>
+                ) : (
+                    <View style={styles.modalButtonRowSingle}>
+                        <AppButton
+                            title="Đã hiểu"
+                            variant="primary"
+                            onPress={handleCloseOtaModal}
+                        />
+                    </View>
+                )}
+            </BaseModal>
 
             {/* Modal xác nhận reset */}
-            <Modal
+            <BaseModal
                 visible={showConfirmResetModal}
-                transparent
-                animationType="fade"
                 onRequestClose={() => setShowConfirmResetModal(false)}
             >
-                <View style={styles.modalOverlay}>
-                    <View style={styles.modalContainer}>
-                        <Text style={styles.modalTitle}>Đặt lại mặc định</Text>
-                        <Text style={styles.modalMessage}>
-                            Thao tác này sẽ xoá dữ liệu đã tải (cache) và đưa
-                            đường dẫn API cùng Sheet ID về giá trị mặc định ban
-                            đầu.{"\n\n"}
-                            Bạn có chắc chắn muốn tiếp tục?
-                        </Text>
+                <Text style={styles.modalTitle}>Đặt lại mặc định</Text>
+                <Text style={styles.modalMessage}>
+                    Thao tác này sẽ xoá dữ liệu đã tải (cache) và đưa đường dẫn
+                    API cùng Sheet ID về giá trị mặc định ban đầu.
+                    {"\n\n"}
+                    Bạn có chắc chắn muốn tiếp tục?
+                </Text>
 
-                        <View style={styles.modalButtonRow}>
-                            <TouchableOpacity
-                                style={[styles.modalButton, styles.modalCancel]}
-                                onPress={() => setShowConfirmResetModal(false)}
-                            >
-                                <Text style={styles.modalButtonText}>Hủy</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity
-                                style={[styles.modalButton, styles.modalDanger]}
-                                onPress={handleConfirmReset}
-                            >
-                                <Text style={styles.modalButtonText}>
-                                    Xác nhận
-                                </Text>
-                            </TouchableOpacity>
-                        </View>
-                    </View>
+                <View style={styles.modalButtonRow}>
+                    <AppButton
+                        title="Hủy"
+                        variant="secondary"
+                        onPress={() => setShowConfirmResetModal(false)}
+                        style={{ flex: 1, marginRight: 4 }}
+                    />
+                    <AppButton
+                        title="Xác nhận"
+                        variant="danger"
+                        onPress={handleConfirmReset}
+                        style={{ flex: 1, marginLeft: 4 }}
+                    />
                 </View>
-            </Modal>
+            </BaseModal>
 
             {/* Modal thông báo đã reset xong */}
-            <Modal
+            <BaseModal
                 visible={showDoneResetModal}
-                transparent
-                animationType="fade"
                 onRequestClose={() => setShowDoneResetModal(false)}
             >
-                <View style={styles.modalOverlay}>
-                    <View style={styles.modalContainer}>
-                        <Text style={styles.modalTitle}>
-                            Đã đặt lại thành công
-                        </Text>
-                        <Text style={styles.modalMessage}>
-                            Cấu hình đã được đưa về mặc định và dữ liệu cũ đã
-                            xoá.{"\n\n"}
-                            Vui lòng tải lại dữ liệu để tiếp tục sử dụng ứng
-                            dụng.
-                        </Text>
+                <Text style={styles.modalTitle}>Đã đặt lại thành công</Text>
+                <Text style={styles.modalMessage}>
+                    Cấu hình đã được đưa về mặc định và dữ liệu cũ đã xoá.
+                    {"\n\n"}
+                    Vui lòng tải lại dữ liệu để tiếp tục sử dụng ứng dụng.
+                </Text>
 
-                        <View style={styles.modalButtonRowSingle}>
-                            <TouchableOpacity
-                                style={[
-                                    styles.modalButton,
-                                    styles.modalPrimary,
-                                ]}
-                                onPress={handleGoToLoadingAfterReset}
-                            >
-                                <Text style={styles.modalButtonText}>
-                                    Tải lại dữ liệu
-                                </Text>
-                            </TouchableOpacity>
-                        </View>
-                    </View>
+                <View style={styles.modalButtonRowSingle}>
+                    <AppButton
+                        title="Tải lại dữ liệu"
+                        variant="primary"
+                        onPress={handleGoToLoadingAfterReset}
+                    />
                 </View>
-            </Modal>
+            </BaseModal>
 
             {/* Modal lưu thành công */}
-            <Modal
+            <BaseModal
                 visible={showSaveSuccessModal}
-                transparent
-                animationType="fade"
                 onRequestClose={() => setShowSaveSuccessModal(false)}
             >
-                <View style={styles.modalOverlay}>
-                    <View style={styles.modalContainer}>
-                        <Text style={styles.modalTitle}>Đã lưu cấu hình</Text>
-                        <Text style={styles.modalMessage}>
-                            Cấu hình API và Sheet ID đã được lưu thành công.
-                        </Text>
-                        <View style={styles.modalButtonRowSingle}>
-                            <TouchableOpacity
-                                style={[
-                                    styles.modalButton,
-                                    styles.modalPrimary,
-                                ]}
-                                onPress={handleAfterSaveOk}
-                            >
-                                <Text style={styles.modalButtonText}>
-                                    Đã hiểu
-                                </Text>
-                            </TouchableOpacity>
-                        </View>
-                    </View>
+                <Text style={styles.modalTitle}>Đã lưu cấu hình</Text>
+                <Text style={styles.modalMessage}>
+                    Cấu hình API và Sheet ID đã được lưu thành công.
+                </Text>
+                <View style={styles.modalButtonRowSingle}>
+                    <AppButton
+                        title="Đã hiểu"
+                        variant="primary"
+                        onPress={handleAfterSaveOk}
+                    />
                 </View>
-            </Modal>
+            </BaseModal>
 
             {/* Modal lưu lỗi */}
-            <Modal
+            <BaseModal
                 visible={showSaveErrorModal}
-                transparent
-                animationType="fade"
                 onRequestClose={() => setShowSaveErrorModal(false)}
             >
-                <View style={styles.modalOverlay}>
-                    <View style={styles.modalContainer}>
-                        <Text style={styles.modalTitle}>Lỗi</Text>
-                        <Text style={styles.modalMessage}>
-                            Không thể lưu cấu hình. Vui lòng thử lại.
-                        </Text>
-                        <View style={styles.modalButtonRowSingle}>
-                            <TouchableOpacity
-                                style={[
-                                    styles.modalButton,
-                                    styles.modalPrimary,
-                                ]}
-                                onPress={() => setShowSaveErrorModal(false)}
-                            >
-                                <Text style={styles.modalButtonText}>
-                                    Đã hiểu
-                                </Text>
-                            </TouchableOpacity>
-                        </View>
-                    </View>
+                <Text style={styles.modalTitle}>Lỗi</Text>
+                <Text style={styles.modalMessage}>
+                    Không thể lưu cấu hình. Vui lòng thử lại.
+                </Text>
+                <View style={styles.modalButtonRowSingle}>
+                    <AppButton
+                        title="Đã hiểu"
+                        variant="primary"
+                        onPress={() => setShowSaveErrorModal(false)}
+                    />
                 </View>
-            </Modal>
+            </BaseModal>
 
             {/* Modal cho phép thay đổi nội dung nguy hiểm */}
-            <Modal
+            <BaseModal
                 visible={showDangerEditModal}
-                transparent
-                animationType="fade"
                 onRequestClose={cancelUnlockDangerField}
             >
-                <View style={styles.modalOverlay}>
-                    <View style={styles.modalContainer}>
-                        <Text style={styles.modalTitle}>
-                            Thay đổi nội dung nhạy cảm
-                        </Text>
-                        <Text style={styles.modalMessage}>
-                            Bạn sắp cho phép chỉnh sửa cấu hình quan trọng (API
-                            Base URL / Sheet ID).{"\n\n"}
-                            Hãy chắc chắn rằng bạn hiểu rõ thay đổi này trước
-                            khi tiếp tục.
-                        </Text>
+                <Text style={styles.modalTitle}>
+                    Thay đổi nội dung nhạy cảm
+                </Text>
+                <Text style={styles.modalMessage}>
+                    Bạn sắp cho phép chỉnh sửa cấu hình quan trọng (API Base URL
+                    / Sheet ID).
+                    {"\n\n"}
+                    Hãy chắc chắn rằng bạn hiểu rõ thay đổi này trước khi tiếp
+                    tục.
+                </Text>
 
-                        <View style={styles.modalButtonRow}>
-                            <TouchableOpacity
-                                style={[styles.modalButton, styles.modalCancel]}
-                                onPress={cancelUnlockDangerField}
-                            >
-                                <Text style={styles.modalButtonText}>Hủy</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity
-                                style={[
-                                    styles.modalButton,
-                                    styles.modalPrimary,
-                                ]}
-                                onPress={confirmUnlockDangerField}
-                            >
-                                <Text style={styles.modalButtonText}>
-                                    Cho phép
-                                </Text>
-                            </TouchableOpacity>
-                        </View>
-                    </View>
+                <View style={styles.modalButtonRow}>
+                    <AppButton
+                        title="Hủy"
+                        variant="secondary"
+                        onPress={cancelUnlockDangerField}
+                        style={{ flex: 1, marginRight: 4 }}
+                    />
+                    <AppButton
+                        title="Cho phép"
+                        variant="primary"
+                        onPress={confirmUnlockDangerField}
+                        style={{ flex: 1, marginLeft: 4 }}
+                    />
                 </View>
-            </Modal>
-        </SafeAreaView>
+            </BaseModal>
+        </AppScreen>
     );
 }
 
 const styles = StyleSheet.create({
-    safeArea: {
-        flex: 1,
-        backgroundColor: "#020617",
-    },
     container: {
         flex: 1,
         paddingHorizontal: 20,
     },
     contentContainer: {
-        paddingTop: 40,
+        paddingTop: 16,
         paddingBottom: 40,
     },
-    header: {
-        fontSize: 26,
-        fontWeight: "900",
-        color: "#E5F2FF",
-        marginBottom: 24,
-        textAlign: "center",
-        letterSpacing: 0.8,
-    },
     card: {
-        backgroundColor: "#0F172A",
+        backgroundColor: colors.surface,
         padding: 18,
         borderRadius: 16,
         marginBottom: 18,
         borderWidth: 1,
-        borderColor: "rgba(59,130,246,0.35)",
+        borderColor: colors.primarySoftBorder,
         shadowColor: "#1D4ED8",
         shadowOpacity: 0.18,
         shadowRadius: 8,
@@ -806,12 +736,12 @@ const styles = StyleSheet.create({
     cardTitle: {
         fontSize: 16,
         fontWeight: "700",
-        color: "#E5F2FF",
+        color: colors.text,
         marginBottom: 6,
     },
     cardDescription: {
         fontSize: 13,
-        color: "#9CA3AF",
+        color: colors.textMuted,
         marginBottom: 10,
         lineHeight: 18,
     },
@@ -827,12 +757,12 @@ const styles = StyleSheet.create({
         borderColor: "rgba(51,65,85,0.9)",
         paddingHorizontal: 12,
         paddingVertical: 10,
-        color: "#E5F2FF",
+        color: colors.text,
         fontSize: 14,
-        backgroundColor: "#020617",
+        backgroundColor: colors.background,
     },
     inputDisabled: {
-        backgroundColor: "#020617",
+        backgroundColor: colors.background,
         borderColor: "rgba(75,85,99,0.9)",
         opacity: 0.6,
     },
@@ -880,12 +810,12 @@ const styles = StyleSheet.create({
     },
     versionLabel: {
         fontSize: 12,
-        color: "#9CA3AF",
+        color: colors.textMuted,
     },
     versionValue: {
         fontSize: 14,
         fontWeight: "600",
-        color: "#E5F2FF",
+        color: colors.text,
         marginTop: 2,
     },
     versionSubText: {
@@ -930,37 +860,21 @@ const styles = StyleSheet.create({
     progressText: {
         marginTop: 4,
         fontSize: 12,
-        color: "#9CA3AF",
+        color: colors.textMuted,
         textAlign: "right",
     },
 
-    // Modal
-    modalOverlay: {
-        flex: 1,
-        backgroundColor: "rgba(15,23,42,0.85)",
-        justifyContent: "center",
-        alignItems: "center",
-        paddingHorizontal: 24,
-    },
-    modalContainer: {
-        backgroundColor: "#020617",
-        borderRadius: 18,
-        paddingVertical: 20,
-        paddingHorizontal: 18,
-        width: "100%",
-        borderWidth: 1,
-        borderColor: "rgba(59,130,246,0.5)",
-    },
+    // Modal (chỉ style nội dung, container/overlay đã có BaseModal)
     modalTitle: {
         fontSize: 18,
         fontWeight: "800",
-        color: "#E5F2FF",
+        color: colors.text,
         marginBottom: 10,
         textAlign: "center",
     },
     modalMessage: {
         fontSize: 14,
-        color: "#9CA3AF",
+        color: colors.textMuted,
         lineHeight: 20,
         textAlign: "center",
         marginBottom: 18,
@@ -974,26 +888,20 @@ const styles = StyleSheet.create({
         marginTop: 4,
         alignItems: "center",
     },
-    modalButton: {
-        width: 120,
-        paddingVertical: 12,
-        borderRadius: 999,
+    themeRow: {
+        flexDirection: "row",
         alignItems: "center",
-        marginHorizontal: 4,
+        justifyContent: "space-between",
+        marginTop: 8,
     },
-    modalCancel: {
-        backgroundColor: "#1F2937",
-    },
-    modalDanger: {
-        backgroundColor: "#DC2626",
-    },
-    modalPrimary: {
-        backgroundColor: "#3B82F6",
-        alignSelf: "center",
-    },
-    modalButtonText: {
-        color: "#F9FAFB",
+    themeLabel: {
         fontSize: 14,
-        fontWeight: "700",
+        color: "#E5F2FF",
+        fontWeight: "600",
+    },
+    themeHint: {
+        fontSize: 12,
+        color: "#9CA3AF",
+        marginTop: 2,
     },
 });

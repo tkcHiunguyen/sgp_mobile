@@ -1,9 +1,24 @@
 import React, { useEffect } from "react";
-import { View, ActivityIndicator, StyleSheet, Pressable } from "react-native";
+import {
+    View,
+    ActivityIndicator,
+    StyleSheet,
+    Pressable,
+    ViewStyle,
+} from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import { useDeviceGroup } from "../context/DeviceGroupContext";
 
-export default function DataSyncIndicator() {
+type Props = {
+    /**
+     * inline = true: dùng trong header/flex row, KHÔNG absolute.
+     * inline = false (mặc định): nổi ở góc màn hình như cũ.
+     */
+    inline?: boolean;
+    style?: ViewStyle;
+};
+
+export default function DataSyncIndicator({ inline = false, style }: Props) {
     const { isDataFromCache, isSyncing, refreshAllData } = useDeviceGroup();
 
     // Tự động sync nếu data từ cache
@@ -25,7 +40,7 @@ export default function DataSyncIndicator() {
     };
 
     return (
-        <View style={styles.wrapper}>
+        <View style={[inline ? styles.inlineWrapper : styles.wrapper, style]}>
             <Pressable
                 onPress={() => {
                     console.log(
@@ -48,6 +63,11 @@ const styles = StyleSheet.create({
         right: 16,
         zIndex: 20,
     },
+    inlineWrapper: {
+        alignItems: "center",
+        justifyContent: "center",
+        marginLeft: 0,
+    },
     iconButton: {
         width: 26,
         height: 26,
@@ -59,3 +79,4 @@ const styles = StyleSheet.create({
         justifyContent: "center",
     },
 });
+

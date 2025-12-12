@@ -11,7 +11,7 @@ type Props = {
 export default function BackButton({ onPress, style }: Props) {
     return (
         <TouchableOpacity style={[styles.container, style]} onPress={onPress}>
-            <Ionicons name="chevron-back" size={28} color="#fff" />
+            <Ionicons name="chevron-back" size={28} color="#fcfcfcff" />
         </TouchableOpacity>
     );
 }
@@ -23,7 +23,7 @@ const styles = StyleSheet.create({
         left: 12,
         width: 44,
         height: 44,
-        backgroundColor: "rgba(0,0,0,0.55)",
+        backgroundColor: "rgba(120,120,120,0.55)",
         borderRadius: 22,
         alignItems: "center",
         justifyContent: "center",

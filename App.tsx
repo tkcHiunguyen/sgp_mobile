@@ -1,8 +1,11 @@
 import React from "react";
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
+
 import { DeviceGroupProvider } from "./src/context/DeviceGroupContext";
 import { OtaProvider } from "./src/context/OtaContext";
+import { ThemeProvider } from "./src/context/ThemeContext";
+
 import { useFirebaseNotifications } from "./src/hooks/useFirebaseNotifications";
 
 import LoadingScreen from "./src/screens/LoadingScreen";
@@ -14,45 +17,52 @@ import ToolsScreen from "./src/screens/Tools";
 import InfoScreen from "./src/screens/Info";
 import WebViewerScreen from "./src/screens/WebViewerScreen";
 import SettingsScreen from "./src/screens/Settings";
+
 const Stack = createNativeStackNavigator();
 
 export default function App() {
     useFirebaseNotifications();
+
     return (
-        <DeviceGroupProvider>
-            <OtaProvider>
-                <NavigationContainer>
-                    <Stack.Navigator screenOptions={{ headerShown: false }}>
-                        <Stack.Screen
-                            name="Loading"
-                            component={LoadingScreen}
-                        />
-                        <Stack.Screen name="Home" component={IndexScreen} />
-                        <Stack.Screen
-                            name="Scanner"
-                            component={ScannerScreen}
-                        />
-                        <Stack.Screen
-                            name="Devices"
-                            component={DevicesScreen}
-                        />
-                        <Stack.Screen
-                            name="History"
-                            component={HistoryScreen}
-                        />
-                        <Stack.Screen name="Tools" component={ToolsScreen} />
-                        <Stack.Screen name="Info" component={InfoScreen} />
-                        <Stack.Screen
-                            name="WebViewer"
-                            component={WebViewerScreen}
-                        />
-                        <Stack.Screen
-                            name="Settings"
-                            component={SettingsScreen}
-                        />
-                    </Stack.Navigator>
-                </NavigationContainer>
-            </OtaProvider>
-        </DeviceGroupProvider>
+        <ThemeProvider>
+            <DeviceGroupProvider>
+                <OtaProvider>
+                    <NavigationContainer>
+                        <Stack.Navigator screenOptions={{ headerShown: false }}>
+                            <Stack.Screen
+                                name="Loading"
+                                component={LoadingScreen}
+                            />
+                            <Stack.Screen name="Home" component={IndexScreen} />
+                            <Stack.Screen
+                                name="Scanner"
+                                component={ScannerScreen}
+                            />
+                            <Stack.Screen
+                                name="Devices"
+                                component={DevicesScreen}
+                            />
+                            <Stack.Screen
+                                name="History"
+                                component={HistoryScreen}
+                            />
+                            <Stack.Screen
+                                name="Tools"
+                                component={ToolsScreen}
+                            />
+                            <Stack.Screen name="Info" component={InfoScreen} />
+                            <Stack.Screen
+                                name="WebViewer"
+                                component={WebViewerScreen}
+                            />
+                            <Stack.Screen
+                                name="Settings"
+                                component={SettingsScreen}
+                            />
+                        </Stack.Navigator>
+                    </NavigationContainer>
+                </OtaProvider>
+            </DeviceGroupProvider>
+        </ThemeProvider>
     );
 }
