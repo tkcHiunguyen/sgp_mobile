@@ -21,6 +21,7 @@ import { BaseModal } from "../components/ui/BaseModal";
 import { EmptyState } from "../components/ui/EmptyState";
 import { AppButton } from "../components/ui/AppButton";
 import { colors } from "../theme/theme";
+import { DateRangeNativePicker } from "../components/DateRangeFilterIOSDark";
 
 type Props = NativeStackScreenProps<RootStackParamList, "History">;
 
@@ -403,77 +404,20 @@ export default function HistoryScreen({ navigation }: Props) {
                     </View>
 
                     {/* FILTER BY DATE */}
-                    <View style={styles.filterWrapper}>
-                        <TouchableOpacity
-                            style={[
-                                styles.filterBox,
-                                (fromDate || toDate || dateFilterOpen) &&
-                                    styles.filterBoxActive,
-                            ]}
-                            onPress={() => {
-                                setDateFilterOpen(!dateFilterOpen);
-                                if (!dateFilterOpen) {
-                                    setDeviceFilterOpen(false);
-                                }
-                            }}
-                            activeOpacity={0.7}
-                        >
-                            <Ionicons
-                                name="calendar-outline"
-                                style={styles.filterIcon}
-                            />
-                        </TouchableOpacity>
-
-                        {dateFilterOpen && (
-                            <View style={styles.dateDropdown}>
-                                <Text style={styles.dateHint}>
-                                    Định dạng: dd-MM-yy
-                                </Text>
-
-                                <View style={styles.dateRow}>
-                                    <Text style={styles.dateLabel}>Từ</Text>
-                                    <TextInput
-                                        style={styles.dateInput}
-                                        placeholder="01-01-25"
-                                        placeholderTextColor={colors.textMuted}
-                                        value={fromDate}
-                                        onChangeText={setFromDate}
-                                    />
-                                </View>
-
-                                <View style={styles.dateRow}>
-                                    <Text style={styles.dateLabel}>Đến</Text>
-                                    <TextInput
-                                        style={styles.dateInput}
-                                        placeholder="31-12-25"
-                                        placeholderTextColor={colors.textMuted}
-                                        value={toDate}
-                                        onChangeText={setToDate}
-                                    />
-                                </View>
-
-                                <View style={styles.dateActionsRow}>
-                                    <TouchableOpacity
-                                        onPress={() => {
-                                            setFromDate("");
-                                            setToDate("");
-                                        }}
-                                    >
-                                        <Text style={styles.dateActionText}>
-                                            Đặt lại
-                                        </Text>
-                                    </TouchableOpacity>
-                                    <TouchableOpacity
-                                        onPress={() => setDateFilterOpen(false)}
-                                    >
-                                        <Text style={styles.dateActionText}>
-                                            Áp dụng
-                                        </Text>
-                                    </TouchableOpacity>
-                                </View>
-                            </View>
-                        )}
-                    </View>
+                    <DateRangeNativePicker
+                        open={dateFilterOpen}
+                        onToggleOpen={() => {
+                            setDateFilterOpen(!dateFilterOpen);
+                            if (!dateFilterOpen) setDeviceFilterOpen(false);
+                        }}
+                        onClose={() => setDateFilterOpen(false)}
+                        fromDate={fromDate}
+                        toDate={toDate}
+                        onChange={({ fromDate, toDate }) => {
+                            setFromDate(fromDate);
+                            setToDate(toDate);
+                        }}
+                    />
 
                     {/* FILTER BY DEVICE */}
                     <View style={styles.filterWrapper}>

@@ -64,7 +64,7 @@ export default function LoadingScreen() {
 
             // đọc raw text để biết server trả gì
             const rawText = await res.text();
-            console.log("📨 [Loading] Raw response text từ server:\n", rawText);
+            // console.log("📨 [Loading] Raw response text từ server:\n", rawText);
 
             // nếu status không ok thì log thêm, rồi dừng (tuỳ bạn muốn xử lý sao)
             if (!res.ok) {
