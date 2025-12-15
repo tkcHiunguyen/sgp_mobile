@@ -40,7 +40,6 @@ const parseDate = (value: string): Date => {
     return new Date(year, month, day);
 };
 
-// Tách mã thiết bị: "PM5-VFD-61-27003" -> group: "PM5", kind: "VFD", code: "61-27003"
 const parseDeviceCode = (fullCode: string) => {
     if (!fullCode) {
         return { group: "", kind: "", code: "" };
@@ -58,7 +57,6 @@ const parseDeviceCode = (fullCode: string) => {
     return { group, kind, code };
 };
 
-// bôi vàng phần match với query
 const highlightText = (
     text: string,
     query: string,
@@ -123,7 +121,6 @@ interface HistoryRow {
     date: string;
     content: string;
 }
-
 export default function DevicesScreen({ navigation }: Props) {
     const { deviceGroups } = useDeviceGroup();
 
@@ -143,6 +140,7 @@ export default function DevicesScreen({ navigation }: Props) {
     // state cho tìm kiếm + lọc loại
     const [searchText, setSearchText] = useState("");
     const [selectedKinds, setSelectedKinds] = useState<string[]>([]);
+    const [kindsInitialized, setKindsInitialized] = useState(false);
     const [filterDropdownOpen, setFilterDropdownOpen] = useState(false);
 
     // animation cho dropdown
@@ -170,6 +168,7 @@ export default function DevicesScreen({ navigation }: Props) {
                 setMaintenanceHistory([]);
                 setSearchText("");
                 setSelectedKinds([]);
+                setKindsInitialized(false);
                 setFilterDropdownOpen(false);
             };
         }, [])
@@ -196,6 +195,25 @@ export default function DevicesScreen({ navigation }: Props) {
         return Array.from(set).sort(); // sort cho gọn
     }, [devicesInGroup]);
 
+    // ✅ Map theo pattern History:
+    // - Khi mở group: mặc định chọn tất cả kinds
+    // - "ALL active" khi selectedKinds === availableKinds
+    // - Nếu selectedKinds rỗng => không hiển thị gì (giống History)
+    useEffect(() => {
+        if (
+            deviceModalVisible &&
+            !kindsInitialized &&
+            availableKinds.length > 0
+        ) {
+            setSelectedKinds(availableKinds);
+            setKindsInitialized(true);
+        }
+    }, [deviceModalVisible, kindsInitialized, availableKinds]);
+
+    const allKindsActive =
+        availableKinds.length === 0 ||
+        selectedKinds.length === availableKinds.length;
+
     // Lọc theo search + loại (multi-select)
     const filteredDevices = useMemo(() => {
         const q = searchText.trim().toLowerCase();
@@ -203,9 +221,16 @@ export default function DevicesScreen({ navigation }: Props) {
         return devicesInGroup.filter((dev) => {
             const parsed = parseDeviceCode(dev.name);
 
-            // lọc theo nhiều loại nếu selectedKinds có phần tử
+            // ✅ Pattern giống History:
+            // - Không chọn gì => không hiển thị gì
+            if (availableKinds.length > 0 && selectedKinds.length === 0) {
+                return false;
+            }
+
+            // - Nếu không phải "ALL" thì mới lọc theo kind
             if (
-                selectedKinds.length > 0 &&
+                availableKinds.length > 0 &&
+                !allKindsActive &&
                 (!parsed.kind || !selectedKinds.includes(parsed.kind))
             ) {
                 return false;
@@ -219,7 +244,13 @@ export default function DevicesScreen({ navigation }: Props) {
 
             return name.includes(q) || code.includes(q) || type.includes(q);
         });
-    }, [devicesInGroup, searchText, selectedKinds]);
+    }, [
+        devicesInGroup,
+        searchText,
+        selectedKinds,
+        availableKinds,
+        allKindsActive,
+    ]);
 
     const handleOpenGroup = (groupName: string) => {
         setSelectedGroup(groupName);
@@ -227,6 +258,7 @@ export default function DevicesScreen({ navigation }: Props) {
         // reset filter khi chọn group mới
         setSearchText("");
         setSelectedKinds([]);
+        setKindsInitialized(false);
         setFilterDropdownOpen(false);
     };
 
@@ -268,13 +300,25 @@ export default function DevicesScreen({ navigation }: Props) {
         });
     };
 
-    const clearKinds = () => {
-        setSelectedKinds([]);
+    const toggleAllKinds = () => {
+        if (allKindsActive) {
+            // đang chọn tất cả -> bỏ hết (giống History)
+            setSelectedKinds([]);
+        } else {
+            // chọn tất cả
+            setSelectedKinds(availableKinds);
+        }
+        setKindsInitialized(true);
     };
 
-    const hasFilter = selectedKinds.length > 0;
+    const hasFilter =
+        availableKinds.length > 0 &&
+        (selectedKinds.length === 0 ||
+            selectedKinds.length !== availableKinds.length);
 
     const showClearSearch = searchText.trim().length > 0;
+
+    // allKindsActive đã được tính phía trên theo pattern History
 
     return (
         <AppScreen topPadding={0}>
@@ -410,10 +454,10 @@ export default function DevicesScreen({ navigation }: Props) {
                                         <TouchableOpacity
                                             style={[
                                                 styles.filterOption,
-                                                selectedKinds.length === 0 &&
+                                                allKindsActive &&
                                                     styles.filterOptionActive,
                                             ]}
-                                            onPress={clearKinds}
+                                            onPress={toggleAllKinds}
                                         >
                                             <View
                                                 style={styles.filterOptionRow}
@@ -425,6 +469,23 @@ export default function DevicesScreen({ navigation }: Props) {
                                                 >
                                                     Tất cả loại
                                                 </Text>
+
+                                                <View
+                                                    style={[
+                                                        styles.checkbox,
+                                                        allKindsActive &&
+                                                            styles.checkboxActive,
+                                                    ]}
+                                                >
+                                                    {allKindsActive && (
+                                                        <Ionicons
+                                                            name="checkmark"
+                                                            style={
+                                                                styles.checkboxIcon
+                                                            }
+                                                        />
+                                                    )}
+                                                </View>
                                             </View>
                                         </TouchableOpacity>
 

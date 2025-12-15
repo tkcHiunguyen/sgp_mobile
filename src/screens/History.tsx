@@ -50,6 +50,59 @@ const parseDeviceCode = (fullCode: string) => {
     return { group, kind, code };
 };
 
+// bôi vàng phần match với query
+const highlightText = (
+    text: string,
+    query: string,
+    baseStyle: any,
+    highlightStyle: any
+) => {
+    const q = query.trim();
+    if (!q) {
+        return <Text style={baseStyle}>{text}</Text>;
+    }
+
+    const lowerText = text.toLowerCase();
+    const lowerQ = q.toLowerCase();
+
+    let currentIndex = 0;
+    const parts: React.ReactNode[] = [];
+    let matchIndex = lowerText.indexOf(lowerQ, currentIndex);
+
+    if (matchIndex === -1) {
+        return <Text style={baseStyle}>{text}</Text>;
+    }
+
+    while (matchIndex !== -1) {
+        if (matchIndex > currentIndex) {
+            parts.push(
+                <Text key={currentIndex} style={baseStyle}>
+                    {text.slice(currentIndex, matchIndex)}
+                </Text>
+            );
+        }
+
+        parts.push(
+            <Text key={matchIndex} style={[baseStyle, highlightStyle]}>
+                {text.slice(matchIndex, matchIndex + q.length)}
+            </Text>
+        );
+
+        currentIndex = matchIndex + q.length;
+        matchIndex = lowerText.indexOf(lowerQ, currentIndex);
+    }
+
+    if (currentIndex < text.length) {
+        parts.push(
+            <Text key={`${currentIndex}-end`} style={baseStyle}>
+                {text.slice(currentIndex)}
+            </Text>
+        );
+    }
+
+    return <Text>{parts}</Text>;
+};
+
 type HistoryRow = { deviceName: string; date: string; content: string };
 
 interface DeviceRow {
@@ -291,6 +344,8 @@ export default function HistoryScreen({ navigation }: Props) {
         const parsed = parseDeviceCode(item.deviceName);
         const meta = deviceMap[item.deviceName];
 
+        const displayCode = parsed.code || item.deviceName;
+
         return (
             <View style={styles.historyCard}>
                 {/* Hàng: group - kind - code */}
@@ -301,19 +356,33 @@ export default function HistoryScreen({ navigation }: Props) {
                     {!!parsed.kind && (
                         <Text style={styles.deviceTag}>{parsed.kind}</Text>
                     )}
-                    <Text style={styles.deviceCode}>
-                        {parsed.code || item.deviceName}
-                    </Text>
+
+                    {highlightText(
+                        displayCode,
+                        searchText,
+                        styles.deviceCode,
+                        styles.highlight
+                    )}
                 </View>
 
                 {/* Mô tả thiết bị (lấy từ bảng thiết bị) */}
-                {meta?.type ? (
-                    <Text style={styles.deviceDesc}>{meta.type}</Text>
-                ) : null}
+                {meta?.type
+                    ? highlightText(
+                          meta.type,
+                          searchText,
+                          styles.deviceDesc,
+                          styles.highlight
+                      )
+                    : null}
 
                 {/* Nội dung bảo trì được đặt trong box nền khác */}
                 <View style={styles.historyContentBox}>
-                    <Text style={styles.historyContent}>{item.content}</Text>
+                    {highlightText(
+                        item.content,
+                        searchText,
+                        styles.historyContent,
+                        styles.highlight
+                    )}
                 </View>
             </View>
         );
@@ -443,44 +512,64 @@ export default function HistoryScreen({ navigation }: Props) {
                             <View style={styles.filterDropdown}>
                                 <ScrollView nestedScrollEnabled>
                                     {/* ALL DEVICES OPTION */}
-                                    <TouchableOpacity
-                                        style={[
-                                            styles.filterOption,
+                                    {(() => {
+                                        const allActive =
+                                            deviceNamesInGroup.length > 0 &&
                                             selectedDevices.length ===
-                                                deviceNamesInGroup.length &&
-                                                styles.filterOptionActive,
-                                        ]}
-                                        onPress={() => {
-                                            if (
-                                                selectedDevices.length ===
-                                                deviceNamesInGroup.length
-                                            ) {
-                                                // đang chọn tất cả -> bỏ hết
-                                                setSelectedDevices([]);
-                                            } else {
-                                                // chọn tất cả
-                                                setSelectedDevices(
-                                                    deviceNamesInGroup
-                                                );
-                                            }
-                                        }}
-                                    >
-                                        <View style={styles.filterRow}>
-                                            <Text
-                                                style={styles.filterOptionText}
+                                                deviceNamesInGroup.length;
+
+                                        return (
+                                            <TouchableOpacity
+                                                style={[
+                                                    styles.filterOption,
+                                                    allActive &&
+                                                        styles.filterOptionActive,
+                                                ]}
+                                                onPress={() => {
+                                                    if (allActive) {
+                                                        // đang chọn tất cả → bỏ hết
+                                                        setSelectedDevices([]);
+                                                    } else {
+                                                        // chọn tất cả
+                                                        setSelectedDevices(
+                                                            deviceNamesInGroup
+                                                        );
+                                                    }
+                                                }}
                                             >
-                                                Tất cả thiết bị
-                                            </Text>
-                                            {selectedDevices.length ===
-                                                deviceNamesInGroup.length && (
-                                                <Ionicons
-                                                    name="checkmark-circle"
-                                                    size={18}
-                                                    color="#22c55e"
-                                                />
-                                            )}
-                                        </View>
-                                    </TouchableOpacity>
+                                                <View
+                                                    style={
+                                                        styles.filterOptionRow
+                                                    }
+                                                >
+                                                    <Text
+                                                        style={
+                                                            styles.filterOptionText
+                                                        }
+                                                    >
+                                                        Tất cả thiết bị
+                                                    </Text>
+
+                                                    <View
+                                                        style={[
+                                                            styles.checkbox,
+                                                            allActive &&
+                                                                styles.checkboxActive,
+                                                        ]}
+                                                    >
+                                                        {allActive && (
+                                                            <Ionicons
+                                                                name="checkmark"
+                                                                style={
+                                                                    styles.checkboxIcon
+                                                                }
+                                                            />
+                                                        )}
+                                                    </View>
+                                                </View>
+                                            </TouchableOpacity>
+                                        );
+                                    })()}
 
                                     {/* DEVICE LIST */}
                                     {deviceNamesInGroup.map((dev) => {
@@ -510,7 +599,11 @@ export default function HistoryScreen({ navigation }: Props) {
                                                     }
                                                 }}
                                             >
-                                                <View style={styles.filterRow}>
+                                                <View
+                                                    style={
+                                                        styles.filterOptionRow
+                                                    }
+                                                >
                                                     <Text
                                                         style={
                                                             styles.filterOptionText
@@ -519,13 +612,22 @@ export default function HistoryScreen({ navigation }: Props) {
                                                         {dev}
                                                     </Text>
 
-                                                    {active && (
-                                                        <Ionicons
-                                                            name="checkmark-circle"
-                                                            size={18}
-                                                            color="#22c55e"
-                                                        />
-                                                    )}
+                                                    <View
+                                                        style={[
+                                                            styles.checkbox,
+                                                            active &&
+                                                                styles.checkboxActive,
+                                                        ]}
+                                                    >
+                                                        {active && (
+                                                            <Ionicons
+                                                                name="checkmark"
+                                                                style={
+                                                                    styles.checkboxIcon
+                                                                }
+                                                            />
+                                                        )}
+                                                    </View>
                                                 </View>
                                             </TouchableOpacity>
                                         );
@@ -1022,7 +1124,14 @@ const styles = StyleSheet.create({
         lineHeight: 18,
     },
 
-    /* ========= TOP DEVICE MODAL (THIẾT BỊ SỬA NHIỀU NHẤT) ========= */
+    highlight: {
+        backgroundColor: "#FACC15",
+        color: "#111827",
+        borderRadius: 10,
+        overflow: "hidden",
+    },
+
+    /* ========= TOP DEVICE MODAL ========= */
     topDeviceModal: {
         maxHeight: "80%",
     },
@@ -1050,5 +1159,29 @@ const styles = StyleSheet.create({
         marginTop: 4,
         fontSize: 12,
         color: colors.textMuted,
+    },
+    filterOptionRow: {
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "space-between",
+    },
+
+    checkbox: {
+        width: 18,
+        height: 18,
+        borderRadius: 4,
+        borderWidth: 1.5,
+        borderColor: "rgba(156,163,175,0.9)",
+        alignItems: "center",
+        justifyContent: "center",
+        backgroundColor: "transparent",
+    },
+    checkboxActive: {
+        borderColor: "#22C55E",
+        backgroundColor: "rgba(34,197,94,0.12)",
+    },
+    checkboxIcon: {
+        fontSize: 14,
+        color: "#22C55E",
     },
 });

@@ -12,14 +12,13 @@ import DateTimePicker, {
 } from "@react-native-community/datetimepicker";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import { colors } from "../theme/theme";
-import { BaseModal } from "./ui/BaseModal"; // nếu đường dẫn khác thì sửa lại
+import { BaseModal } from "./ui/BaseModal";
 
 type Props = {
     fromDate: string; // dd-MM-yy
     toDate: string; // dd-MM-yy
     onChange: (next: { fromDate: string; toDate: string }) => void;
 
-    // dropdown control (đúng flow bạn đang dùng ở History)
     open: boolean;
     onToggleOpen: () => void;
     onClose: () => void;
@@ -64,10 +63,8 @@ export function DateRangeNativePicker({
 
     const [target, setTarget] = useState<"from" | "to">("from");
 
-    // Android: render DateTimePicker -> dialog native
     const [showAndroidPicker, setShowAndroidPicker] = useState(false);
 
-    // iOS: modal custom (Cancel/OK)
     const [iosPickerOpen, setIosPickerOpen] = useState(false);
     const [iosDraft, setIosDraft] = useState<Date>(new Date());
 
@@ -106,7 +103,6 @@ export function DateRangeNativePicker({
     };
 
     const onAndroidPick = (e: DateTimePickerEvent, selected?: Date) => {
-        // Android: dialog đóng ngay sau chọn / cancel
         setShowAndroidPicker(false);
         if (e.type !== "set" || !selected) return;
         applyPicked(selected);
@@ -119,7 +115,6 @@ export function DateRangeNativePicker({
         });
     };
 
-    // ✅ Reset = xoá cả 2 ô + đóng dropdown
     const onReset = () => {
         onChange({ fromDate: "", toDate: "" });
         onClose();
@@ -144,22 +139,23 @@ export function DateRangeNativePicker({
 
     const hasValue = !!fromDate || !!toDate;
 
-    // ===== ✅ Animation dropdown =====
     const [mounted, setMounted] = useState(open);
     const anim = useRef(new Animated.Value(open ? 1 : 0)).current;
 
     useEffect(() => {
         if (open) {
             setMounted(true);
-            Animated.timing(anim, {
+            Animated.spring(anim, {
                 toValue: 1,
-                duration: 170,
+                damping: 18,
+                stiffness: 220,
+                mass: 0.9,
                 useNativeDriver: true,
             }).start();
         } else {
             Animated.timing(anim, {
                 toValue: 0,
-                duration: 140,
+                duration: 120,
                 useNativeDriver: true,
             }).start(({ finished }) => {
                 if (finished) setMounted(false);
@@ -315,7 +311,7 @@ export function DateRangeNativePicker({
                         <DateTimePicker
                             value={currentTargetValue}
                             mode="date"
-                            display="default"
+                            display="calendar"
                             minimumDate={minDate}
                             maximumDate={maxDate}
                             onChange={onAndroidPick}
@@ -394,34 +390,43 @@ const styles = StyleSheet.create({
         position: "relative",
         zIndex: 20,
     },
+
     iconBtn: {
         width: 42,
         height: 40,
-        borderRadius: 12,
+        borderRadius: 14,
         borderWidth: 1,
-        borderColor: "rgba(96,165,250,0.8)",
-        backgroundColor: colors.surface,
+        borderColor: "rgba(96,165,250,0.55)",
+        backgroundColor: "rgba(15,23,42,0.75)",
         justifyContent: "center",
         alignItems: "center",
     },
     iconBtnActive: {
-        backgroundColor: "rgba(37,99,235,0.2)",
+        borderColor: "rgba(96,165,250,0.9)",
+        backgroundColor: "rgba(37,99,235,0.18)",
     },
 
     dropdown: {
         position: "absolute",
         top: 48,
         right: 0,
-        width: 240,
-        borderRadius: 12,
-        backgroundColor: colors.surface,
+        width: 252,
+        borderRadius: 16,
+        backgroundColor: "rgba(15,23,42,0.96)",
         borderWidth: 1,
-        borderColor: "rgba(96,165,250,0.8)",
+        borderColor: "rgba(96,165,250,0.35)",
         zIndex: 999,
-        elevation: 10,
-        padding: 10,
-        gap: 8,
+        elevation: 12,
+        padding: 12,
+        gap: 10,
+
+        // iOS shadow
+        shadowColor: "#000",
+        shadowOpacity: 0.35,
+        shadowRadius: 18,
+        shadowOffset: { width: 0, height: 10 },
     },
+
     dropdownHeader: {
         flexDirection: "row",
         alignItems: "center",
@@ -431,23 +436,24 @@ const styles = StyleSheet.create({
     dropdownTitle: {
         color: colors.text,
         fontSize: 13,
-        fontWeight: "800",
+        fontWeight: "900",
+        letterSpacing: 0.2,
     },
     headerCloseBtn: {
-        width: 28,
-        height: 28,
-        borderRadius: 10,
+        width: 30,
+        height: 30,
+        borderRadius: 12,
         alignItems: "center",
         justifyContent: "center",
-        backgroundColor: "rgba(2,6,23,0.35)",
+        backgroundColor: "rgba(2,6,23,0.55)",
         borderWidth: 1,
-        borderColor: "rgba(148,163,184,0.18)",
+        borderColor: "rgba(148,163,184,0.16)",
     },
 
     box: {
         borderWidth: 1,
-        borderColor: "rgba(148,163,184,0.25)",
-        backgroundColor: "rgba(2,6,23,0.35)",
+        borderColor: "rgba(148,163,184,0.18)",
+        backgroundColor: "rgba(2,6,23,0.55)",
         borderRadius: 14,
         paddingVertical: 10,
         paddingHorizontal: 12,
@@ -458,15 +464,16 @@ const styles = StyleSheet.create({
         justifyContent: "space-between",
     },
     label: {
-        color: colors.textMuted,
+        color: "rgba(229,242,255,0.62)",
         fontSize: 11,
-        fontWeight: "700",
+        fontWeight: "800",
         marginBottom: 4,
+        letterSpacing: 0.2,
     },
     value: {
         color: colors.text,
         fontSize: 13,
-        fontWeight: "800",
+        fontWeight: "900",
     },
 
     presetsRow: {
@@ -477,16 +484,16 @@ const styles = StyleSheet.create({
     },
     chip: {
         borderWidth: 1,
-        borderColor: "rgba(148,163,184,0.25)",
-        backgroundColor: "rgba(2,6,23,0.35)",
-        paddingVertical: 6,
+        borderColor: "rgba(96,165,250,0.22)",
+        backgroundColor: "rgba(10,132,255,0.08)",
+        paddingVertical: 7,
         paddingHorizontal: 10,
         borderRadius: 999,
     },
     chipText: {
         color: colors.text,
         fontSize: 12,
-        fontWeight: "700",
+        fontWeight: "800",
     },
 
     actionsRow: {
@@ -494,9 +501,16 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         alignItems: "center",
     },
-
-    linkPrimary: { color: colors.textAccent, fontSize: 12, fontWeight: "800" },
-    linkMuted: { color: colors.textMuted, fontSize: 12, fontWeight: "800" },
+    linkPrimary: {
+        color: colors.textAccent,
+        fontSize: 12,
+        fontWeight: "900",
+    },
+    linkMuted: {
+        color: "rgba(229,242,255,0.55)",
+        fontSize: 12,
+        fontWeight: "900",
+    },
 
     iosModalCard: {
         backgroundColor: colors.surface,

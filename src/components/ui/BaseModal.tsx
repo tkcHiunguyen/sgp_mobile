@@ -1,5 +1,5 @@
 // src/components/ui/BaseModal.tsx
-import React from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
     Modal,
     View,
@@ -8,6 +8,7 @@ import {
     ViewStyle,
     StyleProp,
     DimensionValue,
+    Animated,
 } from "react-native";
 import { colors, radius, spacing } from "../../theme/theme";
 
@@ -26,24 +27,88 @@ export function BaseModal({
     width = "100%",
     style,
 }: Props) {
+    // ✅ Giữ modal mount để animate khi đóng
+    const [mounted, setMounted] = useState(visible);
+
+    // 0 -> 1 khi mở
+    const anim = useRef(new Animated.Value(0)).current;
+
+    useEffect(() => {
+        if (visible) {
+            setMounted(true);
+            anim.stopAnimation();
+            Animated.timing(anim, {
+                toValue: 1,
+                duration: 180,
+                useNativeDriver: true,
+            }).start();
+        } else {
+            anim.stopAnimation();
+            Animated.timing(anim, {
+                toValue: 0,
+                duration: 140,
+                useNativeDriver: true,
+            }).start(({ finished }) => {
+                if (finished) setMounted(false);
+            });
+        }
+    }, [visible, anim]);
+
+    if (!mounted) return null;
+
+    const overlayOpacity = anim.interpolate({
+        inputRange: [0, 1],
+        outputRange: [0, 1],
+    });
+
+    const containerOpacity = anim.interpolate({
+        inputRange: [0, 1],
+        outputRange: [0, 1],
+    });
+
+    const containerScale = anim.interpolate({
+        inputRange: [0, 1],
+        outputRange: [0.96, 1],
+    });
+
+    const containerTranslateY = anim.interpolate({
+        inputRange: [0, 1],
+        outputRange: [10, 0],
+    });
+
     return (
         <Modal
-            visible={visible}
+            visible={mounted}
             transparent
-            animationType="fade"
+            animationType="none" // ✅ tự animate bằng Animated
             onRequestClose={onRequestClose}
         >
-            <View style={styles.overlay}>
-                {/* Lớp backdrop bắt tap để đóng modal */}
+            <Animated.View
+                style={[styles.overlay, { opacity: overlayOpacity }]}
+            >
+                {/* Backdrop bắt tap để đóng */}
                 <TouchableWithoutFeedback onPress={onRequestClose}>
                     <View style={styles.backdrop} />
                 </TouchableWithoutFeedback>
 
-                {/* Thân modal: KHÔNG bọc trong TouchableWithoutFeedback nữa */}
-                <View style={[styles.container, { width }, style]}>
+                {/* Thân modal */}
+                <Animated.View
+                    style={[
+                        styles.container,
+                        { width },
+                        style,
+                        {
+                            opacity: containerOpacity,
+                            transform: [
+                                { translateY: containerTranslateY },
+                                { scale: containerScale },
+                            ],
+                        },
+                    ]}
+                >
                     {children}
-                </View>
-            </View>
+                </Animated.View>
+            </Animated.View>
         </Modal>
     );
 }
@@ -57,7 +122,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 24,
     },
     backdrop: {
-        ...StyleSheet.absoluteFillObject, 
+        ...StyleSheet.absoluteFillObject,
     },
     container: {
         backgroundColor: colors.background,

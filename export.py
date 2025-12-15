@@ -27,7 +27,7 @@ EXCLUDE_FOLDERS = {
 }
 
 OPENAI_MODEL = "gpt-5-nano"
-OPENAI_API_KEY = "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"
+OPENAI_API_KEY = "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"
 # ==========================================
 
 client = OpenAI(api_key=OPENAI_API_KEY)
@@ -53,6 +53,7 @@ Yêu cầu:
 - Không mô tả chi tiết nội bộ.
 - Không thêm nội dung ngoài file.
 - Output chỉ gồm bullet points.
+- chức năng chính của file.
 
 Nội dung file:
 """

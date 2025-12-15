@@ -5,50 +5,52 @@
 ├─ .gitignore
 ├─ .watchmanconfig
 ├─ App.tsx
-    - - Functions: App — Hàm chính khởi tạo ứng dụng và trả về cây component với providers và navigator.
-    - - Hooks: useFirebaseNotifications — Thiết lập lắng nghe thông báo Firebase khi ứng dụng chạy.
-    - - Components: DeviceGroupProvider — Cung cấp context nhóm thiết bị cho toàn app.
-    - - Components: OtaProvider — Cung cấp context OTA cho toàn app.
-    - - Components: LoadingScreen — Màn hình tải dữ liệu ban đầu.
-    - - Components: IndexScreen — Màn hình chính của ứng dụng.
-    - - Components: ScannerScreen — Màn hình quét thiết bị.
-    - - Components: DevicesScreen — Màn hình danh sách thiết bị.
-    - - Components: HistoryScreen — Màn hình lịch sử.
-    - - Components: ToolsScreen — Màn hình công cụ.
-    - - Components: InfoScreen — Màn hình thông tin.
-    - - Components: WebViewerScreen — Màn hình xem nội dung web.
-    - - Components: SettingsScreen — Màn hình cài đặt.
+    - - App: hàm chính khởi tạo app, bao bọc providers và navigator; gọi useFirebaseNotifications.
+    - - useFirebaseNotifications: hook đăng ký và xử lý thông báo Firebase khi app hoạt động.
+    - - ThemeProvider: cung cấp ngữ cảnh chủ đề cho toàn app.
+    - - DeviceGroupProvider: cung cấp ngữ cảnh nhóm thiết bị.
+    - - OtaProvider: cung cấp ngữ cảnh OTA (cập nhật).
+    - - NavigationContainer: khung điều hướng cho ứng dụng.
+    - - Stack.Navigator: định nghĩa stack các màn hình với cấu hình header ẩn.
+    - - LoadingScreen: màn hình tải lần đầu của ứng dụng.
+    - - IndexScreen: màn hình chính (Home).
+    - - ScannerScreen: màn hình quét thiết bị.
+    - - DevicesScreen: màn hình danh sách thiết bị.
+    - - HistoryScreen: màn hình lịch sử hoạt động.
+    - - ToolsScreen: màn hình công cụ.
+    - - InfoScreen: màn hình thông tin.
+    - - WebViewerScreen: màn hình xem nội dung web.
+    - - SettingsScreen: màn hình cài đặt.
 ├─ Gemfile
+├─ PROJECT_STRUCTURE_SUMMARY.md
 ├─ README.md
 ├─ app.json
 ├─ babel.config.js
-    - - presets: Cung cấp preset Babel cho React Native.
-    - - plugins: Thêm plugin react-native-worklets để hỗ trợ worklets.
+    - - Cấu hình Babel cho dự án React Native với preset "module:@react-native/babel-preset" và plugin "react-native-worklets/plugin".
 ├─ database.ts
-    - - Functions
-    -   - openDatabase: Mở kết nối SQLite và khởi tạo bảng, trả về đối tượng DB.
-    -   - createTables: Thiết lập cấu trúc bảng cho DB (systems, devices, maintenance).
-    -   - syncDataToDB: Đồng bộ dữ liệu từ nguồn lên DB bằng cách xóa và chèn lại dữ liệu của các bảng tương ứng.
+    - - openDatabase: Mở kết nối SQLite và khởi tạo bảng nếu chưa có.
+    - - createTables: Tạo/khởi tạo các bảng dữ liệu (systems, devices, maintenance).
+    - - syncDataToDB: Đồng bộ dữ liệu từ server vào DB và ghi nhận log đồng bộ.
 ├─ export.py
     - - functions
-    -   - clean_frontend_code: Loại bỏ CSS, class và style cùng các comment để làm sạch nội dung frontend trước khi tóm tắt.
-    -   - summarize_file_with_gpt: Gửi nội dung file tới OpenAI để tạo bản tóm tắt kỹ thuật dạng bullet points.
-    -   - walk_dir: Dò cây thư mục, loại bỏ thư mục/tệp không cần thiết và thu thập danh sách file có thể tóm tắt.
+    -   - clean_frontend_code: Loại bỏ CSS, inline styles và comment để làm sạch nội dung frontend trước khi tóm tắt.
+    -   - summarize_file_with_gpt: Gọi OpenAI API để tạo bản tóm tắt kỹ thuật cho nội dung file theo prompt đã cho.
+    -   - walk_dir: Duyệt thư mục, loại bỏ các thư mục loại trừ, đọc file mã nguồn và gắn tóm tắt cho mỗi file vào cấu trúc cây.
 ├─ index.js
-    - - getApp: Lấy instance Firebase app đang sử dụng.
-    - - getMessaging: Lấy dịch vụ Messaging từ ứng dụng Firebase.
-    - - setBackgroundMessageHandler: Đăng ký trình xử lý tin nhắn nhận ở nền/thoát.
-    - - App: Component React Native chính của ứng dụng.
-    - - AppRegistry.registerComponent: Đăng ký component gốc của ứng dụng với React Native để khởi chạy.
+    - - functions: getApp — Lấy instance Firebase App.
+    - - functions: getMessaging — Lấy instance Messaging cho app.
+    - - functions: setBackgroundMessageHandler — Đăng ký hàm xử lý tin nhắn FCM ở chế độ nền/quá trình thoát.
+    - - functions: AppRegistry.registerComponent — Đăng ký component gốc của ứng dụng với AppRegistry.
+    - - components: App — Component chính của ứng dụng.
 ├─ jest.config.js
-    - - functions: Không có hàm được định nghĩa trong file.
-    - - hooks: Không có hook được định nghĩa trong file.
-    - - components: Không có component React Native được định nghĩa trong file.
-    - - classes: Không có lớp Python được định nghĩa trong file.
+    - - functions: Xuất module cấu hình chứa thuộc tính preset với giá trị 'react-native'.
+    - - hooks: không có hooks.
+    - - components: không có components (React/React Native).
+    - - classes: không có classes (Python).
 ├─ metro.config.js
     - - functions
-    -   - getDefaultConfig: Lấy cấu hình Metro mặc định cho dự án React Native.
-    -   - mergeConfig: Hợp nhất cấu hình tùy chỉnh với cấu hình mặc định.
+    -   - getDefaultConfig: Lấy cấu hình Metro mặc định cho dự án ở __dirname.
+    -   - mergeConfig: Hợp nhất cấu hình tùy chỉnh với cấu hình Metro mặc định.
 ├─ package-lock.json
 ├─ package.json
 ├─ src/
@@ -58,60 +60,110 @@
 │   ├─ components/
 │   │   ├─ DataSyncIndicator.tsx
 │   │       - - components
-│   │       -   - DataSyncIndicator: Hiển thị trạng thái đồng bộ dữ liệu và cho phép làm mới bằng nút nhấn.
+│   │       -   - DataSyncIndicator - Thành phần React Native hiển thị trạng thái đồng bộ dữ liệu và cho phép tải lại dữ liệu, có tùy chọn vị trí inline hoặc cố định ở góc màn hình.
+│   │       - 
 │   │       - - hooks
-│   │       -   - useEffect: Theo dõi thay đổi dữ liệu và tự động đồng bộ khi dữ liệu từ cache và không đang đồng bộ.
-│   │       -   - useDeviceGroup: Lấy trạng thái và hàm refreshAllData từ DeviceGroupContext.
+│   │       -   - useDeviceGroup - Hook tùy chỉnh từ DeviceGroupContext cung cấp trạng thái đồng bộ và hàm làm mới dữ liệu.
+│   │       -   - useEffect - Hook React dùng để tự động đồng bộ khi dữ liệu từ cache có sẵn và không đang đồng bộ.
+│   │       - 
 │   │       - - functions
-│   │       -   - renderIcon: Trả về icon phù hợp với trạng thái đồng bộ (đang đồng bộ, từ cache, hoặc đã đồng bộ).
+│   │       -   - renderIcon - Hàm trả về icon tương ứng với trạng thái đồng bộ (đang đồng bộ, có dữ liệu từ cache, hoặc đã xong).
+│   │   ├─ DateRangeFilter.tsx
+│   │       - - functions
+│   │       -   - pad2: chuyển số thành chuỗi 2 chữ số để định dạng ngày tháng
+│   │       -   - ymdToDdMmYy: chuyển đổi ngày từ yyyy-MM-dd sang dd-MM-yy
+│   │       -   - ddMmYyToYmd: chuyển đổi ngày từ dd-MM-yy sang yyyy-MM-dd
+│   │       -   - todayYmd: trả về ngày hôm nay ở định dạng yyyy-MM-dd
+│   │       - 
+│   │       - - hooks
+│   │       -   - useState: quản lý trạng thái mở modal và lưu tạm từ/đến ngày chọn
+│   │       -   - useMemo: tối ưu hóa việc tính toán markedDates cho CalendarList dựa trên tempFrom/tempTo
+│   │       - 
+│   │       - - components
+│   │       -   - DateRangeFilter: component lọc và hiển thị khoảng thời gian bằng calendar và modal
+│   │       - 
+│   │       - - classes
+│   │       -   - (không có)
+│   │   ├─ DateRangeFilterIOSDark.tsx
+│   │       - - DateRangeNativePicker: Thành phần React Native cung cấp chọn ngày theo phạm vi từ-date đến đến-date với presets và hỗ trợ iOS/Android. 
+│   │       - - PresetChip: Nút nhãn preset để nhanh chóng thiết lập phạm vi ngày. 
+│   │       - - pad2: Hàm đệm số ngày thành chuỗi hai chữ số. 
+│   │       - - dmyToDate: Hàm chuyển chuỗi ngày-tháng-năm định dạng dd-mm-yy sang Date. 
+│   │       - - dateToDmy: Hàm chuyển Date sang chuỗi dd-mm-yy. 
+│   │       - - clamp: Hàm giới hạn ngày trong phạm vi minDate maxDate. 
+│   │       - - startOfMonth: Hàm lấy ngày đầu tháng của một ngày cho trước. 
+│   │       - - addDays: Hàm cộng số ngày cho một ngày cho trước. 
+│   │       - - useRef: Giữ tham chiếu cho Animated.Value phục vụ hiệu ứng hiển thị dropdown. 
+│   │       - - useMemo: Tính toán minDate, maxDate và giá trị ngày hiện tại cho picker. 
+│   │       - - useState: Quản lý trạng thái target (from hoặc to), trạng thái hiển thị Android picker, trạng thái mở iOS modal, và draft ngày iOS. 
+│   │       - - useEffect: Quản lý hiệu ứng mở/đóng dropdown bằng hoạt ảnh khi prop open thay đổi. 
+│   │       - - openPicker: Mở picker cho trường từ hoặc đến và chuyển đổi giao diện iOS/Android tương ứng. 
+│   │       - - onAndroidPick: Xử lý kết quả chọn ngày trên Android và áp dụng ngày đã chọn. 
+│   │       - - onClearOne: Xóa giá trị ngày cho một trong hai trường từ/đến. 
+│   │       - - onReset: Đặt lại từ và đến về rỗng và đóng picker. 
+│   │       - - setToday: Thiết lập phạm vi ngày bằng hôm nay cho cả từ và đến. 
+│   │       - - setLastNDays: Thiết lập phạm vi ngày cho N ngày gần nhất đến today. 
+│   │       - - setThisMonth: Thiết lập phạm vi từ đầu tháng đến ngày hôm nay. 
+│   │       - - applyPicked: Áp dụng ngày được chọn cho trường đang active, với hoán đổi tự động nếu từ > đến.
 │   │   ├─ addButton.tsx
-│   │       - - functions: AddButton - Hàm/component React Native nhận onPress và style để hiển thị nút thêm.
-│   │       - - hooks: Không có hook được sử dụng.
-│   │       - - components: AddButton - Nút FAB hiển thị biểu tượng "add" từ Ionicons và xử lý nhấn.
-│   │       - - classes: Không có.
-│   │   └─ backButton.tsx
-│   │       - - components: BackButton - Thành phần React Native hiển thị nút quay lại có icon chevron, nhận onPress và style tùy chọn.
+│   │       - - functions: AddButton function trả về một component React Native hiển thị nút thêm và xử lý onPress.
+│   │       - - components: AddButton component nút FAB cố định ở góc dưới bên phải, hiển thị icon thêm và nhận onPress.
+│   │   ├─ backButton.tsx
+│   │       - - components: BackButton - Nút quay lại hiển thị icon chevron và gọi onPress khi nhấn.
+│   │   └─ ui/
+│   │       ├─ AppButton.tsx
+│   │           - - Component: AppButton - React Native button component with variant styling (primary/danger/secondary) and optional disabled state.
+│   │       ├─ AppCard.tsx
+│   │           - - components: AppCard — Component Card tùy chỉnh cho React Native nhận children và style và render trong một View.
+│   │       ├─ AppScreen.tsx
+│   │           - - components
+│   │           -   - AppScreen: Functional React Native component cung cấp khung màn hình bằng SafeAreaView và container chứa nội dung với padding tùy chỉnh.
+│   │       ├─ BaseModal.tsx
+│   │           - - components: BaseModal - Thành phần modal tùy biến cho React Native, hiển thị nội dung (children) với backdrop mờ và cho phép đóng khi nhấn ngoài, kèm tuỳ chỉnh width và style.
+│   │       ├─ EmptyState.tsx
+│   │           - - functions: EmptyState — hàm component React Native hiển thị tiêu đề (nếu có) và thông báo ở giữa màn hình.
+│   │           - - hooks: Không sử dụng hook trong file.
+│   │           - - components: EmptyState — component UI hiển thị nội dung thông báo và tiêu đề tùy chọn từ props.
+│   │           - - classes: Không có lớp (class) được định nghĩa trong file.
+│   │       ├─ HeaderBar.tsx
+│   │           - - components: HeaderBar — Component React Native hiển thị header gồm hàng trên có nút Back và DataSyncIndicator, hàng dưới hiển thị tiêu đề từ prop title.
+│   │           - - functions: handleBack — Hàm xử lý sự kiện Back, gọi onBack nếu có được truyền vào.
+│   │       └─ ScreenTitle.tsx
+│   │           - - Component: ScreenTitle — Hiển thị tiêu đề màn hình bằng Text với style mặc định và cho phép tùy biến qua prop style.
 │   ├─ config/
 │   │   └─ apiConfig.ts
 │   │       - - functions
-│   │       -   - getApiBase: Lấy api_base từ storage, nếu rỗng dùng DEFAULT_API_BASE.
-│   │       -   - getSheetId: Lấy sheet_id từ storage, nếu rỗng dùng DEFAULT_SHEET_ID.
-│   │       -   - resetConfig: Đặt lại api_base, sheet_id và allData về giá trị mặc định trong storage.
-│   │       -   - setApiBase: Lưu api_base vào storage, với fallback DEFAULT_API_BASE khi giá trị rỗng hoặc null.
-│   │       -   - setSheetId: Lưu sheet_id vào storage, với fallback DEFAULT_SHEET_ID khi giá trị rỗng hoặc null.
+│   │       -   - getApiBase: Lấy API base từ storage MMKV hoặc trả về DEFAULT_API_BASE.
+│   │       -   - getSheetId: Lấy Sheet ID từ storage MMKV hoặc trả về DEFAULT_SHEET_ID.
+│   │       -   - resetConfig: Đặt lại các cấu hình về giá trị mặc định trong MMKV và trả về boolean thành công.
+│   │       -   - setApiBase: Lưu API base vào MMKV; nếu null hoặc rỗng, đặt về DEFAULT_API_BASE.
+│   │       -   - setSheetId: Lưu Sheet ID vào MMKV; nếu null hoặc rỗng, đặt về DEFAULT_SHEET_ID.
 │   ├─ context/
 │   │   ├─ DeviceGroupContext.tsx
-│   │       - - Hooks
-│   │       -   - useDeviceGroup: trả về context DeviceGroupContext và ném lỗi nếu dùng ngoài Provider.
-│   │       - 
-│   │       - - Components
-│   │       -   - DeviceGroupProvider: component React.FC cung cấp DeviceGroupContext và quản lý state đồng bộ dữ liệu.
-│   │       - 
-│   │       - - Functions
-│   │       -   - refreshAllData: hàm bất đồng bộ tải dữ liệu từ API, lưu cache và cập nhật state nội bộ.
-│   │   └─ OtaContext.tsx
-│   │       - - OtaContext: Context lưu trạng thái OTA và hàm bắt đầu tải.  
-│   │       - - OtaProvider: Component provider cho OtaContext, quản lý trạng thái tải và bản build.  
-│   │       - - useOta: Hook để truy cập OtaContext từ các component khác.  
-│   │       - - startDownload: Hàm bắt đầu tải và cài đặt OTA, bỏ qua khi đang tải và cập nhật tiến độ/phiên bản.
+│   │       - - Hook: useDeviceGroup — truy cập và bắt buộc dùng trong DeviceGroupProvider để làm việc với DeviceGroupContext.
+│   │       - - Component: DeviceGroupProvider — cung cấp DeviceGroupContext cho cây React và quản lý trạng thái deviceGroups, isDataFromCache, isSyncing.
+│   │       - - Function: refreshAllData — đồng bộ dữ liệu từ API, cập nhật dữ liệu và trạng thái, lưu dữ liệu vào storage và ghi log.
+│   │   ├─ OtaContext.tsx
+│   │       - - Component: OtaProvider — React component cung cấp OtaContext và quản lý trạng thái OTA.
+│   │       - - Hook: useOta — Custom hook để truy cập OtaContext.
+│   │       - - Function: startDownload — Hàm bắt đầu tải và cài đặt OTA, cập nhật tiến độ và phiên bản.
+│   │   └─ ThemeContext.tsx
+│   │       - - components: ThemeProvider — component React quản lý trạng thái theme và cung cấp ThemeContext cho ứng dụng.
+│   │       - - hooks: useTheme — hook tùy biến để truy cập ThemeContext và đảm bảo dùng trong ThemeProvider.
+│   │       - - functions: setMode, toggleTheme — xử lý cập nhật và lưu trữ chế độ theme.
 │   ├─ generate_logo.py
-│       - - functions: main – điều phối toàn bộ quá trình chạy script: kiểm tra nguồn ảnh, tạo thư mục output, mở và chuẩn hóa ảnh, resize và lưu ic_launcher.png cho từng kích thước đã định.
+│       - - functions
+│       -   - main: Đọc ảnh nguồn, tạo thư mục output và các thư mục con cho từng kích thước, resize ảnh thành các icon Android và lưu vào thư mục tương ứng.
 │   ├─ hooks/
 │   │   └─ useFirebaseNotifications.ts
-│   │       - - Functions: Không có hàm độc lập (ngoài hook export).
-│   │       - - Hooks: useFirebaseNotifications — Thiết lập quyền nhận thông báo, đăng ký topic, lấy token, và xử lý tin nhắn ở foreground để hiển thị thông báo.
-│   │       - - Components: Không có.
-│   │       - - Classes: Không có.
+│   │       - - hooks: useFirebaseNotifications — Thiết lập và xử lý thông báo đẩy Firebase trong ứng dụng (xin quyền, đăng ký topic, lấy token, lắng nghe tin nhắn ở foreground và hiển thị thông báo).
 │   ├─ logo.png
 │   ├─ navigation/
 │   │   └─ AppNavigation.tsx
-│   │       - - Function: AppNavigator — Định nghĩa component điều hướng chính cho ứng dụng bằng NavigationContainer và Stack.Navigator.
-│   │       - - Function: createNativeStackNavigator — Hàm tạo Stack Navigator để điều phối màn hình.
-│   │       - - Component: NavigationContainer — Cung cấp ngữ cảnh điều hướng cho toàn bộ ứng dụng.
-│   │       - - Component: Stack.Navigator — Quản lý danh sách màn hình theo cấu trúc stack.
-│   │       - - Component: Stack.Screen — Định nghĩa một màn hình cụ thể đăng ký trong navigator với tên và component.
-│   │       - - Component: IndexScreen — Màn hình Index được đưa vào navigator.
-│   │       - - Component: Scanner — Màn hình Scanner được đưa vào navigator.
+│   │       - - functions: AppNavigator - Định nghĩa component điều hướng chính sử dụng NavigationContainer và Stack.Navigator.
+│   │       - - hooks: Không có hooks được sử dụng trong file.
+│   │       - - components: AppNavigator - Định nghĩa NavigationContainer và Stack.Navigator chứa các màn hình; IndexScreen - Màn hình Index được đăng ký trong navigator; Scanner - Màn hình Scanner được đăng ký trong navigator.
+│   │       - - classes: Không có.
 │   ├─ output/
 │   │   ├─ mipmap-hdpi/
 │   │   │   └─ ic_launcher.png
@@ -125,159 +177,122 @@
 │   │       └─ ic_launcher.png
 │   ├─ screens/
 │   │   ├─ Devices.tsx
-│   │       - - Functions
-│   │       -   - parseDate: Hàm chuyển đổi chuỗi ngày từ định dạng dd-MM-yy thành ngày Date.
-│   │       - 
-│   │       - - Hooks
-│   │       -   - useDeviceGroup: Lấy danh sách nhóm thiết bị từ DeviceGroupContext.
-│   │       -   - useFocusEffect: Reset trạng thái giao diện khi rời khỏi màn hình Devices.
-│   │       -   - useMemo: Tính toán nhóm được chọn và danh sách thiết bị trong nhóm.
-│   │       -   - useState: Quản lý trạng thái UI như nhóm chọn, modal hiển thị và lịch sử.
-│   │       - 
-│   │       - - Components
-│   │       -   - DevicesScreen: Thành phần màn hình quản lý danh sách nhóm và các modal thiết bị, lịch sử.
-│   │       -   - BackButton: Thành phần tùy chỉnh để quay lại.
-│   │       -   - DataSyncIndicator: Thành phần hiển thị trạng thái đồng bộ dữ liệu.
-│   │       -   - SafeAreaView: Thành phần bố trí giao diện an toàn cho màn hình.
-│   │       -   - View: Thành phần container để bố trí các phần UI.
-│   │       -   - Text: Thành phần hiển thị văn bản.
-│   │       -   - FlatList: Hiển thị danh sách nhóm dưới dạng lưới 2 cột.
-│   │       -   - Modal: Hiển thị hộp thoại cho danh sách thiết bị và lịch sử.
-│   │       -   - ScrollView: Khu vực cuộn cho nội dung trong modal.
-│   │       -   - TouchableOpacity: Nút nhấn cho tương tác (mở nhóm, xem lịch sử, đóng modal).
+│   │       - - parseDate: Chuyển chuỗi ngày dạng "dd-MM-yy" thành đối tượng Date.
+│   │       - - parseDeviceCode: Phân tích mã thiết bị thành group, kind và code.
+│   │       - - highlightText: Sinh và trả về phần văn bản được làm nổi bật theo truy vấn tìm kiếm.
+│   │       - - useMemo: Tối ưu hoá tính toán danh sách nhóm, loại và thiết bị sau lọc.
+│   │       - - useState: Quản lý trạng thái giao diện như nhóm được chọn, modal hiển thị, tìm kiếm và lọc.
+│   │       - - useCallback: Tăn cường hiệu suất cho các hàm callback liên quan đến lifecycle/hiệu ứng.
+│   │       - - useEffect: Điều khiển hoạt ảnh dropdown và reset trạng thái khi rời màn hình.
+│   │       - - useRef: Giữ tham chiếu tới Animated.Value cho hiệu ứng dropdown.
+│   │       - - useFocusEffect: Reset trạng thái UI khi rời khỏi màn hình Devices.
+│   │       - - DevicesScreen: Màn hình hiển thị danh sách nhóm thiết bị với grid và hai modal (thiết bị trong nhóm, lịch sử bảo trì).
 │   │   ├─ History.tsx
-│   │       - - functions: parseDate — Chuyển đổi chuỗi ngày định dạng "dd-MM-yy" thành Date.
-│   │       - - functions: HistoryScreen — Thành phần màn hình hiển thị lịch sử bảo trì và xử lý lựa chọn nhóm.
-│   │       - - hooks: useState — Quản lý trạng thái modalVisible, selectedGroup và historyData.
-│   │       - - hooks: useMemo — Tối ưu danh sách groupNames từ deviceGroups.
-│   │       - - hooks: useDeviceGroup — Truy cập danh sách deviceGroups từ context.
-│   │       - - components: HistoryScreen — Hài hòa giao diện và logic hiển thị lịch sử cho người dùng.
-│   │       - - components: BackButton — Thành phần trở về (nút quay lại) được dùng trong màn hình.
-│   │       - - components: DataSyncIndicator — Thành phần hiển thị trạng thái đồng bộ dữ liệu.
+│   │       - - parseDate: chuyển chuỗi ngày dd-MM-yy thành Date để so sánh thời gian.
+│   │       - - parseDeviceCode: phân tách mã thiết bị thành group, kind, code từ chuỗi như PM5-VFD-61-27002.
+│   │       - - highlightText: ghép nổi bật phần khớp với truy vấn trong chuỗi hiển thị.
+│   │       - - HistoryScreen: màn hình hiển thị lịch sử bảo trì với chọn nhóm, lọc theo thiết bị và ngày, và tìm kiếm.
+│   │       - - useDeviceGroup: lấy danh sách nhóm thiết bị từ context để dựng danh sách nhóm và bảng devices.
+│   │       - - useState: quản lý trạng thái UI như modal chọn nhóm, filter và các filter khác.
+│   │       - - useMemo: tối ưu hóa tính toán và lọc dữ liệu lịch sử theo trạng thái người dùng.
 │   │   ├─ Info.tsx
-│   │       - - Functions
-│   │       -   - InfoScreen: component/function chính để hiển thị màn hình Thông tin với header và danh sách thẻ.
-│   │       - 
-│   │       - - Hooks
-│   │       -   - Không có.
-│   │       - 
-│   │       - - Components
-│   │       -   - BackButton: nút quay về ở góc trái được dùng trong InfoScreen.
-│   │       -   - DataSyncIndicator: chỉ thị đồng bộ dữ liệu ở góc phải được dùng trong InfoScreen.
-│   │       -   - InfoScreen: component chính của màn hình Thông tin. 
-│   │       - 
-│   │       - - Classes
-│   │       -   - Không có.
-│   │   ├─ LoadingScreen.tsx
-│   │       - - Component: LoadingScreen — Màn hình tải dữ liệu, hiển thị trạng thái và tự động điều hướng đến Home khi hoàn tất.
-│   │       - - Hooks:
-│   │       -   - useNavigation — Lấy đối tượng điều hướng để chuyển màn hình.
-│   │       -   - useDeviceGroup — Kết nối với context DeviceGroup để đọc/ghi nhóm thiết bị.
-│   │       -   - useState (status) — Quản lý trạng thái chu trình tải (checking/loadingNew/ready).
-│   │       -   - useState (hasLocalData) — Theo dõi có dữ liệu từ bộ nhớ hay không.
-│   │       -   - useState (totalTable/validTable/errTable) — Quản lý meta dữ liệu từ API.
-│   │       -   - useRef (opacity) — Lưu tham chiếu Animated.Value cho hiệu ứng mờ dần.
-│   │       -   - useRef (timeoutRef) — Lưu tham chiếu timeout để điều khiển chuyển màn hình.
-│   │       -   - useEffect (bootstrap) — Khởi động bootstrap dữ liệu và đồng bộ cache/local storage.
-│   │       -   - useEffect (status ready) — Khi trạng thái ready, kích hoạt mờ dần và điều hướng.
-│   │       - - Functions:
-│   │       -   - fetchAllData — Gọi API lấy toàn bộ dữ liệu, cập nhật cache và context.
-│   │       -   - bootstrap — Khởi động dữ liệu từ local storage hoặc tải dữ liệu mới.
-│   │       -   - renderTitle — Sinh tiêu đề UI dựa trên trạng thái hiện tại.
-│   │   ├─ Scanner.tsx
-│   │       - - useCameraDevice: chọn thiết bị camera phía sau cho quét mã.  
-│   │       - - useCameraPermission: quản lý quyền truy cập camera và yêu cầu khi cần.  
-│   │       - - useCodeScanner: cấu hình quét QR và xử lý khi có mã được quét.  
-│   │       - - useEffect: quản lý các side effect như yêu cầu quyền và đợi camera ổn định.  
-│   │       - - useRef: nắm giữ tham chiếu tới giá trị Animated cho hiệu ứng bắt mã.  
-│   │       - - useState: quản lý nhiều trạng thái như scannedValue, showPopup, flashOn, scanType, deviceGroupName, deviceHistory, scanReady, isCapturing, pendingValue.  
-│   │       - - ScannerScreen: component React Native hiển thị camera, khung quét, và popup kết quả.  
-│   │       - - parseDate: chuyển đổi chuỗi ngày dd-MM-yy thành Date.  
-│   │       - - isProbablyUrl: xác định chuỗi có phải URL hoặc domain hay không.  
-│   │       - - findDeviceInfo: tìm thông tin thiết bị trong deviceGroups dựa trên tên quét.  
-│   │       - - resetPopupState: reset trạng thái popup và trạng thái quét sau khi đóng.  
-│   │       - - processScannedValue: phân loại giá trị quét thành device/url/text rồi hiện popup.  
-│   │       - - handleOpenUrl: mở liên kết đã quét trong WebViewer.  
-│   │       - - renderPopupContent: sinh nội dung popup dựa trên loại quét.
-│   │   ├─ Settings.tsx
-│   │       - - Component: SettingsScreen — màn hình Cài đặt cho API Base URL, Sheet ID và OTA cùng quản lý modal/nhắc nhở. 
-│   │       - - Hook: useState (nhiều biến) — quản lý trạng thái các trường nhập, khóa, modal và OTA. 
-│   │       - - Hook: useEffect — khởi tạo và tải giá trị cấu hình ban đầu từ config. 
-│   │       - - Hook: useOta — tích hợp OTA để theo dõi phiên bản, trạng thái tải và bắt đầu tải. 
-│   │       - - Function: handleSave — lưu API Base URL và Sheet ID, dọn cache khi Sheet ID thay đổi. 
-│   │       - - Function: handleResetToDefault — hiện modal xác nhận đặt lại mặc định. 
-│   │       - - Function: handleConfirmReset — reset cấu hình về mặc định và thông báo 완료. 
-│   │       - - Function: handleGoToLoadingAfterReset — điều hướng đến màn hình Loading sau reset. 
-│   │       - - Function: requestUnlockField — xử lý mở khóa trường hoặc hiển thị cảnh báo trước khi unlock. 
-│   │       - - Function: handleAfterSaveOk — đóng modal lưu thành công và có thể trở về Loading. 
-│   │       - - Function: confirmUnlockDangerField — cấp quyền chỉnh sửa trường đã được xác nhận. 
-│   │       - - Function: cancelUnlockDangerField — hủy bỏ cấp quyền chỉnh sửa. 
-│   │       - - Function: openOtaModal — hiển thị modal OTA với loại, tiêu đề và thông báo tương ứng. 
-│   │       - - Function: handleCheckOta — kiểm tra bản cập nhật OTA và xử lý các trường hợp có/hông có cập nhật. 
-│   │       - - Function: handleConfirmDownloadUpdate — tải và cài đặt OTA hoặc hiển thị lỗi. 
-│   │       - - Function: handleCloseOtaModal — đóng modal OTA. 
-│   │       - - Imported Component: BackButton — nút quay lại màn hình trước. 
-│   │       - - Imported Component: DataSyncIndicator — chỉ báo đồng bộ dữ liệu trong màn hình Cài đặt. 
-│   │       - - Embedded UI Component: TextInput API Base URL — trường nhập API Base URL với tính năng khóa/mở khóa. 
-│   │       - - Embedded UI Component: TextInput Sheet ID — trường nhập Sheet ID với tính năng khóa/mở khóa. 
-│   │       - - Embedded UI Component: OTA progress UI — hiển thị trạng thái và thanh tiến trình tải OTA. 
-│   │       - - Modal: OTA confirmation/error/info dialogs — hiển thị trạng thái và tùy chọn người dùng khi OTA. 
-│   │       - - Modal: Reset confirmation — xác nhận đặt lại cấu hình về mặc định. 
-│   │       - - Modal: Reset thành công — thông báo hoàn tất và yêu cầu tải lại dữ liệu. 
-│   │       - - Modal: Lỗi lưu/khác — thông báo khi lưu thất bại hoặc lỗi xảy ra.
-│   │   ├─ Tools.tsx
-│   │       - - components: ToolsScreen - hiển thị màn hình Tools với icon, tiêu đề và chú thích.
-│   │       - - functions: StyleSheet.create - tạo stylesheet cho ToolsScreen.
-│   │   ├─ WebViewerScreen.tsx
-│   │       - - components: WebViewerScreen — Màn hình hiển thị WebView theo URL và hỗ trợ quay về.
-│   │       - - components: BackButton — Nút quay lại điều khiển navigation.goBack().
-│   │       - - hooks: Không có hook nào được sử dụng trong file.
-│   │       - - functions: Không có hàm độc lập ngoài component.
-│   │       - - classes: Không có lớp Python.
-│   │   └─ index.tsx
-│   │       - - functions
-│   │       -   - triggerTestNotification — Hàm bất đồng bộ phát thông báo thử bằng Notifee và cấp quyền/tạo channel.
-│   │       - - hooks
-│   │       -   - useNavigation — Hook dùng để điều hướng giữa các màn hình.
-│   │       -   - useRef — Hook để tạo và duy trì Animated.Value cho hiệu ứng scale.
 │   │       - - components
-│   │       -   - FeatureTile — Thành phần tile hiển thị chức năng với hiệu ứng nhấn và trạng thái sẵn sàng.
-│   │       -   - IndexScreen — Màn hình chính hiển thị DataSyncIndicator, tiêu đề và danh sách các tile.
+│   │       -   - InfoScreen: Hiển thị màn hình Thông tin với header và danh sách thẻ thông tin
+│   │       -   - AppScreen: Khung bố cục màn hình cho ứng dụng
+│   │       -   - HeaderBar: Thanh tiêu đề với nút quay lại
+│   │   ├─ LoadingScreen.tsx
+│   │       - - Component: LoadingScreen – hiển thị màn hình loading, quản lý trạng thái dữ liệu và điều hướng đến Home khi xong.
+│   │       - - Hook: useState – quản lý trạng thái (status, hasLocalData) và metadata dữ liệu (totalTable, validTable, errTable).
+│   │       - - Hook: useEffect – thực thi bootstrap tải dữ liệu và xử lý chuyển trang khi hoàn tất.
+│   │       - - Hook: useRef – lưu tham chiếu cho Animated.Value và timeout để điều khiển hiệu ứng và dọn dẹp.
+│   │       - - Hook: useNavigation – cung cấp điều hướng để chuyển sang màn hình Home.
+│   │       - - Hook: useDeviceGroup – cập nhật danh sách deviceGroups và trạng thái nguồn dữ liệu (cache hay tải mới).
+│   │       - - Function: fetchAllData – gọi API, phân tích kết quả, cập nhật trạng thái và lưu cache dữ liệu.
+│   │       - - Function: renderTitle – trả về tiêu đề giao diện dựa trên trạng thái và dữ liệu.
+│   │       - - Ghi chú: phần UI và style được dùng để hiển thị trạng thái loading và thông tin meta, không nằm ngoài danh mục trên.
+│   │   ├─ Scanner.tsx
+│   │       - - parseDate: Hàm phân tích chuỗi ngày ở định dạng dd-MM-yy thành đối tượng Date để phục vụ sắp xếp lịch sử.
+│   │       - - isProbablyUrl: Hàm nhận diện chuỗi có thể là URL hoặc tên miền ngắn dựa trên cú pháp và ký tự.
+│   │       - - findDeviceInfo: Hàm duyệt qua danh sách deviceGroups để lấy thông tin nhóm và lịch sử liên quan của một thiết bị.
+│   │       - - resetPopupState: Hàm reset toàn bộ trạng thái popup và các trường liên quan sau khi đóng hoặc kết thúc xử lý.
+│   │       - - processScannedValue: Hàm phân loại giá trị quét thành thiết bị/url/text và kích hoạt popup tương ứng.
+│   │       - - handleOpenUrl: Hàm mở liên kết được quét trong WebViewer.
+│   │       - - ScannerScreen: Component màn hình quét QR với camera, overlay và popup hiển thị kết quả.
+│   │       - - useCameraDevice: Hook lấy thiết bị camera để dùng (ví dụ phía sau).
+│   │       - - useCameraPermission: Hook kiểm tra và yêu cầu quyền truy cập camera.
+│   │       - - useCodeScanner: Hook quét mã QR và kích hoạt chu trình bắt mã.
+│   │   ├─ Settings.tsx
+│   │       - - Component: SettingsScreen — Màn hình Settings hiển thị tùy chọn cấu hình và OTA, điều hướng và hiển thị modals.  
+│   │       - - Hook: useEffect — Khởi tạo và đồng bộ API Base URL và Sheet ID từ cấu hình khi màn hình được mount.  
+│   │       - - Hook: useState (nhóm trạng thái giao diện) — Quản lý các trạng thái input, khóa trường, modal và trạng thái OTA.  
+│   │       - - Hook: useOta — Lấy thông tin OTA và điều khiển quá trình tải cập nhật.  
+│   │       - - Hook: useTheme — Lấy chủ đề giao diện và cho phép chuyển đổi theme.  
+│   │       - - Function: handleSave — Lưu API Base URL và Sheet ID, làm sạch cache nếu sheetId thay đổi, hiển thị kết quả lưu.  
+│   │       - - Function: handleResetToDefault — Mở modal xác nhận đặt lại về mặc định.  
+│   │       - - Function: handleConfirmReset — Đặt lại cấu hình về mặc định và cập nhật trạng thái hiển thị.  
+│   │       - - Function: handleGoToLoadingAfterReset — Điều hướng tới màn hình Loading sau khi reset thành công.  
+│   │       - - Function: requestUnlockField — Yêu cầu mở khóa trường và hiện cảnh báo nếu đang khóa.  
+│   │       - - Function: handleAfterSaveOk — Xử lý sau khi lưu thành công và có thể điều hướng sau lưu.  
+│   │       - - Function: confirmUnlockDangerField — Mật khóa trường được xác nhận mở khóa và đóng modal cảnh báo.  
+│   │       - - Function: cancelUnlockDangerField — Hủy bỏ việc mở khóa và đóng modal cảnh báo.  
+│   │       - - Function: openOtaModal — Mở modal OTA với loại, tiêu đề và thông báo tuỳ biến.  
+│   │       - - Function: handleCheckOta — Kiểm tra cập nhật OTA, xử lý có bản cập nhật mới hoặc lỗi kết nối/HTTP.  
+│   │       - - Function: handleConfirmDownloadUpdate — Bắt đầu tải và cài đặt OTA hoặc hiển thị lỗi khi gặp sự cố.  
+│   │       - - Function: handleCloseOtaModal — Đóng modal OTA.
+│   │   ├─ Tools.tsx
+│   │       - - functions: ToolsScreen là hàm React Native trả về UI màn hình Tools.
+│   │       - - components: ToolsScreen hiển thị icon, tiêu đề và chú thích trên màn hình Tools.
+│   │   ├─ WebViewerScreen.tsx
+│   │       - - components: WebViewerScreen — màn hình React Native hiển thị WebView cho URL từ route và nút quay lại.
+│   │       - - hooks: Không có hook React nào được sử dụng trong file.
+│   │       - - functions: Không có hàm độc lập được định nghĩa (chỉ có component function).
+│   │       - - classes: Không có lớp Python được định nghĩa.
+│   │   └─ index.tsx
+│   │       - - triggerTestNotification: Phát thông báo thử nghiệm bằng Notifee với channel và mức độ HIGH trên Android.
+│   │       - - useNavigation: Hook để điều hướng giữa các màn hình trong component.
+│   │       - - useRef: Hook lưu trữ tham chiếu Animated.Value cho hiệu ứng phóng/thu nhỏ tile.
+│   │       - - FeatureTile: Thành phần tile hiển thị chức năng với icon, tiêu đề, trạng thái sẵn sàng và hiệu ứng nhấn.
+│   │       - - IndexScreen: Màn hình chính hiển thị header và danh sách lưới các tile chức năng.
 │   ├─ services/
 │   │   └─ otaService.ts
-│   │       - - fetchLatestOta: Lấy thông tin OTA mới nhất từ server và trả về OtaInfo hoặc null. 
-│   │       - - isNewerVersion: So sánh phiên bản server và hiện tại để xác định có bản cập nhật mới hay không.
-│   │       - - downloadAndInstallApk: Tải xuống APK OTA, dọn dẹp APK cũ trong Downloads và mở APK bằng FileViewer.
-│   │       - - OtaError: Lớp lỗi tùy biến đại diện cho các loại lỗi OTA (network, http, platform, download, unknown).
+│   │       - - functions
+│   │       -   - fetchLatestOta: Lấy OTA mới nhất từ server, trả về OtaInfo hoặc null.
+│   │       -   - isNewerVersion: So sánh serverVersion và currentVersion để xác định bản cập nhật có mới hay không.
+│   │       -   - downloadAndInstallApk: Tải APK OTA, dọn dẹp APK cũ trong Downloads, lưu file và mở trình cài đặt.
+│   │       - - classes
+│   │       -   - OtaError: Lỗi tùy biến cho OTA với loại lỗi và trạng thái HTTP (nếu có).
+│   ├─ theme/
+│   │   └─ theme.ts
+│   │       - - colors: Định nghĩa bảng màu giao diện cho nền, surface, văn bản và trạng thái.
+│   │       - - spacing: Định nghĩa hệ thống khoảng cách chuẩn cho layout (xs–xl).
+│   │       - - radius: Định nghĩa bán kính bo góc chuẩn cho các thành phần (sm–pill).
 │   ├─ types/
 │   │   ├─ maintenance.ts
-│   │       - - MaintenanceActionType: Định nghĩa tập hợp các loại hành động bảo trì ở dạng chuỗi ký tự (Kiểm tra, Vệ sinh, Sửa chữa, Thay thế, Hiệu chuẩn).
-│   │       - - MaintenanceHistoryItem: Mô hình dữ liệu ghi nhận lịch sử bảo trì cho một thiết bị.
-│   │       - - AddMaintenancePayload: Mô hình dữ liệu payload dùng để thêm một bản ghi bảo trì cho một thiết bị.
+│   │       - - MaintenanceActionType: định nghĩa union type cho các hành động bảo trì (Kiểm tra, Vệ sinh, Sửa chữa, Thay thế, Hiệu chuẩn).
+│   │       - - MaintenanceHistoryItem: định nghĩa interface cho mục lưu trữ lịch sử bảo trì với các trường id, device_id, action_type, action_desc, performed_by, action_date, created_at.
+│   │       - - AddMaintenancePayload: định nghĩa interface cho payload thêm bảo trì cho thiết bị với các trường device_id, action_type, action_desc, performed_by, action_date.
+│   │       - - File chứa định nghĩa kiểu dữ liệu cho bảo trì; không có chức năng (functions/hooks/components/classes).
 │   │   ├─ navigation.ts
-│   │       - - Home: Màn hình chính của ứng dụng.
-│   │       - // Note: The instruction says one-line per item; using a comment-like line may violate. I'll remove the comment line.
-│   │       - 
-│   │       - - Home: Màn hình chính của ứng dụng.
-│   │       - - Scanner: Màn hình quét.
-│   │       - - Devices: Danh sách thiết bị.
-│   │       - - History: Lịch sử cho thiết bị (có deviceId và deviceName).
-│   │       - - Tools: Công cụ.
-│   │       - - Info: Hiển thị thông tin từ URL.
-│   │       - - WebViewer: Xem nội dung từ URL.
-│   │       - - SystemManager: Quản lý hệ thống (id và tên).
-│   │       - - Data: Dữ liệu.
-│   │       - - Settings: Cài đặt.
-│   │       - - Loading: Màn hình tải.
+│   │       - - RootStackParamList là kiểu (type) dùng cho React Navigation, định nghĩa các route và tham số tương ứng.
+│   │       - - Home: route không tham số.
+│   │       - - Scanner: route không tham số.
+│   │       - - Devices: route không tham số.
+│   │       - - History: route có tham số deviceId và deviceName.
+│   │       - - Tools: route không tham số.
+│   │       - - Info: route có tham số url.
+│   │       - - WebViewer: route có tham số url.
+│   │       - - SystemManager: route có tham số id và name.
+│   │       - - Data: route không tham số.
+│   │       - - Settings: route không tham số.
+│   │       - - Loading: route không tham số.
 │   │   └─ react-native-vector-icons.d.ts
-│   │       - - components:
-│   │       -   - Ionicons content component: một component React Native nhận props TextProps cùng name, size, color để hiển thị icon Ionicons.
+│   │       - - Component: Ionicons (default export) - React component type rendering Ionicons, nhận props name, size, color và kế thừa TextProps.
 │   └─ utils/
 │       └─ notifications.ts
-│           - - functions: Định nghĩa các hàm để quản lý kênh thông báo Android và hiển thị thông báo trạng thái máy chủ.
-│           - - hooks: Không có hook trong file.
-│           - - components: Không có component trong file.
-│           - - classes: Không có class trong file.
+│           - - functions
+│           -   - ensureChannel: Đảm bảo channel thông báo Android có id 'server-status-channel' được tạo.
+│           -   - showServerStatusNotification: Hiển thị thông báo server status với tiêu đề và nội dung, dùng channel Android đã được đảm bảo.
+├─ test
 ├─ test.js
-├─ tree
+├─ test2
 └─ tsconfig.json
