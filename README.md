@@ -1,97 +1,79 @@
-This is a new [**React Native**](https://reactnative.dev) project, bootstrapped using [`@react-native-community/cli`](https://github.com/react-native-community/cli).
+# QR3 Mobile App
 
-# Getting Started
+Ung dung React Native cho quan ly va quet QR. Tai lieu nay tap trung vao cach van hanh du an va workflow dua len GitHub.
 
-> **Note**: Make sure you have completed the [Set Up Your Environment](https://reactnative.dev/docs/set-up-your-environment) guide before proceeding.
+## Yeu cau
+- Node.js >= 20
+- Android Studio (Android) hoac Xcode (iOS)
+- JDK va SDK theo huong dan React Native
 
-## Step 1: Start Metro
-
-First, you will need to run **Metro**, the JavaScript build tool for React Native.
-
-To start the Metro dev server, run the following command from the root of your React Native project:
-
+## Cai dat
 ```sh
-# Using npm
+npm install
+```
+
+## Cau hinh
+Du an co su dung `export.py` de tao tom tat cau truc du an. File nay doc khoa tu `.env`.
+
+Tao file `.env` (da bi ignore khi push):
+```env
+OPENAI_API_KEY=your_key_here
+```
+
+## Chay ung dung
+```sh
+# Mo Metro
 npm start
 
-# OR using Yarn
-yarn start
-```
-
-## Step 2: Build and run your app
-
-With Metro running, open a new terminal window/pane from the root of your React Native project, and use one of the following commands to build and run your Android or iOS app:
-
-### Android
-
-```sh
-# Using npm
+# Android
 npm run android
 
-# OR using Yarn
-yarn android
-```
-
-### iOS
-
-For iOS, remember to install CocoaPods dependencies (this only needs to be run on first clone or after updating native deps).
-
-The first time you create a new project, run the Ruby bundler to install CocoaPods itself:
-
-```sh
-bundle install
-```
-
-Then, and every time you update your native dependencies, run:
-
-```sh
-bundle exec pod install
-```
-
-For more information, please visit [CocoaPods Getting Started guide](https://guides.cocoapods.org/using/getting-started.html).
-
-```sh
-# Using npm
+# iOS
 npm run ios
-
-# OR using Yarn
-yarn ios
 ```
 
-If everything is set up correctly, you should see your new app running in the Android Emulator, iOS Simulator, or your connected device.
+## Test va lint
+```sh
+npm test
+npm run test:watch
+npm run test:coverage
+npm run lint
+```
 
-This is one way to run your app — you can also build it directly from Android Studio or Xcode.
+## Cau truc thu muc
+- `App.tsx`: entry point
+- `src/components`: UI components
+- `src/screens`: man hinh chinh
+- `src/navigation`: dieu huong
+- `src/context`: app context (auth, device group, ...)
+- `src/utils`: helper va test
+- `src/config`: config (api, ...)
+- `src/types`: type definitions
+- `__tests__`: test files
+- `android/`, `ios/`: native projects
+- `PROJECT_STRUCTURE_SUMMARY.md`: tom tat cau truc tu `export.py`
 
-## Step 3: Modify your app
+## Workflow GitHub (de dua len repo)
+1. Kiem tra thay doi
+```sh
+git status -sb
+```
 
-Now that you have successfully run the app, let's make changes!
+2. Them file vao stage
+```sh
+git add -A
+```
 
-Open `App.tsx` in your text editor of choice and make some changes. When you save, your app will automatically update and reflect these changes — this is powered by [Fast Refresh](https://reactnative.dev/docs/fast-refresh).
+3. Tao commit
+```sh
+git commit -m "Your message"
+```
 
-When you want to forcefully reload, for example to reset the state of your app, you can perform a full reload:
+4. Day len GitHub
+```sh
+git push origin main
+```
 
-- **Android**: Press the <kbd>R</kbd> key twice or select **"Reload"** from the **Dev Menu**, accessed via <kbd>Ctrl</kbd> + <kbd>M</kbd> (Windows/Linux) or <kbd>Cmd ⌘</kbd> + <kbd>M</kbd> (macOS).
-- **iOS**: Press <kbd>R</kbd> in iOS Simulator.
-
-## Congratulations! :tada:
-
-You've successfully run and modified your React Native App. :partying_face:
-
-### Now what?
-
-- If you want to add this new React Native code to an existing application, check out the [Integration guide](https://reactnative.dev/docs/integration-with-existing-apps).
-- If you're curious to learn more about React Native, check out the [docs](https://reactnative.dev/docs/getting-started).
-
-# Troubleshooting
-
-If you're having issues getting the above steps to work, see the [Troubleshooting](https://reactnative.dev/docs/troubleshooting) page.
-
-# Learn More
-
-To learn more about React Native, take a look at the following resources:
-
-- [React Native Website](https://reactnative.dev) - learn more about React Native.
-- [Getting Started](https://reactnative.dev/docs/environment-setup) - an **overview** of React Native and how setup your environment.
-- [Learn the Basics](https://reactnative.dev/docs/getting-started) - a **guided tour** of the React Native **basics**.
-- [Blog](https://reactnative.dev/blog) - read the latest official React Native **Blog** posts.
-- [`@facebook/react-native`](https://github.com/facebook/react-native) - the Open Source; GitHub **repository** for React Native.
+## Luu y ve secret
+- Khong commit `.env` hoac API key.
+- Neu push bi chan do secret, xoa key khoi code va commit lai.
