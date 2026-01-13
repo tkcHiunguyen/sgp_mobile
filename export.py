@@ -27,7 +27,27 @@ EXCLUDE_FOLDERS = {
 }
 
 OPENAI_MODEL = "gpt-5-nano"
-OPENAI_API_KEY = "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"
+
+
+def load_env(path=".env"):
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            for raw_line in f:
+                line = raw_line.strip()
+                if not line or line.startswith("#") or "=" not in line:
+                    continue
+                key, value = line.split("=", 1)
+                key = key.strip()
+                value = value.strip().strip('"').strip("'")
+                os.environ.setdefault(key, value)
+    except FileNotFoundError:
+        return
+
+
+load_env()
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+if not OPENAI_API_KEY:
+    raise ValueError("Missing OPENAI_API_KEY. Set it in .env or environment variables.")
 # ==========================================
 
 client = OpenAI(api_key=OPENAI_API_KEY)

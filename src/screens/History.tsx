@@ -25,7 +25,6 @@ import { DateRangeNativePicker } from "../components/DateRangeFilterIOSDark";
 
 type Props = NativeStackScreenProps<RootStackParamList, "History">;
 
-// helper: chuyển "dd-MM-yy" -> Date
 const parseDate = (value: string): Date => {
     const [dd, mm, yy] = value.split("-");
     const day = parseInt(dd, 10);

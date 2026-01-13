@@ -14,7 +14,18 @@ import { colors, radius, spacing } from "../../theme/theme";
 
 type Props = {
     visible: boolean;
-    onRequestClose: () => void;
+
+    /**
+     * ✅ API mới: dùng onClose cho thống nhất
+     */
+    onClose?: () => void;
+
+    /**
+     * ✅ Giữ tương thích ngược (code cũ)
+     * - Nếu bạn đang dùng onRequestClose ở chỗ khác vẫn chạy bình thường.
+     */
+    onRequestClose?: () => void;
+
     children: React.ReactNode;
     width?: DimensionValue;
     style?: StyleProp<ViewStyle>;
@@ -22,16 +33,17 @@ type Props = {
 
 export function BaseModal({
     visible,
+    onClose,
     onRequestClose,
     children,
     width = "100%",
     style,
 }: Props) {
-    // ✅ Giữ modal mount để animate khi đóng
     const [mounted, setMounted] = useState(visible);
-
-    // 0 -> 1 khi mở
     const anim = useRef(new Animated.Value(0)).current;
+
+    // ✅ 1 handler duy nhất để đóng
+    const handleClose = onClose || onRequestClose || (() => {});
 
     useEffect(() => {
         if (visible) {
@@ -81,13 +93,13 @@ export function BaseModal({
             visible={mounted}
             transparent
             animationType="none" // ✅ tự animate bằng Animated
-            onRequestClose={onRequestClose}
+            onRequestClose={handleClose} // ✅ Android back
         >
             <Animated.View
                 style={[styles.overlay, { opacity: overlayOpacity }]}
             >
                 {/* Backdrop bắt tap để đóng */}
-                <TouchableWithoutFeedback onPress={onRequestClose}>
+                <TouchableWithoutFeedback onPress={handleClose}>
                     <View style={styles.backdrop} />
                 </TouchableWithoutFeedback>
 

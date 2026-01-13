@@ -1,3 +1,4 @@
+// src/screens/Scanner.tsx (hoặc ScannerScreen.tsx)
 import React, { useEffect, useRef, useState } from "react";
 import {
     StyleSheet,
@@ -7,6 +8,7 @@ import {
     TouchableOpacity,
     ScrollView,
     Animated,
+    Dimensions,
 } from "react-native";
 import {
     Camera,
@@ -22,6 +24,9 @@ import BackButton from "../components/backButton";
 import { useDeviceGroup } from "../context/DeviceGroupContext";
 import { colors } from "../theme/theme";
 
+import { AddHistoryAction } from "../components/maintenance/AddHistoryButton";
+import { getApiBase, getSheetId } from "../config/apiConfig";
+
 type Props = NativeStackScreenProps<RootStackParamList, "Scanner">;
 
 const SCAN_SIZE = 250;
@@ -30,7 +35,7 @@ type ScanType = "device" | "url" | "text" | null;
 
 interface HistoryRow {
     deviceName: string;
-    date: string;
+    date: string; // dd-MM-yy
     content: string;
 }
 
@@ -39,15 +44,27 @@ const parseDate = (value: string): Date => {
     const [dd, mm, yy] = value.split("-");
     const day = parseInt(dd, 10);
     const month = parseInt(mm, 10) - 1;
-    const year = 2000 + parseInt(yy, 10); // "25" -> 2025
+    const year = 2000 + parseInt(yy, 10);
     return new Date(year, month, day);
+};
+
+const parseDeviceCode = (fullCode: string) => {
+    if (!fullCode) return { group: "", kind: "", code: "" };
+
+    const parts = fullCode.split("-");
+    if (parts.length < 2) return { group: "", kind: "", code: fullCode };
+
+    const group = parts[0] || "";
+    const kind = parts[1] || "";
+    const code = parts.slice(2).join("-") || "";
+
+    return { group, kind, code };
 };
 
 // phán đoán có phải URL hay không
 const isProbablyUrl = (value: string): boolean => {
     const trimmed = value.trim();
     if (/^https?:\/\//i.test(trimmed)) return true;
-    // dạng domain ngắn, không có khoảng trắng
     if (!/\s/.test(trimmed) && /[.]/.test(trimmed)) return true;
     return false;
 };
@@ -55,7 +72,8 @@ const isProbablyUrl = (value: string): boolean => {
 export default function ScannerScreen({ navigation }: Props) {
     const device = useCameraDevice("back");
     const { hasPermission, requestPermission } = useCameraPermission();
-    const { deviceGroups } = useDeviceGroup();
+
+    const { deviceGroups, appendHistoryAndSync } = useDeviceGroup();
 
     const [scannedValue, setScannedValue] = useState<string | null>(null);
     const [showPopup, setShowPopup] = useState(false);
@@ -75,13 +93,26 @@ export default function ScannerScreen({ navigation }: Props) {
 
     const scannerActive = true;
 
+    // ✅ FIX: vị trí nút flash tính theo scannerBox (không hard-code bottom)
+    const { height } = Dimensions.get("window");
+    const FLASH_SIZE = 70;
+    const FLASH_GAP = 22;
+
+    const scannerTop = (height - SCAN_SIZE) / 2;
+    const idealFlashTop = scannerTop + SCAN_SIZE + FLASH_GAP;
+
+    // chặn không cho nút xuống quá sát đáy (tránh đụng home bar / gesture)
+    const BOTTOM_SAFE = 24;
+    const maxFlashTop = height - FLASH_SIZE - BOTTOM_SAFE;
+
+    const flashTop = Math.min(idealFlashTop, maxFlashTop);
+
     useEffect(() => {
         (async () => {
             if (!hasPermission) await requestPermission();
         })();
     }, [hasPermission, requestPermission]);
 
-    // Đợi 700ms cho camera ổn định rồi mới cho phép quét
     useEffect(() => {
         const t = setTimeout(() => setScanReady(true), 700);
         return () => clearTimeout(t);
@@ -133,9 +164,7 @@ export default function ScannerScreen({ navigation }: Props) {
         captureAnim.setValue(0);
     };
 
-    // Sau khi animation bắt mã xong mới phân loại & mở popup
     const processScannedValue = (value: string) => {
-        // 1) Ưu tiên check xem có phải tên thiết bị không
         const deviceInfo = findDeviceInfo(value);
         if (deviceInfo) {
             setScannedValue(value);
@@ -146,7 +175,6 @@ export default function ScannerScreen({ navigation }: Props) {
             return;
         }
 
-        // 2) Không phải thiết bị → check URL
         if (isProbablyUrl(value)) {
             setScannedValue(value);
             setScanType("url");
@@ -154,13 +182,11 @@ export default function ScannerScreen({ navigation }: Props) {
             return;
         }
 
-        // 3) Còn lại là text thường
         setScannedValue(value);
         setScanType("text");
         setShowPopup(true);
     };
 
-    // Khi isCapturing = true thì chạy animation 4 góc
     useEffect(() => {
         if (isCapturing && pendingValue) {
             captureAnim.setValue(0);
@@ -176,7 +202,6 @@ export default function ScannerScreen({ navigation }: Props) {
                     useNativeDriver: true,
                 }),
             ]).start(() => {
-                // animation xong mới xử lý logic popup
                 processScannedValue(pendingValue);
                 setIsCapturing(false);
                 setPendingValue(null);
@@ -187,7 +212,6 @@ export default function ScannerScreen({ navigation }: Props) {
     const codeScanner = useCodeScanner({
         codeTypes: ["qr"],
         onCodeScanned: (codes) => {
-            // chưa sẵn sàng, đang popup, đang capture → bỏ qua
             if (!scanReady || showPopup || isCapturing || codes.length === 0)
                 return;
 
@@ -195,7 +219,6 @@ export default function ScannerScreen({ navigation }: Props) {
             const value = raw?.trim();
             if (!value) return;
 
-            // bắt đầu hiệu ứng bắt mã
             setPendingValue(value);
             setIsCapturing(true);
         },
@@ -208,9 +231,7 @@ export default function ScannerScreen({ navigation }: Props) {
         if (!scannedValue) return;
         setShowPopup(false);
         setTimeout(() => {
-            navigation.navigate("WebViewer", {
-                url: scannedValue,
-            });
+            navigation.navigate("WebViewer", { url: scannedValue });
         }, 100);
     };
 
@@ -218,50 +239,137 @@ export default function ScannerScreen({ navigation }: Props) {
         if (!scanType || !scannedValue) return null;
 
         if (scanType === "device") {
-            const [groupCode, deviceCode] = scannedValue.split("_");
+            const deviceName = scannedValue;
+            const groupLabel = deviceGroupName ?? "Không xác định";
+
             return (
                 <>
-                    <Text style={styles.title}>Thiết bị được nhận diện</Text>
-                    <Text style={styles.deviceNamePopup}>
-                        {deviceCode || scannedValue}
-                    </Text>
-                    <Text style={styles.deviceGroupPopup}>
-                        Nhóm: {deviceGroupName || groupCode || "Không xác định"}
-                    </Text>
+                    <View style={styles.popupHeader2}>
+                        <View style={styles.headerLeft}>
+                            <View style={styles.headerIconWrap}>
+                                <Ionicons
+                                    name="hardware-chip-outline"
+                                    size={18}
+                                    color={colors.text}
+                                />
+                            </View>
 
-                    <View style={styles.historyContainer}>
+                            <View style={{ flex: 1 }}>
+                                <Text style={styles.popupTitle2}>
+                                    Thiết bị được nhận diện
+                                </Text>
+
+                                <Text
+                                    style={styles.deviceNameBig}
+                                    numberOfLines={2}
+                                >
+                                    {deviceName}
+                                </Text>
+
+                                <View style={styles.metaRow}>
+                                    <View style={styles.pill}>
+                                        <Ionicons
+                                            name="layers-outline"
+                                            size={14}
+                                            color={colors.text}
+                                        />
+                                        <Text
+                                            style={styles.pillText}
+                                            numberOfLines={1}
+                                        >
+                                            {groupLabel}
+                                        </Text>
+                                    </View>
+
+                                    <View style={styles.badgeCount}>
+                                        <Ionicons
+                                            name="time-outline"
+                                            size={14}
+                                            color={colors.text}
+                                        />
+                                        <Text style={styles.badgeCountText}>
+                                            {deviceHistory.length} lịch sử
+                                        </Text>
+                                    </View>
+                                </View>
+                            </View>
+                        </View>
+
+                        <View style={styles.headerRight}>
+                            <AddHistoryAction
+                                appScriptUrl={getApiBase()}
+                                sheetId={getSheetId()}
+                                sheetName={deviceGroupName ?? ""}
+                                deviceName={deviceName}
+                                iconSize={18}
+                                disabled={!deviceGroupName}
+                                onPosted={async (row) => {
+                                    setDeviceHistory((prev) => {
+                                        const next = [row as any, ...prev];
+                                        return next.sort(
+                                            (a, b) =>
+                                                parseDate(b.date).getTime() -
+                                                parseDate(a.date).getTime()
+                                        );
+                                    });
+
+                                    await appendHistoryAndSync({
+                                        sheetName: deviceGroupName ?? "",
+                                        row,
+                                    });
+                                }}
+                            />
+                        </View>
+                    </View>
+
+                    <View style={styles.historyWrap2}>
                         {deviceHistory.length === 0 ? (
-                            <Text style={styles.noHistoryText}>
-                                Thiết bị này chưa có lịch sử bảo trì.
-                            </Text>
+                            <View style={styles.emptyBox}>
+                                <Ionicons
+                                    name="information-circle-outline"
+                                    size={18}
+                                    color={colors.text}
+                                />
+                                <Text style={styles.emptyText}>
+                                    Thiết bị này chưa có lịch sử bảo trì.
+                                </Text>
+                            </View>
                         ) : (
                             <ScrollView
-                                style={styles.historyScroll}
+                                style={styles.historyScroll2}
                                 showsVerticalScrollIndicator={false}
                             >
                                 {deviceHistory.map((item, index) => (
                                     <View
                                         key={`${item.date}-${index}`}
-                                        style={styles.historyRow}
+                                        style={styles.historyCard}
                                     >
-                                        <Text style={styles.historyDate}>
-                                            {item.date}
-                                        </Text>
-                                        <Text style={styles.historyContent}>
+                                        <View style={styles.historyCardTop}>
+                                            <Ionicons
+                                                name="calendar-outline"
+                                                size={14}
+                                                color={colors.textMuted}
+                                            />
+                                            <Text style={styles.historyDate2}>
+                                                {item.date}
+                                            </Text>
+                                        </View>
+                                        <Text style={styles.historyContent2}>
                                             {item.content}
                                         </Text>
                                     </View>
                                 ))}
+                                <View style={{ height: 6 }} />
                             </ScrollView>
                         )}
                     </View>
 
-                    <View style={styles.singleBtnRow}>
+                    <View style={styles.singleBtnRow2}>
                         <TouchableOpacity
                             style={[
                                 styles.btnBase,
-                                styles.singleBtn,
-                                styles.closeBtn,
+                                styles.singleBtn2,
+                                styles.closeBtn2,
                             ]}
                             onPress={resetPopupState}
                         >
@@ -303,7 +411,6 @@ export default function ScannerScreen({ navigation }: Props) {
             );
         }
 
-        // text thường
         return (
             <>
                 <Text style={styles.title}>Nội dung QR</Text>
@@ -320,7 +427,6 @@ export default function ScannerScreen({ navigation }: Props) {
         );
     };
 
-    // style animation cho 4 góc
     const cornerAnimatedStyle = {
         opacity: captureAnim,
         transform: [
@@ -343,16 +449,13 @@ export default function ScannerScreen({ navigation }: Props) {
                 torch={flashOn ? "on" : "off"}
             />
 
-            {/* Back nổi trên camera (component dùng chung đã chuẩn hóa position) */}
             <BackButton onPress={() => navigation.goBack()} />
 
-            {/* Overlay khung quét */}
             <View style={styles.overlay}>
                 <View style={styles.overlayTop} />
                 <View style={styles.overlayCenter}>
                     <View style={styles.overlaySide} />
                     <View style={styles.scannerBox}>
-                        {/* 4 góc bắt mã */}
                         <Animated.View
                             style={[
                                 styles.corner,
@@ -387,8 +490,12 @@ export default function ScannerScreen({ navigation }: Props) {
                 <View style={styles.overlayBottom} />
             </View>
 
-            {/* Flash toggle */}
-            <TouchableOpacity style={styles.flashBtn} onPress={toggleFlash}>
+            {/* ✅ FIX: đặt theo top động */}
+            <TouchableOpacity
+                style={[styles.flashBtn, { top: flashTop }]}
+                onPress={toggleFlash}
+                activeOpacity={0.85}
+            >
                 <Ionicons
                     name={flashOn ? "flash" : "flash-off"}
                     size={35}
@@ -396,7 +503,6 @@ export default function ScannerScreen({ navigation }: Props) {
                 />
             </TouchableOpacity>
 
-            {/* Popup kết quả */}
             <Modal transparent visible={showPopup} animationType="fade">
                 <View style={styles.modalBackground}>
                     <View style={styles.popup}>{renderPopupContent()}</View>
@@ -445,7 +551,6 @@ const styles = StyleSheet.create({
         position: "relative",
     },
 
-    // 4 góc highlight
     corner: {
         position: "absolute",
         width: 32,
@@ -483,7 +588,6 @@ const styles = StyleSheet.create({
 
     flashBtn: {
         position: "absolute",
-        bottom: 190,
         alignSelf: "center",
         width: 70,
         height: 70,
@@ -491,6 +595,8 @@ const styles = StyleSheet.create({
         backgroundColor: "rgba(0,0,0,0.6)",
         justifyContent: "center",
         alignItems: "center",
+        zIndex: 50,
+        elevation: 50,
     },
 
     modalBackground: {
@@ -499,19 +605,10 @@ const styles = StyleSheet.create({
         alignItems: "center",
         backgroundColor: "rgba(0,0,0,0.5)",
     },
-    popup: {
-        width: "90%",
-        padding: 26,
-        borderRadius: 18,
-        backgroundColor: colors.surface,
-        shadowColor: "#000",
-        shadowOpacity: 0.35,
-        shadowRadius: 12,
-        shadowOffset: { width: 0, height: 6 },
-        elevation: 12,
-        borderWidth: 1,
-        borderColor: colors.primarySoftBorder,
-        maxHeight: "80%",
+    addCornerBtn: {
+        position: "absolute",
+        top: 0,
+        right: 0,
     },
     title: {
         fontSize: 20,
@@ -527,7 +624,6 @@ const styles = StyleSheet.create({
         color: colors.textSoft,
     },
 
-    // BUTTON STYLES
     btnBase: {
         paddingVertical: 14,
         paddingHorizontal: 12,
@@ -569,7 +665,6 @@ const styles = StyleSheet.create({
         textAlign: "center",
     },
 
-    // popup device
     deviceNamePopup: {
         fontSize: 18,
         fontWeight: "800",
@@ -617,5 +712,195 @@ const styles = StyleSheet.create({
         fontSize: 13,
         color: colors.textSoft,
         lineHeight: 18,
+    },
+    popup: {
+        width: "90%",
+        padding: 26,
+        borderRadius: 18,
+        backgroundColor: colors.surface,
+        shadowColor: "#000",
+        shadowOpacity: 0.35,
+        shadowRadius: 12,
+        shadowOffset: { width: 0, height: 6 },
+        elevation: 12,
+        borderWidth: 1,
+        borderColor: colors.primarySoftBorder,
+        maxHeight: "80%",
+        position: "relative",
+        overflow: "visible",
+    },
+
+    popupHeader: {
+        position: "relative",
+        flexDirection: "row",
+        alignItems: "flex-start",
+        marginBottom: 8,
+        zIndex: 50,
+        elevation: 50,
+    },
+
+    popupHeaderText: {
+        flex: 1,
+        paddingRight: 12,
+    },
+
+    popupHeaderAction: {
+        zIndex: 999,
+        elevation: 999,
+        alignSelf: "flex-start",
+    },
+    popupHeader2: {
+        flexDirection: "row",
+        alignItems: "flex-start",
+        justifyContent: "space-between",
+        padding: 14,
+        borderRadius: 16,
+        backgroundColor: "rgba(2,6,23,0.55)",
+        borderWidth: 1,
+        borderColor: "rgba(22,163,74,0.28)",
+        marginBottom: 12,
+    },
+    headerLeft: {
+        flexDirection: "row",
+        flex: 1,
+        paddingRight: 10,
+    },
+    headerRight: {
+        alignItems: "flex-end",
+        justifyContent: "flex-start",
+    },
+    headerIconWrap: {
+        width: 36,
+        height: 36,
+        borderRadius: 12,
+        alignItems: "center",
+        justifyContent: "center",
+        backgroundColor: "rgba(255,255,255,0.06)",
+        borderWidth: 1,
+        borderColor: "rgba(255,255,255,0.10)",
+        marginRight: 10,
+    },
+
+    popupTitle2: {
+        color: colors.textMuted,
+        fontSize: 12,
+        fontWeight: "800",
+        letterSpacing: 0.2,
+    },
+    deviceNameBig: {
+        color: colors.text,
+        fontSize: 18,
+        fontWeight: "900",
+        marginTop: 4,
+        lineHeight: 22,
+    },
+
+    metaRow: {
+        flexDirection: "row",
+        alignItems: "center",
+        flexWrap: "wrap",
+        marginTop: 10,
+    },
+    pill: {
+        flexDirection: "row",
+        alignItems: "center",
+        paddingHorizontal: 10,
+        paddingVertical: 6,
+        borderRadius: 999,
+        backgroundColor: "rgba(22,163,74,0.18)",
+        borderWidth: 1,
+        borderColor: "rgba(22,163,74,0.35)",
+        marginRight: 8,
+        marginBottom: 8,
+    },
+    pillText: {
+        marginLeft: 6,
+        color: colors.text,
+        fontSize: 12,
+        fontWeight: "800",
+    },
+    badgeCount: {
+        flexDirection: "row",
+        alignItems: "center",
+        paddingHorizontal: 10,
+        paddingVertical: 6,
+        borderRadius: 999,
+        backgroundColor: "rgba(255,255,255,0.05)",
+        borderWidth: 1,
+        borderColor: "rgba(255,255,255,0.10)",
+        marginBottom: 8,
+    },
+    badgeCountText: {
+        marginLeft: 6,
+        color: colors.text,
+        fontSize: 12,
+        fontWeight: "800",
+    },
+
+    historyWrap2: {
+        borderRadius: 16,
+        backgroundColor: "rgba(15,23,42,0.35)",
+        borderWidth: 1,
+        borderColor: "rgba(255,255,255,0.08)",
+        padding: 12,
+        marginBottom: 10,
+    },
+    historyScroll2: {
+        maxHeight: 300,
+    },
+
+    emptyBox: {
+        flexDirection: "row",
+        alignItems: "center",
+        paddingVertical: 14,
+        paddingHorizontal: 12,
+        borderRadius: 12,
+        backgroundColor: "rgba(255,255,255,0.04)",
+        borderWidth: 1,
+        borderColor: "rgba(255,255,255,0.08)",
+    },
+    emptyText: {
+        marginLeft: 8,
+        color: colors.textSoft,
+        fontSize: 13,
+        fontWeight: "700",
+    },
+
+    historyCard: {
+        padding: 12,
+        borderRadius: 14,
+        backgroundColor: "rgba(17,24,39,0.65)",
+        borderWidth: 1,
+        borderColor: "rgba(255,255,255,0.08)",
+        marginBottom: 10,
+    },
+    historyCardTop: {
+        flexDirection: "row",
+        alignItems: "center",
+        marginBottom: 8,
+    },
+    historyDate2: {
+        marginLeft: 6,
+        color: colors.textMuted,
+        fontSize: 12,
+        fontWeight: "900",
+    },
+    historyContent2: {
+        color: colors.text,
+        fontSize: 13,
+        fontWeight: "700",
+        lineHeight: 18,
+    },
+
+    singleBtnRow2: {
+        marginTop: 6,
+    },
+    singleBtn2: {
+        alignSelf: "center",
+        width: "70%",
+        marginTop: 2,
+    },
+    closeBtn2: {
+        backgroundColor: colors.danger,
     },
 });

@@ -29,31 +29,42 @@ import { EmptyState } from "../components/ui/EmptyState";
 import { AppButton } from "../components/ui/AppButton";
 import { colors } from "../theme/theme";
 
+import { getSheetId, getApiBase } from "../config/apiConfig";
+import { AddHistoryAction } from "../components/maintenance/AddHistoryButton";
+
 type Props = NativeStackScreenProps<RootStackParamList, "Devices">;
+
+interface DeviceRow {
+    id: string | null;
+    name: string; // PM5-VFD-61-27002
+    type: string; // mô tả
+    freq: string | number | null;
+}
+
+interface HistoryRow {
+    deviceName: string;
+    date: string; // dd-MM-yy
+    content: string;
+}
 
 // helper: parse "dd-MM-yy" -> Date
 const parseDate = (value: string): Date => {
     const [dd, mm, yy] = value.split("-");
     const day = parseInt(dd, 10);
     const month = parseInt(mm, 10) - 1;
-    const year = 2000 + parseInt(yy, 10); // "25" -> 2025
+    const year = 2000 + parseInt(yy, 10);
     return new Date(year, month, day);
 };
 
 const parseDeviceCode = (fullCode: string) => {
-    if (!fullCode) {
-        return { group: "", kind: "", code: "" };
-    }
+    if (!fullCode) return { group: "", kind: "", code: "" };
 
     const parts = fullCode.split("-");
-    if (parts.length < 2) {
-        return { group: "", kind: "", code: fullCode };
-    }
+    if (parts.length < 2) return { group: "", kind: "", code: fullCode };
 
     const group = parts[0] || "";
     const kind = parts[1] || "";
     const code = parts.slice(2).join("-") || "";
-
     return { group, kind, code };
 };
 
@@ -64,20 +75,16 @@ const highlightText = (
     highlightStyle: any
 ) => {
     const q = query.trim();
-    if (!q) {
-        return <Text style={baseStyle}>{text}</Text>;
-    }
+    if (!q) return <Text style={baseStyle}>{text}</Text>;
 
-    const lowerText = text.toLowerCase();
+    const lowerText = (text || "").toLowerCase();
     const lowerQ = q.toLowerCase();
 
     let currentIndex = 0;
     const parts: React.ReactNode[] = [];
     let matchIndex = lowerText.indexOf(lowerQ, currentIndex);
 
-    if (matchIndex === -1) {
-        return <Text style={baseStyle}>{text}</Text>;
-    }
+    if (matchIndex === -1) return <Text style={baseStyle}>{text}</Text>;
 
     while (matchIndex !== -1) {
         if (matchIndex > currentIndex) {
@@ -109,20 +116,8 @@ const highlightText = (
     return <Text>{parts}</Text>;
 };
 
-interface DeviceRow {
-    id: string | null; // có thể rỗng
-    name: string; // Mã thiết bị (PM5-VFD-...)
-    type: string; // Mô tả / Chủng loại
-    freq: string | number | null; // Tần suất bảo trì
-}
-
-interface HistoryRow {
-    deviceName: string;
-    date: string;
-    content: string;
-}
 export default function DevicesScreen({ navigation }: Props) {
-    const { deviceGroups } = useDeviceGroup();
+    const { deviceGroups, appendHistoryAndSync } = useDeviceGroup();
 
     const groups = deviceGroups || [];
 
@@ -137,13 +132,12 @@ export default function DevicesScreen({ navigation }: Props) {
         []
     );
 
-    // state cho tìm kiếm + lọc loại
+    // search + filter
     const [searchText, setSearchText] = useState("");
     const [selectedKinds, setSelectedKinds] = useState<string[]>([]);
     const [kindsInitialized, setKindsInitialized] = useState(false);
     const [filterDropdownOpen, setFilterDropdownOpen] = useState(false);
 
-    // animation cho dropdown
     const dropdownAnim = useRef(new Animated.Value(0)).current;
 
     useEffect(() => {
@@ -157,15 +151,16 @@ export default function DevicesScreen({ navigation }: Props) {
         }
     }, [filterDropdownOpen, dropdownAnim]);
 
-    // Reset state mỗi lần rời khỏi màn Devices
     useFocusEffect(
         useCallback(() => {
             return () => {
                 setSelectedGroup(null);
                 setDeviceModalVisible(false);
+
                 setSelectedDeviceName(null);
                 setHistoryModalVisible(false);
                 setMaintenanceHistory([]);
+
                 setSearchText("");
                 setSelectedKinds([]);
                 setKindsInitialized(false);
@@ -174,7 +169,6 @@ export default function DevicesScreen({ navigation }: Props) {
         }, [])
     );
 
-    // Lấy data group đang chọn
     const selectedGroupData = useMemo(
         () => groups.find((g: any) => g.table === selectedGroup),
         [groups, selectedGroup]
@@ -183,22 +177,15 @@ export default function DevicesScreen({ navigation }: Props) {
     const devicesInGroup: DeviceRow[] =
         (selectedGroupData?.devices?.rows as DeviceRow[]) || [];
 
-    // Tập các loại (kind) phân tích từ mã thiết bị: PM5-VFD-... -> VFD, SOT, ...
     const availableKinds = useMemo(() => {
         const set = new Set<string>();
         devicesInGroup.forEach((dev) => {
             const parsed = parseDeviceCode(dev.name);
-            if (parsed.kind) {
-                set.add(parsed.kind);
-            }
+            if (parsed.kind) set.add(parsed.kind);
         });
-        return Array.from(set).sort(); // sort cho gọn
+        return Array.from(set).sort();
     }, [devicesInGroup]);
 
-    // ✅ Map theo pattern History:
-    // - Khi mở group: mặc định chọn tất cả kinds
-    // - "ALL active" khi selectedKinds === availableKinds
-    // - Nếu selectedKinds rỗng => không hiển thị gì (giống History)
     useEffect(() => {
         if (
             deviceModalVisible &&
@@ -214,20 +201,18 @@ export default function DevicesScreen({ navigation }: Props) {
         availableKinds.length === 0 ||
         selectedKinds.length === availableKinds.length;
 
-    // Lọc theo search + loại (multi-select)
     const filteredDevices = useMemo(() => {
         const q = searchText.trim().toLowerCase();
 
         return devicesInGroup.filter((dev) => {
             const parsed = parseDeviceCode(dev.name);
 
-            // ✅ Pattern giống History:
-            // - Không chọn gì => không hiển thị gì
+            // không chọn gì => không hiển thị gì (khi có kind)
             if (availableKinds.length > 0 && selectedKinds.length === 0) {
                 return false;
             }
 
-            // - Nếu không phải "ALL" thì mới lọc theo kind
+            // lọc theo kind nếu không phải ALL
             if (
                 availableKinds.length > 0 &&
                 !allKindsActive &&
@@ -238,11 +223,19 @@ export default function DevicesScreen({ navigation }: Props) {
 
             if (!q) return true;
 
-            const code = parsed.code.toLowerCase();
-            const name = dev.name.toLowerCase();
+            const code = (parsed.code || "").toLowerCase();
+            const name = (dev.name || "").toLowerCase();
             const type = (dev.type || "").toLowerCase();
+            const kind = (parsed.kind || "").toLowerCase();
+            const group = (parsed.group || "").toLowerCase();
 
-            return name.includes(q) || code.includes(q) || type.includes(q);
+            return (
+                name.includes(q) ||
+                code.includes(q) ||
+                type.includes(q) ||
+                kind.includes(q) ||
+                group.includes(q)
+            );
         });
     }, [
         devicesInGroup,
@@ -255,7 +248,7 @@ export default function DevicesScreen({ navigation }: Props) {
     const handleOpenGroup = (groupName: string) => {
         setSelectedGroup(groupName);
         setDeviceModalVisible(true);
-        // reset filter khi chọn group mới
+
         setSearchText("");
         setSelectedKinds([]);
         setKindsInitialized(false);
@@ -290,24 +283,17 @@ export default function DevicesScreen({ navigation }: Props) {
         setSelectedDeviceName(null);
     };
 
-    // toggle multi-select kind
     const toggleKind = (kind: string) => {
-        setSelectedKinds((prev) => {
-            if (prev.includes(kind)) {
-                return prev.filter((k) => k !== kind);
-            }
-            return [...prev, kind];
-        });
+        setSelectedKinds((prev) =>
+            prev.includes(kind)
+                ? prev.filter((k) => k !== kind)
+                : [...prev, kind]
+        );
     };
 
     const toggleAllKinds = () => {
-        if (allKindsActive) {
-            // đang chọn tất cả -> bỏ hết (giống History)
-            setSelectedKinds([]);
-        } else {
-            // chọn tất cả
-            setSelectedKinds(availableKinds);
-        }
+        if (allKindsActive) setSelectedKinds([]);
+        else setSelectedKinds(availableKinds);
         setKindsInitialized(true);
     };
 
@@ -318,17 +304,13 @@ export default function DevicesScreen({ navigation }: Props) {
 
     const showClearSearch = searchText.trim().length > 0;
 
-    // allKindsActive đã được tính phía trên theo pattern History
-
     return (
         <AppScreen topPadding={0}>
-            {/* HEADER */}
             <HeaderBar
                 title="Danh sách nhóm thiết bị"
                 onBack={() => navigation.goBack()}
             />
 
-            {/* CONTENT */}
             <View style={styles.content}>
                 {groups.length === 0 ? (
                     <EmptyState message="Chưa có nhóm thiết bị. Vui lòng đồng bộ hoặc thêm dữ liệu nhóm thiết bị." />
@@ -346,6 +328,7 @@ export default function DevicesScreen({ navigation }: Props) {
                             <TouchableOpacity
                                 style={styles.cardWrapper}
                                 onPress={() => handleOpenGroup(item.table)}
+                                activeOpacity={0.85}
                             >
                                 <View style={styles.card}>
                                     <Text style={styles.cardText}>
@@ -370,7 +353,7 @@ export default function DevicesScreen({ navigation }: Props) {
 
                 {devicesInGroup.length > 0 ? (
                     <>
-                        {/* Thanh tìm kiếm + lọc */}
+                        {/* SEARCH + FILTER */}
                         <View style={styles.searchFilterRow}>
                             {/* SEARCH */}
                             <View style={styles.searchWrapper}>
@@ -458,6 +441,7 @@ export default function DevicesScreen({ navigation }: Props) {
                                                     styles.filterOptionActive,
                                             ]}
                                             onPress={toggleAllKinds}
+                                            activeOpacity={0.85}
                                         >
                                             <View
                                                 style={styles.filterOptionRow}
@@ -503,6 +487,7 @@ export default function DevicesScreen({ navigation }: Props) {
                                                     onPress={() =>
                                                         toggleKind(kind)
                                                     }
+                                                    activeOpacity={0.85}
                                                 >
                                                     <View
                                                         style={
@@ -514,8 +499,14 @@ export default function DevicesScreen({ navigation }: Props) {
                                                                 styles.filterOptionText
                                                             }
                                                         >
-                                                            {kind}
+                                                            {highlightText(
+                                                                kind,
+                                                                searchText,
+                                                                styles.filterOptionText,
+                                                                styles.highlight
+                                                            )}
                                                         </Text>
+
                                                         <View
                                                             style={[
                                                                 styles.checkbox,
@@ -544,58 +535,121 @@ export default function DevicesScreen({ navigation }: Props) {
                         <ScrollView
                             style={styles.modalScroll}
                             showsVerticalScrollIndicator={false}
+                            keyboardShouldPersistTaps="handled"
                         >
                             {filteredDevices.map((dev, index) => {
                                 const parsed = parseDeviceCode(dev.name);
-                                const displayCode = parsed.code || dev.name;
+                                const codeText = parsed.code || dev.name;
 
                                 return (
                                     <TouchableOpacity
                                         key={`${dev.name}-${index}`}
                                         style={styles.deviceRow}
+                                        activeOpacity={0.85}
                                         onPress={() =>
                                             handleOpenDeviceHistory(dev.name)
                                         }
                                     >
                                         <View style={styles.deviceBlock}>
-                                            {/* Hàng thông tin: tag + code cùng 1 hàng bên trái */}
-                                            <View style={styles.deviceInfoRow}>
+                                            <View style={styles.deviceTopRow}>
+                                                {/* LEFT */}
+                                                <View style={styles.deviceLeft}>
+                                                    <View
+                                                        style={
+                                                            styles.deviceTagGroup
+                                                        }
+                                                    >
+                                                        {!!parsed.group && (
+                                                            <Text
+                                                                style={
+                                                                    styles.deviceTag
+                                                                }
+                                                            >
+                                                                {highlightText(
+                                                                    parsed.group,
+                                                                    searchText,
+                                                                    styles.deviceTag,
+                                                                    styles.highlight
+                                                                )}
+                                                            </Text>
+                                                        )}
+
+                                                        {!!parsed.kind && (
+                                                            <Text
+                                                                style={
+                                                                    styles.deviceTag
+                                                                }
+                                                            >
+                                                                {highlightText(
+                                                                    parsed.kind,
+                                                                    searchText,
+                                                                    styles.deviceTag,
+                                                                    styles.highlight
+                                                                )}
+                                                            </Text>
+                                                        )}
+
+                                                        {/* ✅ CODE: khôi phục highlight */}
+                                                        {highlightText(
+                                                            codeText,
+                                                            searchText,
+                                                            styles.deviceCode,
+                                                            styles.highlight
+                                                        )}
+                                                    </View>
+                                                </View>
+
+                                                {/* RIGHT: + (dùng component bạn đã làm sẵn) */}
                                                 <View
-                                                    style={
-                                                        styles.deviceTagGroup
+                                                    // ✅ chặn onPress của row bị kích hoạt khi bấm nút +
+                                                    onStartShouldSetResponder={() =>
+                                                        true
                                                     }
                                                 >
-                                                    {!!parsed.group && (
-                                                        <Text
-                                                            style={
-                                                                styles.deviceTag
-                                                            }
-                                                        >
-                                                            {parsed.group}
-                                                        </Text>
-                                                    )}
-                                                    {!!parsed.kind && (
-                                                        <Text
-                                                            style={
-                                                                styles.deviceTag
-                                                            }
-                                                        >
-                                                            {parsed.kind}
-                                                        </Text>
-                                                    )}
+                                                    <AddHistoryAction
+                                                        appScriptUrl={getApiBase()}
+                                                        sheetId={getSheetId()}
+                                                        sheetName={
+                                                            selectedGroup ?? ""
+                                                        }
+                                                        deviceName={dev.name}
+                                                        iconSize={18}
+                                                        disabled={
+                                                            !selectedGroup
+                                                        }
+                                                        onPosted={async (
+                                                            row
+                                                        ) => {
+                                                            // ✅ update UI ngay + sync server
+                                                            await appendHistoryAndSync(
+                                                                {
+                                                                    sheetName:
+                                                                        selectedGroup ??
+                                                                        "",
+                                                                    row,
+                                                                }
+                                                            );
 
-                                                    {highlightText(
-                                                        displayCode,
-                                                        searchText,
-                                                        styles.deviceCode,
-                                                        styles.highlight
-                                                    )}
+                                                            // ✅ nếu đang mở lịch sử của đúng thiết bị, prepend cho thấy ngay
+                                                            if (
+                                                                selectedDeviceName ===
+                                                                row.deviceName
+                                                            ) {
+                                                                setMaintenanceHistory(
+                                                                    (prev) => [
+                                                                        row as any,
+                                                                        ...prev,
+                                                                    ]
+                                                                );
+                                                            }
+                                                        }}
+                                                    />
                                                 </View>
                                             </View>
 
-                                            {/* Mô tả thiết bị */}
+                                            {/* DESC: giữ highlight */}
                                             {highlightText(
-                                                dev.type,
+                                                dev.type || "",
                                                 searchText,
                                                 styles.deviceDesc,
                                                 styles.highlight
@@ -620,7 +674,7 @@ export default function DevicesScreen({ navigation }: Props) {
                 />
             </BaseModal>
 
-            {/* MODAL: LỊCH SỬ BẢO TRÌ CỦA TỪNG THIẾT BỊ */}
+            {/* MODAL: LỊCH SỬ BẢO TRÌ */}
             <BaseModal
                 visible={historyModalVisible}
                 onRequestClose={closeHistoryModal}
@@ -677,7 +731,6 @@ const styles = StyleSheet.create({
         paddingTop: 8,
     },
 
-    // Grid nhóm thiết bị
     row: {
         justifyContent: "space-between",
         marginBottom: 16,
@@ -710,7 +763,6 @@ const styles = StyleSheet.create({
         textAlign: "center",
     },
 
-    // Modal chung
     modalTitle: {
         fontSize: 18,
         fontWeight: "800",
@@ -730,15 +782,13 @@ const styles = StyleSheet.create({
         fontSize: 14,
     },
 
-    // ================= SEARCH + FILTER =================
+    // search/filter
     searchFilterRow: {
         flexDirection: "row",
         alignItems: "center",
         marginBottom: 10,
         paddingHorizontal: 8,
     },
-
-    // SEARCH
     searchWrapper: {
         flex: 1,
         marginRight: 8,
@@ -770,7 +820,6 @@ const styles = StyleSheet.create({
         marginLeft: 4,
     },
 
-    // FILTER
     filterWrapper: {
         width: 50,
         justifyContent: "center",
@@ -805,7 +854,6 @@ const styles = StyleSheet.create({
         backgroundColor: "#22C55E",
     },
 
-    // DROPDOWN OVERLAY
     filterDropdown: {
         position: "absolute",
         top: 48,
@@ -819,7 +867,6 @@ const styles = StyleSheet.create({
         elevation: 10,
         paddingVertical: 4,
     },
-
     filterOption: {
         paddingVertical: 6,
         paddingHorizontal: 10,
@@ -856,7 +903,7 @@ const styles = StyleSheet.create({
         color: "#22C55E",
     },
 
-    // DANH SÁCH THIẾT BỊ TRONG NHÓM
+    // devices
     deviceRow: {
         marginBottom: 10,
     },
@@ -868,12 +915,15 @@ const styles = StyleSheet.create({
         paddingHorizontal: 12,
         backgroundColor: colors.surface,
     },
-
-    // Hàng chứa tag + code (kiểu B: tất cả nằm bên trái)
-    deviceInfoRow: {
+    deviceTopRow: {
         flexDirection: "row",
-        alignItems: "center",
+        alignItems: "flex-start",
+        justifyContent: "space-between",
         marginBottom: 6,
+    },
+    deviceLeft: {
+        flex: 1,
+        paddingRight: 10,
     },
     deviceTagGroup: {
         flexDirection: "row",
@@ -906,7 +956,6 @@ const styles = StyleSheet.create({
         lineHeight: 20,
     },
 
-    // highlight search text
     highlight: {
         backgroundColor: "#FACC15",
         color: "#111827",
@@ -914,7 +963,7 @@ const styles = StyleSheet.create({
         overflow: "hidden",
     },
 
-    // LỊCH SỬ BẢO TRÌ THIẾT BỊ
+    // history
     historyItem: {
         flexDirection: "row",
         padding: 10,
@@ -938,10 +987,7 @@ const styles = StyleSheet.create({
         shadowRadius: 6,
         elevation: 3,
     },
-    historyItemRight: {
-        flex: 1,
-        justifyContent: "center",
-    },
+    historyItemRight: { flex: 1, justifyContent: "center" },
     historyDate: {
         color: colors.textAccent,
         fontSize: 13,

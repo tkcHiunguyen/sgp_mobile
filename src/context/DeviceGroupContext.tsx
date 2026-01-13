@@ -15,6 +15,10 @@ interface DeviceGroupContextType {
 
     isSyncing: boolean;
     refreshAllData: () => Promise<void>;
+    appendHistoryAndSync: (args: {
+        sheetName: string; // tên group (ví dụ "PM5")
+        row: { deviceName: string; date: string; content: string };
+    }) => Promise<void>;
 }
 
 const DeviceGroupContext = createContext<DeviceGroupContextType | null>(null);
@@ -40,7 +44,6 @@ export const DeviceGroupProvider: React.FC<{ children: React.ReactNode }> = ({
         if (isSyncing) return;
 
         console.log("🔄 [SYNC] BẮT ĐẦU tải dữ liệu mới...");
-
         const start = Date.now();
 
         try {
@@ -53,36 +56,19 @@ export const DeviceGroupProvider: React.FC<{ children: React.ReactNode }> = ({
                 `${apiBase}?action=getAllData&sheetId=${encodeURIComponent(
                     sheetId
                 )}`,
-                {
-                    method: "GET",
-                }
+                { method: "GET" }
             );
 
             const result = await res.json();
             console.log("📌 [SYNC] Raw result:", result);
 
-            const totalTable = result.totalTable ?? 0;
-            const validTable = result.validTable ?? [];
-            const errTable = result.errTable ?? [];
-
             const allData = result.data ?? [];
 
-            console.log("📌 [SYNC] allData:", allData);
-            console.log("🔎 [SYNC] Meta:", {
-                totalTable,
-                validTable,
-                errTable,
-            });
-
             storage.set(KEY_ALL_DATA, JSON.stringify(allData));
-            // OPTIONAL: lưu meta
-            // storage.set(KEY_TABLE_META, JSON.stringify({ totalTable, validTable, errTable }));
-
             setDeviceGroups(allData);
             setIsDataFromCache(false);
 
-            const ms = Date.now() - start;
-            console.log(`✅ [SYNC] HOÀN TẤT (mất ${ms}ms)`);
+            console.log(`✅ [SYNC] HOÀN TẤT (mất ${Date.now() - start}ms)`);
         } catch (err) {
             console.error("❌ [SYNC] Lỗi khi đồng bộ:", err);
         } finally {
@@ -90,15 +76,54 @@ export const DeviceGroupProvider: React.FC<{ children: React.ReactNode }> = ({
         }
     }, [isSyncing]);
 
+    const appendHistoryAndSync = useCallback(
+        async (args: {
+            sheetName: string;
+            row: { deviceName: string; date: string; content: string };
+        }) => {
+            const { sheetName, row } = args;
+
+            // 1) Update UI ngay lập tức
+            setDeviceGroups((prev) => {
+                const next = prev.map((g) => {
+                    if (g.table !== sheetName) return g;
+
+                    const oldHistoryRows = (g.history?.rows ?? []) as any[];
+
+                    // prepend để thấy ngay dòng mới nhất
+                    const newHistoryRows = [row, ...oldHistoryRows];
+
+                    return {
+                        ...g,
+                        history: {
+                            ...(g.history ?? {
+                                headers: ["deviceName", "date", "content"],
+                            }),
+                            rows: newHistoryRows,
+                        },
+                    };
+                });
+
+                // ✅ cập nhật cache ngay sau khi đã có next
+                // (lưu ý: storage.set nên dùng ngay ở đây vì next đã là mảng mới)
+                storage.set(KEY_ALL_DATA, JSON.stringify(next));
+                return next;
+            });
+
+            // 2) Sync ngay với server để đảm bảo chuẩn (đặc biệt nếu server format ngày khác)
+            await refreshAllData();
+        },
+        [refreshAllData]
+    );
+
     const value: DeviceGroupContextType = {
         deviceGroups,
         setDeviceGroups,
-
         isDataFromCache,
         setIsDataFromCache,
-
         isSyncing,
         refreshAllData,
+        appendHistoryAndSync, // ✅
     };
 
     return (
@@ -107,3 +132,4 @@ export const DeviceGroupProvider: React.FC<{ children: React.ReactNode }> = ({
         </DeviceGroupContext.Provider>
     );
 };
+

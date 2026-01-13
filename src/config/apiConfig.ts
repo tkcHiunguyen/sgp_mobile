@@ -56,4 +56,14 @@ export const setSheetId = (value: string | null) => {
 };
 
 export const API_BASE_URL = "https://sgp.skybot.id.vn/";
-export const VERSION = "1.0.6";
+export const VERSION = "1.0.7";
+// KEY FOR AUTHENTIACTIONS //
+export const AUTH_WEBAPP_URL =
+    "https://script.google.com/macros/s/AKfycby7hdEetvSbbwtuJQiTl0Mp0JP-Jpz1wDn-4Mt5fzDFCah67GxLaU1UMxoqKSEn-Tz5EQ/exec";
+
+export const KEY_AUTH_TOKEN = "auth_token";
+export const KEY_AUTH_EXPIRES_AT = "auth_expiresAt";
+export const KEY_AUTH_USER = "auth_user";
+export const KEY_REMEMBER_ME = "auth_remember_me";
+export const KEY_REMEMBERED_USERNAME = "auth_remembered_username";
+export const KEY_REMEMBERED_PASSWORD = "auth_remembered_password";

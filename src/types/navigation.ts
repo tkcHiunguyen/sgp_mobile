@@ -1,19 +1,30 @@
+// src/types/navigation.ts
+
 export type RootStackParamList = {
+    Loading: undefined;
+
     Home: undefined;
     Scanner: undefined;
     Devices: undefined;
+
     History: {
         deviceId: string;
         deviceName: string;
     };
+
     Tools: undefined;
-    Info: { url: string };
-    WebViewer: { url: string };
-    SystemManager: {
-        id: string;
-        name: string;
+
+    Info: {
+        url: string;
     };
-    Data: undefined;
+
+    WebViewer: {
+        url: string;
+        title?: string;
+    };
+    Me: undefined;
     Settings: undefined;
-    Loading: undefined;
+    Login: { prefillUsername?: string } | undefined;
+    Register: undefined;
+    AdminUsers: undefined;
 };

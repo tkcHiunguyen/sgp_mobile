@@ -1,4 +1,4 @@
-import React, { useRef } from "react";
+import React, { useRef, useMemo } from "react";
 import {
     Animated,
     FlatList,
@@ -11,12 +11,13 @@ import LinearGradient from "react-native-linear-gradient";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import { useNavigation } from "@react-navigation/native";
 import notifee, { AndroidImportance } from "@notifee/react-native";
-
+import { useAuth } from "../context/AuthContext";
 import DataSyncIndicator from "../components/DataSyncIndicator";
 import { AppScreen } from "../components/ui/AppScreen";
 import { ScreenTitle } from "../components/ui/ScreenTitle";
 import { colors } from "../theme/theme";
-
+type FeaturesArray = ReturnType<typeof getFeatures>;
+type FeatureItem = FeaturesArray[number];
 // ====== HÀM TEST THÔNG BÁO ======
 async function triggerTestNotification() {
     await notifee.requestPermission();
@@ -38,66 +39,78 @@ async function triggerTestNotification() {
 }
 
 // ====== DANH SÁCH CHỨC NĂNG ======
-const features = [
-    {
-        id: "scan",
-        title: "Quét mã QR",
-        icon: "qr-code-outline",
-        route: "Scanner",
-        isReady: true,
-    },
-    {
-        id: "device",
-        title: "Quản lý thiết bị",
-        icon: "server-outline",
-        route: "Devices",
-        isReady: true,
-    },
-    {
-        id: "history",
-        title: "Lịch sử",
-        icon: "time-outline",
-        route: "History",
-        isReady: true,
-    },
-    {
-        id: "tools",
-        title: "Công cụ",
-        icon: "construct-outline",
-        route: "Tools",
-        isReady: false,
-    },
-    {
-        id: "info",
-        title: "Thông tin",
-        icon: "information-circle-outline",
-        route: "Info",
-        isReady: true,
-    },
-    {
-        id: "database",
-        title: "Cơ sở dữ liệu",
-        icon: "analytics-outline",
-        route: "Database",
-        isReady: false,
-    },
-    {
-        id: "settings",
-        title: "Cài đặt",
-        icon: "settings-outline",
-        route: "Settings",
-        isReady: true,
-    },
-    // {
-    //     id: "test-noti",
-    //     title: "Test thông báo",
-    //     icon: "notifications-outline",
-    //     route: null,
-    //     isReady: true,
-    // },
-] as const;
+const getFeatures = (isAdmin: boolean) =>
+    [
+        {
+            id: "scan",
+            title: "Quét mã QR",
+            icon: "qr-code-outline",
+            route: "Scanner",
+            isReady: true,
+        },
+        {
+            id: "device",
+            title: "Quản lý thiết bị",
+            icon: "server-outline",
+            route: "Devices",
+            isReady: true,
+        },
+        {
+            id: "history",
+            title: "Lịch sử",
+            icon: "time-outline",
+            route: "History",
+            isReady: true,
+        },
+        {
+            id: "tools",
+            title: "Công cụ",
+            icon: "construct-outline",
+            route: "Tools",
+            isReady: false,
+        },
+        {
+            id: "info",
+            title: "Thông tin",
+            icon: "information-circle-outline",
+            route: "Info",
+            isReady: true,
+        },
+        {
+            id: "database",
+            title: "Cơ sở dữ liệu",
+            icon: "analytics-outline",
+            route: "Database",
+            isReady: false,
+        },
 
-type FeatureItem = (typeof features)[number];
+        ...(isAdmin
+            ? [
+                  {
+                      id: "admin-users",
+                      title: "Quản trị Users",
+                      icon: "people-outline",
+                      route: "AdminUsers",
+                      isReady: true,
+                  },
+              ]
+            : []),
+
+        {
+            id: "settings",
+            title: "Cài đặt",
+            icon: "settings-outline",
+            route: "Settings",
+            isReady: true,
+        },
+        {
+            id: "me",
+            title: "Tài khoản",
+            icon: "person-circle-outline",
+            route: "Me",
+            isReady: true,
+        },
+    ] as const;
 
 function FeatureTile({ item }: { item: FeatureItem }) {
     const navigation = useNavigation<any>();
@@ -124,10 +137,10 @@ function FeatureTile({ item }: { item: FeatureItem }) {
     const handlePress = () => {
         if (!item.isReady) return;
 
-        if (item.id === "test-noti") {
-            triggerTestNotification();
-            return;
-        }
+        // if (item.id === "test-noti") {
+        //     triggerTestNotification();
+        //     return;
+        // }
 
         if (item.route) {
             navigation.navigate(item.route);
@@ -181,9 +194,13 @@ function FeatureTile({ item }: { item: FeatureItem }) {
 }
 
 export default function IndexScreen() {
+    const { user } = useAuth() as any; // bạn chỉnh type nếu AuthContext đã có type
+    const isAdmin = String(user?.role || "").toLowerCase() === "administrator";
+
+    const features = useMemo(() => getFeatures(isAdmin), [isAdmin]);
+
     return (
         <AppScreen topPadding={0}>
-            {/* HEADER: Sync trên, tiêu đề dưới */}
             <View style={styles.header}>
                 <View style={styles.headerTopRow}>
                     <DataSyncIndicator inline />
