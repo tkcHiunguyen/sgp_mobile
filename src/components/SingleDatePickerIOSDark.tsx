@@ -14,6 +14,7 @@ import DateTimePicker, {
 } from "@react-native-community/datetimepicker";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import { colors } from "../theme/theme";
+import { textStyle } from "../theme/typography";
 import { BaseModal } from "./ui/BaseModal";
 
 type Props = {
@@ -334,9 +335,11 @@ const styles = StyleSheet.create({
     },
     dropdownTitle: {
         color: colors.text,
-        fontSize: 13,
-        fontWeight: "900",
-        letterSpacing: 0.2,
+        ...textStyle(13, {
+            weight: "900",
+            lineHeightPreset: "tight",
+            letterSpacing: 0.2,
+        }),
     },
     headerCloseBtn: {
         width: 30,
@@ -359,15 +362,16 @@ const styles = StyleSheet.create({
     },
     label: {
         color: "rgba(229,242,255,0.62)",
-        fontSize: 11,
-        fontWeight: "800",
+        ...textStyle(11, {
+            weight: "800",
+            lineHeightPreset: "tight",
+            letterSpacing: 0.2,
+        }),
         marginBottom: 4,
-        letterSpacing: 0.2,
     },
     value: {
         color: colors.text,
-        fontSize: 13,
-        fontWeight: "900",
+        ...textStyle(13, { weight: "900", lineHeightPreset: "tight" }),
     },
 
     actionsRow: {
@@ -379,13 +383,11 @@ const styles = StyleSheet.create({
     },
     linkPrimary: {
         color: colors.textAccent,
-        fontSize: 12,
-        fontWeight: "900",
+        ...textStyle(12, { weight: "900", lineHeightPreset: "tight" }),
     },
     linkMuted: {
         color: "rgba(229,242,255,0.55)",
-        fontSize: 12,
-        fontWeight: "900",
+        ...textStyle(12, { weight: "900", lineHeightPreset: "tight" }),
     },
 
     iosModalCard: {
@@ -397,8 +399,7 @@ const styles = StyleSheet.create({
     },
     iosModalTitle: {
         color: colors.text,
-        fontSize: 15,
-        fontWeight: "900",
+        ...textStyle(15, { weight: "900", lineHeightPreset: "tight" }),
         textAlign: "center",
         marginBottom: 8,
     },

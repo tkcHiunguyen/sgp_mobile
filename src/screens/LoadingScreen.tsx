@@ -18,6 +18,7 @@ import {
     KEY_ALL_DATA,
 } from "../config/apiConfig";
 import { colors } from "../theme/theme";
+import { textStyle } from "../theme/typography";
 
 type Status = "checking" | "loadingNew" | "ready" | "error";
 
@@ -375,20 +376,19 @@ const styles = StyleSheet.create({
     title: {
         marginTop: 24,
         color: colors.text,
-        fontSize: 18,
-        fontWeight: "700",
+        ...textStyle(18, { weight: "700", lineHeightPreset: "tight" }),
         textAlign: "center",
     },
     subText: {
         marginTop: 8,
         color: colors.textMuted,
-        fontSize: 14,
+        ...textStyle(14),
         textAlign: "center",
     },
     errorText: {
         marginTop: 10,
         color: colors.danger,
-        fontSize: 14,
+        ...textStyle(14),
         textAlign: "center",
         maxWidth: 280,
     },
@@ -403,8 +403,7 @@ const styles = StyleSheet.create({
     },
     primaryButtonText: {
         color: "#FFFFFF",
-        fontSize: 14,
-        fontWeight: "700",
+        ...textStyle(14, { weight: "700", lineHeightPreset: "tight" }),
     },
     secondaryButton: {
         marginTop: 8,
@@ -418,19 +417,18 @@ const styles = StyleSheet.create({
     },
     secondaryButtonText: {
         color: colors.primary,
-        fontSize: 14,
-        fontWeight: "700",
+        ...textStyle(14, { weight: "700", lineHeightPreset: "tight" }),
     },
     metaText: {
         marginTop: 4,
         color: colors.textAccent,
-        fontSize: 13,
+        ...textStyle(13, { lineHeightPreset: "tight" }),
         textAlign: "center",
     },
     metaTextSmall: {
         marginTop: 2,
         color: colors.danger,
-        fontSize: 12,
+        ...textStyle(12, { lineHeightPreset: "tight" }),
         textAlign: "center",
     },
 });

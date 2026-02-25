@@ -5,6 +5,7 @@ import { CalendarList, DateData } from "react-native-calendars";
 
 import { BaseModal } from "./ui/BaseModal";
 import { colors } from "../theme/theme";
+import { textStyle } from "../theme/typography";
 
 type Props = {
     fromDate: string; // dd-MM-yy
@@ -261,8 +262,7 @@ const styles = StyleSheet.create({
     },
 
     title: {
-        fontSize: 16,
-        fontWeight: "700",
+        ...textStyle(16, { weight: "700", lineHeightPreset: "tight" }),
         color: colors.text,
         textAlign: "center",
         marginBottom: 10,
@@ -284,13 +284,12 @@ const styles = StyleSheet.create({
     },
     pillLabel: {
         color: colors.textMuted,
-        fontSize: 11,
+        ...textStyle(11, { lineHeightPreset: "tight" }),
         marginBottom: 4,
     },
     pillValue: {
         color: colors.text,
-        fontSize: 13,
-        fontWeight: "600",
+        ...textStyle(13, { weight: "600", lineHeightPreset: "tight" }),
     },
 
     calendarWrap: {
@@ -310,7 +309,6 @@ const styles = StyleSheet.create({
     },
     actionText: {
         color: colors.textAccent,
-        fontSize: 13,
-        fontWeight: "700",
+        ...textStyle(13, { weight: "700", lineHeightPreset: "tight" }),
     },
 });

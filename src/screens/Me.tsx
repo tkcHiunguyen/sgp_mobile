@@ -22,6 +22,7 @@ import { launchImageLibrary } from "react-native-image-picker";
 import { AppScreen } from "../components/ui/AppScreen";
 import HeaderBar from "../components/ui/HeaderBar";
 import { colors } from "../theme/theme";
+import { textStyle } from "../theme/typography";
 import { useAuth } from "../context/AuthContext";
 import { AUTH_WEBAPP_URL } from "../config/apiConfig";
 
@@ -1127,20 +1128,18 @@ const styles = StyleSheet.create({
     avatarHint: {
         marginTop: 10,
         color: colors.textMuted,
-        fontWeight: "800",
-        fontSize: 12,
+        ...textStyle(12, { weight: "800", lineHeightPreset: "tight" }),
         textAlign: "center",
     },
 
     fullName: {
         color: colors.text,
-        fontSize: 16,
-        fontWeight: "900",
+        ...textStyle(16, { weight: "900", lineHeightPreset: "tight" }),
     },
     username: {
         marginTop: 2,
         color: colors.textMuted,
-        fontWeight: "800",
+        ...textStyle(13, { weight: "800", lineHeightPreset: "tight" }),
     },
     chipRow: {
         marginTop: 8,
@@ -1164,8 +1163,7 @@ const styles = StyleSheet.create({
     },
     chipText: {
         color: colors.text,
-        fontWeight: "900",
-        fontSize: 12,
+        ...textStyle(12, { weight: "900", lineHeightPreset: "tight" }),
     },
 
     metaBlock: {
@@ -1177,12 +1175,11 @@ const styles = StyleSheet.create({
     },
     metaText: {
         color: colors.textMuted,
-        fontWeight: "800",
-        fontSize: 12,
+        ...textStyle(12, { weight: "800", lineHeightPreset: "tight" }),
     },
     metaTextStrong: {
         color: colors.text,
-        fontWeight: "900",
+        ...textStyle(12, { weight: "900", lineHeightPreset: "tight" }),
     },
 
     sectionTitleRow: {
@@ -1192,8 +1189,7 @@ const styles = StyleSheet.create({
     },
     sectionTitle: {
         color: colors.textSoft,
-        fontWeight: "900",
-        fontSize: 13,
+        ...textStyle(13, { weight: "900", lineHeightPreset: "tight" }),
     },
 
     actionGrid: {
@@ -1223,7 +1219,7 @@ const styles = StyleSheet.create({
     actionText: {
         flex: 1,
         color: colors.text,
-        fontWeight: "900",
+        ...textStyle(14, { weight: "900", lineHeightPreset: "tight" }),
     },
 
     logoutCard: {
@@ -1247,20 +1243,18 @@ const styles = StyleSheet.create({
     },
     logoutText: {
         color: colors.text,
-        fontWeight: "900",
-        fontSize: 14,
+        ...textStyle(14, { weight: "900", lineHeightPreset: "tight" }),
     },
     logoutHint: {
         marginTop: 8,
         color: colors.textMuted,
-        fontWeight: "800",
-        fontSize: 12,
+        ...textStyle(12, { weight: "800", lineHeightPreset: "tight" }),
         textAlign: "center",
     },
 
     errText: {
         color: colors.danger,
-        fontWeight: "900",
+        ...textStyle(13, { weight: "900", lineHeightPreset: "tight" }),
         marginTop: 2,
     },
 
@@ -1290,8 +1284,7 @@ const styles = StyleSheet.create({
     },
     pwdTitle: {
         color: colors.text,
-        fontWeight: "900",
-        fontSize: 15,
+        ...textStyle(15, { weight: "900", lineHeightPreset: "tight" }),
     },
     inputRow: {
         flexDirection: "row",
@@ -1307,7 +1300,7 @@ const styles = StyleSheet.create({
     input: {
         flex: 1,
         color: colors.text,
-        fontWeight: "800",
+        ...textStyle(14, { weight: "800", lineHeightPreset: "tight" }),
     },
     pwdActions: {
         marginTop: 8,
@@ -1352,16 +1345,14 @@ const styles = StyleSheet.create({
     },
     confirmTitle: {
         color: colors.text,
-        fontSize: 15,
-        fontWeight: "900",
+        ...textStyle(15, { weight: "900", lineHeightPreset: "tight" }),
         flex: 1,
         minWidth: 0,
     },
 
     confirmMessage: {
         color: colors.textSoft,
-        fontWeight: "700",
-        lineHeight: 20,
+        ...textStyle(13, { weight: "700", lineHeightPreset: "loose" }),
         marginTop: 4,
     },
 
@@ -1382,9 +1373,7 @@ const styles = StyleSheet.create({
     },
     confirmMessageText: {
         color: colors.textSoft,
-        fontWeight: "700",
-        lineHeight: 18,
-        fontSize: 12,
+        ...textStyle(12, { weight: "700", lineHeightPreset: "normal" }),
         flexShrink: 1,
     },
 
@@ -1409,7 +1398,7 @@ const styles = StyleSheet.create({
     },
     btnGhostText: {
         color: colors.text,
-        fontWeight: "900",
+        ...textStyle(14, { weight: "900", lineHeightPreset: "tight" }),
     },
     btnPrimary: {
         backgroundColor: "rgba(59,130,246,0.22)",
@@ -1421,6 +1410,6 @@ const styles = StyleSheet.create({
     },
     btnPrimaryText: {
         color: colors.text,
-        fontWeight: "900",
+        ...textStyle(14, { weight: "900", lineHeightPreset: "tight" }),
     },
 });

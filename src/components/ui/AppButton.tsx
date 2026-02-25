@@ -9,6 +9,7 @@ import {
     ViewStyle,
 } from "react-native";
 import { colors, radius, spacing } from "../../theme/theme";
+import { textStyle } from "../../theme/typography";
 
 type Variant = "primary" | "danger" | "secondary";
 
@@ -66,7 +67,6 @@ const styles = StyleSheet.create({
     },
     text: {
         color: "#F9FAFB",
-        fontSize: 14,
-        fontWeight: "700",
+        ...textStyle(14, { weight: "700", lineHeightPreset: "tight" }),
     },
 });

@@ -40,6 +40,7 @@ import HeaderBar from "../components/ui/HeaderBar";
 import { BaseModal } from "../components/ui/BaseModal";
 import { AppButton } from "../components/ui/AppButton";
 import { colors } from "../theme/theme";
+import { inputMetrics, textStyle } from "../theme/typography";
 import { useTheme } from "../context/ThemeContext";
 import { Switch } from "react-native";
 type Props = NativeStackScreenProps<RootStackParamList, "Settings">;
@@ -736,16 +737,14 @@ const styles = StyleSheet.create({
         elevation: 4,
     },
     cardTitle: {
-        fontSize: 16,
-        fontWeight: "700",
+        ...textStyle(16, { weight: "700", lineHeightPreset: "tight" }),
         color: colors.text,
         marginBottom: 6,
     },
     cardDescription: {
-        fontSize: 13,
+        ...textStyle(13),
         color: colors.textMuted,
         marginBottom: 10,
-        lineHeight: 18,
     },
     inputRow: {
         flexDirection: "row",
@@ -758,9 +757,10 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: "rgba(51,65,85,0.9)",
         paddingHorizontal: 12,
-        paddingVertical: 10,
+        paddingVertical: inputMetrics.paddingVertical,
+        height: inputMetrics.height,
         color: colors.text,
-        fontSize: 14,
+        ...textStyle(14, { lineHeightPreset: "tight" }),
         backgroundColor: colors.background,
     },
     inputDisabled: {
@@ -800,8 +800,7 @@ const styles = StyleSheet.create({
     },
     buttonText: {
         color: "#FFFFFF",
-        fontSize: 14,
-        fontWeight: "700",
+        ...textStyle(14, { weight: "700", lineHeightPreset: "tight" }),
     },
 
     // OTA
@@ -811,12 +810,11 @@ const styles = StyleSheet.create({
         marginTop: 8,
     },
     versionLabel: {
-        fontSize: 12,
+        ...textStyle(12, { lineHeightPreset: "tight" }),
         color: colors.textMuted,
     },
     versionValue: {
-        fontSize: 14,
-        fontWeight: "600",
+        ...textStyle(14, { weight: "600", lineHeightPreset: "tight" }),
         color: colors.text,
         marginTop: 2,
     },
@@ -835,8 +833,7 @@ const styles = StyleSheet.create({
     },
     otaButtonText: {
         color: "#F9FAFB",
-        fontSize: 13,
-        fontWeight: "700",
+        ...textStyle(13, { weight: "700", lineHeightPreset: "tight" }),
     },
 
     // Progress bar
@@ -856,23 +853,21 @@ const styles = StyleSheet.create({
     },
     progressText: {
         marginTop: 4,
-        fontSize: 12,
+        ...textStyle(12, { lineHeightPreset: "tight" }),
         color: colors.textMuted,
         textAlign: "right",
     },
 
     // Modal (chỉ style nội dung, container/overlay đã có BaseModal)
     modalTitle: {
-        fontSize: 18,
-        fontWeight: "800",
+        ...textStyle(18, { weight: "800", lineHeightPreset: "tight" }),
         color: colors.text,
         marginBottom: 10,
         textAlign: "center",
     },
     modalMessage: {
-        fontSize: 14,
+        ...textStyle(14, { lineHeightPreset: "loose" }),
         color: colors.textMuted,
-        lineHeight: 20,
         textAlign: "center",
         marginBottom: 18,
     },
@@ -892,12 +887,11 @@ const styles = StyleSheet.create({
         marginTop: 8,
     },
     themeLabel: {
-        fontSize: 14,
+        ...textStyle(14, { weight: "600", lineHeightPreset: "tight" }),
         color: "#E5F2FF",
-        fontWeight: "600",
     },
     themeHint: {
-        fontSize: 12,
+        ...textStyle(12, { lineHeightPreset: "tight" }),
         color: "#9CA3AF",
         marginTop: 2,
     },

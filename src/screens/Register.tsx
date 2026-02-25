@@ -12,6 +12,8 @@ import {
     TouchableOpacity,
     View,
     TouchableWithoutFeedback,
+    StyleProp,
+    TextStyle,
 } from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
@@ -21,6 +23,7 @@ import { AppScreen } from "../components/ui/AppScreen";
 import BackButton from "../components/backButton";
 import { BaseModal } from "../components/ui/BaseModal";
 import { colors, spacing, radius } from "../theme/theme";
+import { inputMetrics, textStyle } from "../theme/typography";
 import { useAuth } from "../context/AuthContext";
 
 type Props = NativeStackScreenProps<RootStackParamList, "Register">;
@@ -229,6 +232,7 @@ export default function RegisterScreen({ navigation }: Props) {
                                     returnKeyType="next"
                                     autoCapitalize="none"
                                     autoCorrect={false}
+                                    inputStyle={styles.usernameInput}
                                     onSubmitEditing={() =>
                                         fullNameRef.current?.focus()
                                     }
@@ -476,6 +480,7 @@ function Field(props: {
     onSubmitEditing?: () => void;
     // ✅ FIX TS: ref can be null
     refInput?: React.RefObject<TextInput | null>;
+    inputStyle?: StyleProp<TextStyle>;
 }) {
     const {
         label,
@@ -489,6 +494,7 @@ function Field(props: {
         autoCorrect,
         onSubmitEditing,
         refInput,
+        inputStyle,
     } = props;
 
     return (
@@ -510,7 +516,7 @@ function Field(props: {
                     editable={editable}
                     placeholder={placeholder}
                     placeholderTextColor={colors.textMuted}
-                    style={[styles.input, styles.singleLine]}
+                    style={[styles.input, styles.singleLine, inputStyle]}
                     returnKeyType={returnKeyType}
                     autoCapitalize={autoCapitalize || "none"}
                     autoCorrect={autoCorrect ?? false}
@@ -540,16 +546,13 @@ const styles = StyleSheet.create({
     },
     hTitle: {
         color: colors.text,
-        fontSize: 32,
-        fontWeight: "900",
-        letterSpacing: 0.2,
+        ...textStyle(32, { weight: "900", lineHeightPreset: "tight", letterSpacing: 0.2 }),
         textAlign: "center",
     },
     hSub: {
         marginTop: 8,
         color: colors.textMuted,
-        fontSize: 13,
-        lineHeight: 18,
+        ...textStyle(13),
         textAlign: "center",
         maxWidth: 360,
     },
@@ -571,8 +574,7 @@ const styles = StyleSheet.create({
     },
     chipText: {
         color: colors.textSoft,
-        fontSize: 12.5,
-        fontWeight: "800",
+        ...textStyle(12.5, { weight: "800", lineHeightPreset: "tight" }),
         opacity: 0.95,
     },
 
@@ -586,10 +588,8 @@ const styles = StyleSheet.create({
     },
     sectionTitle: {
         color: colors.text,
-        fontWeight: "900",
-        fontSize: 14,
+        ...textStyle(14, { weight: "900", lineHeightPreset: "tight", letterSpacing: 0.2 }),
         marginBottom: 10,
-        letterSpacing: 0.2,
     },
     divider: {
         height: 1,
@@ -603,8 +603,7 @@ const styles = StyleSheet.create({
     },
     label: {
         color: colors.textSoft,
-        fontSize: 13,
-        fontWeight: "700",
+        ...textStyle(13, { weight: "700" }),
     },
 
     inputWrap: {
@@ -620,13 +619,17 @@ const styles = StyleSheet.create({
         flex: 1,
         paddingHorizontal: spacing.sm,
         color: colors.text,
-        fontSize: 15,
+        ...textStyle(15, { lineHeightPreset: "tight" }),
+    },
+    usernameInput: {
+        ...textStyle(17, { weight: "600", lineHeightPreset: "tight" }),
     },
     singleLine: {
-        height: 48,
-        paddingVertical: 0,
-        includeFontPadding: false,
-        textAlignVertical: "center",
+        height: inputMetrics.height,
+        paddingVertical: inputMetrics.paddingVertical,
+        ...(Platform.OS === "android"
+            ? { includeFontPadding: false, textAlignVertical: "center" as const }
+            : null),
     },
     eyeBtn: {
         paddingHorizontal: spacing.md,
@@ -643,9 +646,8 @@ const styles = StyleSheet.create({
     },
     warnText: {
         color: colors.warning,
-        fontSize: 12.5,
+        ...textStyle(12.5, { weight: "700" }),
         flex: 1,
-        fontWeight: "700",
     },
 
     errorBox: {
@@ -676,8 +678,7 @@ const styles = StyleSheet.create({
     },
     primaryBtnText: {
         color: colors.text,
-        fontWeight: "900",
-        fontSize: 16,
+        ...textStyle(16, { weight: "900", lineHeightPreset: "tight" }),
     },
 
     secondaryRow: {
@@ -690,13 +691,11 @@ const styles = StyleSheet.create({
     },
     secondaryText: {
         color: colors.textMuted,
-        fontSize: 13,
-        fontWeight: "600",
+        ...textStyle(13, { weight: "600" }),
     },
     secondaryLink: {
         color: colors.primary,
-        fontSize: 13,
-        fontWeight: "900",
+        ...textStyle(13, { weight: "900" }),
     },
 
     // ===== Modal =====
@@ -721,16 +720,14 @@ const styles = StyleSheet.create({
     },
     modalTitle: {
         color: colors.text,
-        fontSize: 20,
-        fontWeight: "900",
+        ...textStyle(20, { weight: "900", lineHeightPreset: "tight" }),
         textAlign: "center",
     },
     modalDesc: {
         marginTop: 8,
         color: colors.textSoft,
-        fontSize: 13,
+        ...textStyle(13),
         textAlign: "center",
-        lineHeight: 18,
         maxWidth: 320,
         opacity: 0.95,
     },
@@ -749,9 +746,8 @@ const styles = StyleSheet.create({
     },
     modalHintText: {
         color: colors.textMuted,
-        fontSize: 12.5,
+        ...textStyle(12.5),
         flex: 1,
-        lineHeight: 16,
     },
 
     modalBtn: {
@@ -770,13 +766,11 @@ const styles = StyleSheet.create({
     },
     modalBtnText: {
         color: colors.text,
-        fontWeight: "900",
-        fontSize: 15,
+        ...textStyle(15, { weight: "900", lineHeightPreset: "tight" }),
     },
     modalGhostText: {
         color: colors.textSoft,
-        fontWeight: "800",
-        fontSize: 14,
+        ...textStyle(14, { weight: "800", lineHeightPreset: "tight" }),
         opacity: 0.95,
     },
 });

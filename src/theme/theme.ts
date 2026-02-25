@@ -35,3 +35,5 @@ export const radius = {
     lg: 16,
     pill: 999,
 };
+
+export { inputMetrics, lineHeightFor, normalizeWeight, textStyle } from "./typography";

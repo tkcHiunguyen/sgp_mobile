@@ -3,6 +3,7 @@ import { View, Text, StyleSheet } from "react-native";
 import BackButton from "../backButton";
 import DataSyncIndicator from "../DataSyncIndicator";
 import { colors } from "../../theme/theme";
+import { textStyle } from "../../theme/typography";
 
 interface HeaderBarProps {
     title: string;
@@ -64,11 +65,9 @@ const styles = StyleSheet.create({
 
     title: {
         marginTop: 8,
-        fontSize: 22,
-        fontWeight: "900",
+        ...textStyle(22, { weight: "900", lineHeightPreset: "tight", letterSpacing: 0.7 }),
         textAlign: "center",
         color: colors.text,
-        letterSpacing: 0.7,
     },
 });
 
