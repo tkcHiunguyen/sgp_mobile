@@ -18,6 +18,7 @@ import { AppScreen } from "../components/ui/AppScreen";
 import HeaderBar from "../components/ui/HeaderBar";
 import { EmptyState } from "../components/ui/EmptyState";
 import { colors } from "../theme/theme";
+import { textStyle } from "../theme/typography";
 import { useAuth } from "../context/AuthContext";
 import { AUTH_WEBAPP_URL } from "../config/apiConfig";
 
@@ -904,8 +905,7 @@ const styles = StyleSheet.create({
     searchInput: {
         flex: 1,
         color: colors.text,
-        fontSize: 14,
-        fontWeight: "600",
+        ...textStyle(14, { weight: "600", lineHeightPreset: "tight" }),
     },
 
     refreshBtnSm: {
@@ -940,8 +940,7 @@ const styles = StyleSheet.create({
     },
     tabText: {
         color: colors.textMuted,
-        fontWeight: "900",
-        fontSize: 12,
+        ...textStyle(12, { weight: "900", lineHeightPreset: "tight" }),
     },
     tabTextActive: {
         color: colors.text,
@@ -950,7 +949,7 @@ const styles = StyleSheet.create({
     errText: {
         color: colors.danger,
         marginTop: 8,
-        fontWeight: "800",
+        ...textStyle(13, { weight: "800", lineHeightPreset: "tight" }),
     },
 
     card: {
@@ -979,8 +978,7 @@ const styles = StyleSheet.create({
 
     username: {
         color: colors.text,
-        fontSize: 15,
-        fontWeight: "900",
+        ...textStyle(15, { weight: "900", lineHeightPreset: "tight" }),
         maxWidth: "55%",
     },
 
@@ -998,15 +996,14 @@ const styles = StyleSheet.create({
     },
     roleChipInlineText: {
         color: colors.textSoft,
-        fontWeight: "900",
-        fontSize: 12,
+        ...textStyle(12, { weight: "900", lineHeightPreset: "tight" }),
         flexShrink: 1,
     },
 
     meta: {
         marginTop: 4,
         color: colors.textSoft,
-        fontWeight: "700",
+        ...textStyle(13, { weight: "700", lineHeightPreset: "tight" }),
     },
 
     metaRow: {
@@ -1017,8 +1014,7 @@ const styles = StyleSheet.create({
     },
     metaSmall: {
         color: colors.textMuted,
-        fontSize: 12,
-        fontWeight: "700",
+        ...textStyle(12, { weight: "700", lineHeightPreset: "tight" }),
     },
 
     badge: {
@@ -1039,8 +1035,7 @@ const styles = StyleSheet.create({
     },
     badgeText: {
         color: colors.text,
-        fontSize: 12,
-        fontWeight: "900",
+        ...textStyle(12, { weight: "900", lineHeightPreset: "tight" }),
     },
 
     pressedSm: {
@@ -1074,21 +1069,19 @@ const styles = StyleSheet.create({
     },
     roleModalTitle: {
         color: colors.text,
-        fontSize: 15,
-        fontWeight: "900",
+        ...textStyle(15, { weight: "900", lineHeightPreset: "tight" }),
     },
     roleModalSub: {
         marginTop: 6,
         color: colors.textMuted,
-        fontWeight: "700",
+        ...textStyle(13, { weight: "700", lineHeightPreset: "tight" }),
     },
     roleList: {
         marginTop: 10,
     },
     roleGroupTitle: {
         color: colors.textSoft,
-        fontWeight: "900",
-        fontSize: 12,
+        ...textStyle(12, { weight: "900", lineHeightPreset: "tight" }),
         marginBottom: 8,
     },
     roleItem: {
@@ -1106,7 +1099,7 @@ const styles = StyleSheet.create({
     },
     roleItemText: {
         color: colors.text,
-        fontWeight: "800",
+        ...textStyle(14, { weight: "800", lineHeightPreset: "tight" }),
         flex: 1,
     },
 
@@ -1131,14 +1124,12 @@ const styles = StyleSheet.create({
     },
     confirmTitle: {
         color: colors.text,
-        fontSize: 15,
-        fontWeight: "900",
+        ...textStyle(15, { weight: "900", lineHeightPreset: "tight" }),
         flex: 1,
     },
     confirmMessage: {
         color: colors.textSoft,
-        fontWeight: "700",
-        lineHeight: 20,
+        ...textStyle(13, { weight: "700", lineHeightPreset: "loose" }),
         marginTop: 4,
     },
     confirmActions: {
@@ -1162,7 +1153,7 @@ const styles = StyleSheet.create({
     },
     btnGhostText: {
         color: colors.text,
-        fontWeight: "900",
+        ...textStyle(14, { weight: "900", lineHeightPreset: "tight" }),
     },
     btnPrimary: {
         backgroundColor: "rgba(59,130,246,0.22)",
@@ -1174,7 +1165,7 @@ const styles = StyleSheet.create({
     },
     btnPrimaryText: {
         color: colors.text,
-        fontWeight: "900",
+        ...textStyle(14, { weight: "900", lineHeightPreset: "tight" }),
     },
 
     // ===== Session modal =====

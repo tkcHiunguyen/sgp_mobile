@@ -1,6 +1,6 @@
 // src/hooks/useFirebaseNotifications.ts
 import { useEffect } from "react";
-import { getApp } from "@react-native-firebase/app";
+import { getApp, getApps } from "@react-native-firebase/app";
 import {
     AuthorizationStatus,
     getMessaging,
@@ -11,11 +11,18 @@ import {
 } from "@react-native-firebase/messaging";
 import { showServerStatusNotification } from "../utils/notifications";
 
-const app = getApp();
-const messaging = getMessaging(app);
-
 export function useFirebaseNotifications() {
     useEffect(() => {
+        if (getApps().length === 0) {
+            console.warn(
+                "Firebase default app is missing. Skipping notification setup."
+            );
+            return;
+        }
+
+        const app = getApp();
+        const messaging = getMessaging(app);
+
         (async () => {
             // 🔐 Xin quyền
             const authStatus = await requestPermission(messaging);

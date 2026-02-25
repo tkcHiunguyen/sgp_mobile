@@ -2,9 +2,11 @@ import React, { useRef, useMemo } from "react";
 import {
     Animated,
     FlatList,
+    Platform,
     Pressable,
     StyleSheet,
     Text,
+    useWindowDimensions,
     View,
 } from "react-native";
 import LinearGradient from "react-native-linear-gradient";
@@ -16,8 +18,24 @@ import DataSyncIndicator from "../components/DataSyncIndicator";
 import { AppScreen } from "../components/ui/AppScreen";
 import { ScreenTitle } from "../components/ui/ScreenTitle";
 import { colors } from "../theme/theme";
+import { textStyle } from "../theme/typography";
 type FeaturesArray = ReturnType<typeof getFeatures>;
 type FeatureItem = FeaturesArray[number];
+const IOS_MENU_CENTER_OFFSET = Platform.OS === "ios" ? -11 : 0;
+
+const getResponsiveLayout = (width: number) => {
+    const horizontalPadding = width < 380 ? 12 : 20;
+    const columnGap = width < 380 ? 12 : 16;
+
+    const numColumns = width >= 960 ? 4 : width >= 640 ? 3 : 2;
+    const maxGridWidth = Math.max(0, width - horizontalPadding * 2);
+    const tileWidth = Math.floor(
+        (maxGridWidth - columnGap * (numColumns - 1)) / numColumns,
+    );
+    const gridWidth = tileWidth * numColumns + columnGap * (numColumns - 1);
+
+    return { horizontalPadding, columnGap, numColumns, tileWidth, gridWidth };
+};
 // ====== HÀM TEST THÔNG BÁO ======
 async function triggerTestNotification() {
     await notifee.requestPermission();
@@ -112,7 +130,13 @@ const getFeatures = (isAdmin: boolean) =>
         },
     ] as const;
 
-function FeatureTile({ item }: { item: FeatureItem }) {
+function FeatureTile({
+    item,
+    tileWidth,
+}: {
+    item: FeatureItem;
+    tileWidth: number;
+}) {
     const navigation = useNavigation<any>();
     const scale = useRef(new Animated.Value(1)).current;
 
@@ -158,7 +182,7 @@ function FeatureTile({ item }: { item: FeatureItem }) {
             onPressIn={handlePressIn}
             onPressOut={handlePressOut}
             onPress={handlePress}
-            style={styles.tileWrapper}
+            style={[styles.tileWrapper, { width: tileWidth }]}
             disabled={!item.isReady}
         >
             <Animated.View style={{ transform: [{ scale }] }}>
@@ -174,19 +198,36 @@ function FeatureTile({ item }: { item: FeatureItem }) {
                         },
                     ]}
                 >
-                    <View style={styles.iconContainer}>
-                        <Ionicons
-                            name={item.icon}
-                            size={26}
-                            color={iconColor}
-                        />
+                    <View style={styles.tileContent}>
+                        <View style={styles.iconContainer}>
+                            <Ionicons
+                                name={item.icon}
+                                size={26}
+                                color={iconColor}
+                                style={styles.tileIcon}
+                            />
+                        </View>
+
+                        <View style={styles.tileLabelBox}>
+                            <Text
+                                numberOfLines={2}
+                                style={[styles.tileText, { color: textColor }]}
+                            >
+                                {item.title}
+                            </Text>
+                        </View>
+
+                        <View style={styles.tileBadgeBox}>
+                            {!item.isReady && (
+                                <Text
+                                    numberOfLines={1}
+                                    style={styles.badgeText}
+                                >
+                                    Sắp ra mắt
+                                </Text>
+                            )}
+                        </View>
                     </View>
-                    <Text style={[styles.tileText, { color: textColor }]}>
-                        {item.title}
-                    </Text>
-                    {!item.isReady && (
-                        <Text style={styles.badgeText}>Sắp ra mắt</Text>
-                    )}
                 </LinearGradient>
             </Animated.View>
         </Pressable>
@@ -196,12 +237,20 @@ function FeatureTile({ item }: { item: FeatureItem }) {
 export default function IndexScreen() {
     const { user } = useAuth() as any; // bạn chỉnh type nếu AuthContext đã có type
     const isAdmin = String(user?.role || "").toLowerCase() === "administrator";
+    const { width } = useWindowDimensions();
 
     const features = useMemo(() => getFeatures(isAdmin), [isAdmin]);
+    const { horizontalPadding, columnGap, numColumns, tileWidth, gridWidth } =
+        useMemo(() => getResponsiveLayout(width), [width]);
 
     return (
         <AppScreen topPadding={0}>
-            <View style={styles.header}>
+            <View
+                style={[
+                    styles.header,
+                    { paddingHorizontal: horizontalPadding },
+                ]}
+            >
                 <View style={styles.headerTopRow}>
                     <DataSyncIndicator inline />
                 </View>
@@ -209,12 +258,27 @@ export default function IndexScreen() {
             </View>
 
             <FlatList
+                key={`menu-grid-${numColumns}`}
                 data={features}
-                renderItem={({ item }) => <FeatureTile item={item} />}
+                renderItem={({ item }) => (
+                    <FeatureTile item={item} tileWidth={tileWidth} />
+                )}
                 keyExtractor={(item) => item.id}
-                numColumns={2}
-                columnWrapperStyle={styles.row}
-                contentContainerStyle={styles.listContent}
+                numColumns={numColumns}
+                columnWrapperStyle={[
+                    styles.row,
+                    {
+                        width: gridWidth,
+                        marginBottom: columnGap,
+                        columnGap,
+                    },
+                ]}
+                contentContainerStyle={[
+                    styles.listContent,
+                    {
+                        paddingHorizontal: horizontalPadding,
+                    },
+                ]}
                 showsVerticalScrollIndicator={false}
             />
         </AppScreen>
@@ -223,7 +287,6 @@ export default function IndexScreen() {
 
 const styles = StyleSheet.create({
     header: {
-        paddingHorizontal: 20,
         paddingTop: 8,
         marginBottom: 8,
     },
@@ -235,47 +298,81 @@ const styles = StyleSheet.create({
     },
 
     listContent: {
-        paddingHorizontal: 20,
         paddingBottom: 80,
         paddingTop: 4,
+        alignItems: "center",
     },
     row: {
-        justifyContent: "space-between",
-        marginBottom: 18,
+        justifyContent: "flex-start",
     },
     tileWrapper: {
-        flexBasis: "48%",
+        minWidth: 0,
     },
     tile: {
-        minHeight: 120,
+        minHeight: 136,
         borderRadius: 18,
         justifyContent: "center",
-        alignItems: "center",
+        alignItems: "stretch",
         shadowColor: "#1D4ED8",
         shadowOpacity: 0.22,
         shadowRadius: 10,
         elevation: 5,
         borderWidth: 1,
-        paddingVertical: 18,
+        paddingVertical: 12,
         paddingHorizontal: 10,
     },
+    tileContent: {
+        flex: 1,
+        width: "100%",
+        alignItems: "center",
+        justifyContent: "center",
+    },
     iconContainer: {
+        position: "relative",
         backgroundColor: "rgba(37,99,235,0.12)",
-        padding: 10,
+        width: 48,
+        height: 48,
         borderRadius: 14,
+        alignItems: "center",
+        justifyContent: "center",
         marginBottom: 8,
         borderWidth: 1,
         borderColor: "rgba(59,130,246,0.4)",
+        transform: [{ translateX: IOS_MENU_CENTER_OFFSET }],
+    },
+    tileIcon: {
+        position: "absolute",
+        left: "50%",
+        top: "50%",
+        marginLeft: -13,
+        marginTop: -13,
+    },
+    tileLabelBox: {
+        minHeight: 38,
+        width: "100%",
+        justifyContent: "center",
+        alignItems: "center",
+        marginTop: 2,
+        transform: [{ translateX: IOS_MENU_CENTER_OFFSET }],
     },
     tileText: {
-        fontSize: 14,
-        fontWeight: "700",
-        letterSpacing: 0.4,
+        ...textStyle(14, {
+            weight: "700",
+            lineHeightPreset: "tight",
+            letterSpacing: 0.4,
+        }),
         textAlign: "center",
     },
+    tileBadgeBox: {
+        minHeight: 16,
+        marginTop: 2,
+        width: "100%",
+        alignItems: "center",
+        justifyContent: "center",
+        transform: [{ translateX: IOS_MENU_CENTER_OFFSET }],
+    },
     badgeText: {
-        marginTop: 4,
-        fontSize: 11,
+        ...textStyle(11, { lineHeightPreset: "tight" }),
         color: "#FBBF24",
     },
 });

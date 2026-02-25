@@ -2,6 +2,7 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { colors, spacing } from "../../theme/theme";
+import { textStyle } from "../../theme/typography";
 
 type Props = {
     message: string;
@@ -26,15 +27,14 @@ const styles = StyleSheet.create({
     },
     title: {
         color: colors.text,
-        fontSize: 16,
-        fontWeight: "700",
+        ...textStyle(16, { weight: "700", lineHeightPreset: "tight" }),
         marginBottom: 4,
         textAlign: "center",
     },
     message: {
         marginTop: 4,
         color: colors.textMuted,
-        fontSize: 13,
+        ...textStyle(13),
         textAlign: "center",
     },
 });

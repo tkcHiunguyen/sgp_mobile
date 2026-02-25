@@ -28,6 +28,7 @@ import { BaseModal } from "../components/ui/BaseModal";
 import { EmptyState } from "../components/ui/EmptyState";
 import { AppButton } from "../components/ui/AppButton";
 import { colors } from "../theme/theme";
+import { textStyle } from "../theme/typography";
 
 import { getSheetId, getApiBase } from "../config/apiConfig";
 import { AddHistoryAction } from "../components/maintenance/AddHistoryButton";
@@ -127,7 +128,7 @@ export default function DevicesScreen({ navigation }: Props) {
     const [selectedDeviceName, setSelectedDeviceName] = useState<string | null>(
         null
     );
-    const [historyModalVisible, setHistoryModalVisible] = useState(false);
+    const [showDeviceHistory, setShowDeviceHistory] = useState(false);
     const [maintenanceHistory, setMaintenanceHistory] = useState<HistoryRow[]>(
         []
     );
@@ -139,7 +140,6 @@ export default function DevicesScreen({ navigation }: Props) {
     const [filterDropdownOpen, setFilterDropdownOpen] = useState(false);
 
     const dropdownAnim = useRef(new Animated.Value(0)).current;
-
     useEffect(() => {
         if (filterDropdownOpen) {
             dropdownAnim.setValue(0);
@@ -158,7 +158,7 @@ export default function DevicesScreen({ navigation }: Props) {
                 setDeviceModalVisible(false);
 
                 setSelectedDeviceName(null);
-                setHistoryModalVisible(false);
+                setShowDeviceHistory(false);
                 setMaintenanceHistory([]);
 
                 setSearchText("");
@@ -253,15 +253,19 @@ export default function DevicesScreen({ navigation }: Props) {
         setSelectedKinds([]);
         setKindsInitialized(false);
         setFilterDropdownOpen(false);
+        setSelectedDeviceName(null);
+        setMaintenanceHistory([]);
+        setShowDeviceHistory(false);
     };
 
     const handleOpenDeviceHistory = (deviceCode: string) => {
-        if (!selectedGroupData || !selectedGroupData.history) return;
-
+        const normalizedDeviceCode = (deviceCode || "").trim().toLowerCase();
         const allHistory: HistoryRow[] =
-            (selectedGroupData.history.rows as HistoryRow[]) || [];
+            (selectedGroupData?.history?.rows as HistoryRow[]) || [];
 
-        const filtered = allHistory.filter((h) => h.deviceName === deviceCode);
+        const filtered = allHistory.filter(
+            (h) => (h.deviceName || "").trim().toLowerCase() === normalizedDeviceCode
+        );
 
         const sorted = [...filtered].sort(
             (a, b) => parseDate(b.date).getTime() - parseDate(a.date).getTime()
@@ -269,18 +273,30 @@ export default function DevicesScreen({ navigation }: Props) {
 
         setSelectedDeviceName(deviceCode);
         setMaintenanceHistory(sorted);
-        setHistoryModalVisible(true);
+        setFilterDropdownOpen(false);
+        setShowDeviceHistory(true);
     };
 
     const closeDeviceModal = () => {
         setDeviceModalVisible(false);
         setFilterDropdownOpen(false);
+        setSelectedDeviceName(null);
+        setMaintenanceHistory([]);
+        setShowDeviceHistory(false);
     };
 
-    const closeHistoryModal = () => {
-        setHistoryModalVisible(false);
+    const closeHistoryView = () => {
+        setShowDeviceHistory(false);
         setMaintenanceHistory([]);
         setSelectedDeviceName(null);
+    };
+
+    const handleDeviceModalRequestClose = () => {
+        if (showDeviceHistory) {
+            closeHistoryView();
+            return;
+        }
+        closeDeviceModal();
     };
 
     const toggleKind = (kind: string) => {
@@ -344,177 +360,167 @@ export default function DevicesScreen({ navigation }: Props) {
             {/* MODAL: DANH SÁCH THIẾT BỊ TRONG NHÓM */}
             <BaseModal
                 visible={deviceModalVisible}
-                onRequestClose={closeDeviceModal}
-                width="96%"
+                onRequestClose={handleDeviceModalRequestClose}
+                width={showDeviceHistory ? "90%" : "96%"}
             >
-                <Text style={styles.modalTitle}>
-                    Thiết bị trong nhóm {selectedGroup}
-                </Text>
-
-                {devicesInGroup.length > 0 ? (
+                {showDeviceHistory ? (
                     <>
-                        {/* SEARCH + FILTER */}
-                        <View style={styles.searchFilterRow}>
-                            {/* SEARCH */}
-                            <View style={styles.searchWrapper}>
-                                <View style={styles.searchInputRow}>
-                                    <Ionicons
-                                        name="search-outline"
-                                        style={styles.searchIcon}
-                                    />
-                                    <TextInput
-                                        style={styles.searchInput}
-                                        placeholder="Tìm kiếm"
-                                        placeholderTextColor={colors.textMuted}
-                                        value={searchText}
-                                        onChangeText={setSearchText}
-                                    />
-                                    {showClearSearch && (
-                                        <TouchableOpacity
-                                            onPress={() => setSearchText("")}
-                                            hitSlop={{
-                                                top: 8,
-                                                bottom: 8,
-                                                left: 8,
-                                                right: 8,
-                                            }}
-                                        >
-                                            <Ionicons
-                                                name="close-circle"
-                                                style={styles.clearIcon}
-                                            />
-                                        </TouchableOpacity>
-                                    )}
-                                </View>
-                            </View>
+                        <Text style={styles.modalTitle}>
+                            Lịch sử bảo trì của {selectedDeviceName}
+                        </Text>
 
-                            {/* FILTER */}
-                            <View style={styles.filterWrapper}>
-                                <TouchableOpacity
-                                    style={[
-                                        styles.filterBox,
-                                        hasFilter && styles.filterBoxActive,
-                                    ]}
-                                    onPress={() =>
-                                        setFilterDropdownOpen(
-                                            !filterDropdownOpen
-                                        )
-                                    }
-                                    activeOpacity={0.7}
-                                >
-                                    <Ionicons
-                                        name="filter-outline"
-                                        style={styles.filterIcon}
-                                    />
-                                    {hasFilter && (
-                                        <View style={styles.filterDot} />
-                                    )}
-                                </TouchableOpacity>
-
-                                {filterDropdownOpen && (
-                                    <Animated.View
-                                        style={[
-                                            styles.filterDropdown,
-                                            {
-                                                opacity: dropdownAnim,
-                                                transform: [
-                                                    {
-                                                        scale: dropdownAnim.interpolate(
-                                                            {
-                                                                inputRange: [
-                                                                    0, 1,
-                                                                ],
-                                                                outputRange: [
-                                                                    0.96, 1,
-                                                                ],
-                                                            }
-                                                        ),
-                                                    },
-                                                ],
-                                            },
-                                        ]}
+                        {maintenanceHistory.length > 0 ? (
+                            <ScrollView
+                                style={styles.modalScroll}
+                                showsVerticalScrollIndicator={false}
+                            >
+                                {maintenanceHistory.map((item, index) => (
+                                    <View
+                                        key={`${item.date}-${index}`}
+                                        style={styles.historyItem}
                                     >
+                                        <View style={styles.historyItemLeft}>
+                                            <Text style={styles.historyDate}>
+                                                {item.date}
+                                            </Text>
+                                        </View>
+                                        <View style={styles.historyItemRight}>
+                                            <Text style={styles.historyContent}>
+                                                {item.content}
+                                            </Text>
+                                        </View>
+                                    </View>
+                                ))}
+                            </ScrollView>
+                        ) : (
+                            <Text style={styles.noData}>
+                                Không có lịch sử bảo trì cho thiết bị này.
+                            </Text>
+                        )}
+
+                        <AppButton
+                            title="Đóng"
+                            variant="secondary"
+                            onPress={closeHistoryView}
+                            style={{ marginTop: 8 }}
+                        />
+                    </>
+                ) : (
+                    <>
+                        <Text style={styles.modalTitle}>
+                            Thiết bị trong nhóm {selectedGroup}
+                        </Text>
+
+                        {devicesInGroup.length > 0 ? (
+                            <>
+                                {/* SEARCH + FILTER */}
+                                <View style={styles.searchFilterRow}>
+                                    {/* SEARCH */}
+                                    <View style={styles.searchWrapper}>
+                                        <View style={styles.searchInputRow}>
+                                            <Ionicons
+                                                name="search-outline"
+                                                style={styles.searchIcon}
+                                            />
+                                            <TextInput
+                                                style={styles.searchInput}
+                                                placeholder="Tìm kiếm"
+                                                placeholderTextColor={colors.textMuted}
+                                                value={searchText}
+                                                onChangeText={setSearchText}
+                                            />
+                                            {showClearSearch && (
+                                                <TouchableOpacity
+                                                    onPress={() => setSearchText("")}
+                                                    hitSlop={{
+                                                        top: 8,
+                                                        bottom: 8,
+                                                        left: 8,
+                                                        right: 8,
+                                                    }}
+                                                >
+                                                    <Ionicons
+                                                        name="close-circle"
+                                                        style={styles.clearIcon}
+                                                    />
+                                                </TouchableOpacity>
+                                            )}
+                                        </View>
+                                    </View>
+
+                                    {/* FILTER */}
+                                    <View style={styles.filterWrapper}>
                                         <TouchableOpacity
                                             style={[
-                                                styles.filterOption,
-                                                allKindsActive &&
-                                                    styles.filterOptionActive,
+                                                styles.filterBox,
+                                                hasFilter &&
+                                                    styles.filterBoxActive,
                                             ]}
-                                            onPress={toggleAllKinds}
-                                            activeOpacity={0.85}
+                                            onPress={() =>
+                                                setFilterDropdownOpen(
+                                                    !filterDropdownOpen
+                                                )
+                                            }
+                                            activeOpacity={0.7}
                                         >
-                                            <View
-                                                style={styles.filterOptionRow}
-                                            >
-                                                <Text
-                                                    style={
-                                                        styles.filterOptionText
-                                                    }
-                                                >
-                                                    Tất cả loại
-                                                </Text>
-
-                                                <View
-                                                    style={[
-                                                        styles.checkbox,
-                                                        allKindsActive &&
-                                                            styles.checkboxActive,
-                                                    ]}
-                                                >
-                                                    {allKindsActive && (
-                                                        <Ionicons
-                                                            name="checkmark"
-                                                            style={
-                                                                styles.checkboxIcon
-                                                            }
-                                                        />
-                                                    )}
-                                                </View>
-                                            </View>
+                                            <Ionicons
+                                                name="filter-outline"
+                                                style={styles.filterIcon}
+                                            />
+                                            {hasFilter && (
+                                                <View style={styles.filterDot} />
+                                            )}
                                         </TouchableOpacity>
 
-                                        {availableKinds.map((kind) => {
-                                            const active =
-                                                selectedKinds.includes(kind);
-                                            return (
+                                        {filterDropdownOpen && (
+                                            <Animated.View
+                                                style={[
+                                                    styles.filterDropdown,
+                                                    {
+                                                        opacity: dropdownAnim,
+                                                        transform: [
+                                                            {
+                                                                scale: dropdownAnim.interpolate(
+                                                                    {
+                                                                        inputRange:
+                                                                            [0, 1],
+                                                                        outputRange:
+                                                                            [0.96, 1],
+                                                                    }
+                                                                ),
+                                                            },
+                                                        ],
+                                                    },
+                                                ]}
+                                            >
                                                 <TouchableOpacity
-                                                    key={kind}
                                                     style={[
                                                         styles.filterOption,
-                                                        active &&
+                                                        allKindsActive &&
                                                             styles.filterOptionActive,
                                                     ]}
-                                                    onPress={() =>
-                                                        toggleKind(kind)
-                                                    }
+                                                    onPress={toggleAllKinds}
                                                     activeOpacity={0.85}
                                                 >
                                                     <View
-                                                        style={
-                                                            styles.filterOptionRow
-                                                        }
+                                                        style={styles.filterOptionRow}
                                                     >
                                                         <Text
                                                             style={
                                                                 styles.filterOptionText
                                                             }
                                                         >
-                                                            {highlightText(
-                                                                kind,
-                                                                searchText,
-                                                                styles.filterOptionText,
-                                                                styles.highlight
-                                                            )}
+                                                            Tất cả loại
                                                         </Text>
 
                                                         <View
                                                             style={[
                                                                 styles.checkbox,
-                                                                active &&
+                                                                allKindsActive &&
                                                                     styles.checkboxActive,
                                                             ]}
                                                         >
-                                                            {active && (
+                                                            {allKindsActive && (
                                                                 <Ionicons
                                                                     name="checkmark"
                                                                     style={
@@ -525,200 +531,217 @@ export default function DevicesScreen({ navigation }: Props) {
                                                         </View>
                                                     </View>
                                                 </TouchableOpacity>
-                                            );
-                                        })}
-                                    </Animated.View>
-                                )}
-                            </View>
-                        </View>
 
-                        <ScrollView
-                            style={styles.modalScroll}
-                            showsVerticalScrollIndicator={false}
-                            keyboardShouldPersistTaps="handled"
-                        >
-                            {filteredDevices.map((dev, index) => {
-                                const parsed = parseDeviceCode(dev.name);
-                                const codeText = parsed.code || dev.name;
-
-                                return (
-                                    <TouchableOpacity
-                                        key={`${dev.name}-${index}`}
-                                        style={styles.deviceRow}
-                                        activeOpacity={0.85}
-                                        onPress={() =>
-                                            handleOpenDeviceHistory(dev.name)
-                                        }
-                                    >
-                                        <View style={styles.deviceBlock}>
-                                            <View style={styles.deviceTopRow}>
-                                                {/* LEFT */}
-                                                <View style={styles.deviceLeft}>
-                                                    <View
-                                                        style={
-                                                            styles.deviceTagGroup
-                                                        }
-                                                    >
-                                                        {!!parsed.group && (
-                                                            <Text
-                                                                style={
-                                                                    styles.deviceTag
-                                                                }
-                                                            >
-                                                                {highlightText(
-                                                                    parsed.group,
-                                                                    searchText,
-                                                                    styles.deviceTag,
-                                                                    styles.highlight
-                                                                )}
-                                                            </Text>
-                                                        )}
-
-                                                        {!!parsed.kind && (
-                                                            <Text
-                                                                style={
-                                                                    styles.deviceTag
-                                                                }
-                                                            >
-                                                                {highlightText(
-                                                                    parsed.kind,
-                                                                    searchText,
-                                                                    styles.deviceTag,
-                                                                    styles.highlight
-                                                                )}
-                                                            </Text>
-                                                        )}
-
-                                                        {/* ✅ CODE: khôi phục highlight */}
-                                                        {highlightText(
-                                                            codeText,
-                                                            searchText,
-                                                            styles.deviceCode,
-                                                            styles.highlight
-                                                        )}
-                                                    </View>
-                                                </View>
-
-                                                {/* RIGHT: + (dùng component bạn đã làm sẵn) */}
-                                                <View
-                                                    // ✅ chặn onPress của row bị kích hoạt khi bấm nút +
-                                                    onStartShouldSetResponder={() =>
-                                                        true
-                                                    }
-                                                >
-                                                    <AddHistoryAction
-                                                        appScriptUrl={getApiBase()}
-                                                        sheetId={getSheetId()}
-                                                        sheetName={
-                                                            selectedGroup ?? ""
-                                                        }
-                                                        deviceName={dev.name}
-                                                        iconSize={18}
-                                                        disabled={
-                                                            !selectedGroup
-                                                        }
-                                                        onPosted={async (
-                                                            row
-                                                        ) => {
-                                                            // ✅ update UI ngay + sync server
-                                                            await appendHistoryAndSync(
-                                                                {
-                                                                    sheetName:
-                                                                        selectedGroup ??
-                                                                        "",
-                                                                    row,
-                                                                }
-                                                            );
-
-                                                            // ✅ nếu đang mở lịch sử của đúng thiết bị, prepend cho thấy ngay
-                                                            if (
-                                                                selectedDeviceName ===
-                                                                row.deviceName
-                                                            ) {
-                                                                setMaintenanceHistory(
-                                                                    (prev) => [
-                                                                        row as any,
-                                                                        ...prev,
-                                                                    ]
-                                                                );
+                                                {availableKinds.map((kind) => {
+                                                    const active =
+                                                        selectedKinds.includes(
+                                                            kind
+                                                        );
+                                                    return (
+                                                        <TouchableOpacity
+                                                            key={kind}
+                                                            style={[
+                                                                styles.filterOption,
+                                                                active &&
+                                                                    styles.filterOptionActive,
+                                                            ]}
+                                                            onPress={() =>
+                                                                toggleKind(kind)
                                                             }
-                                                        }}
-                                                    />
+                                                            activeOpacity={0.85}
+                                                        >
+                                                            <View
+                                                                style={
+                                                                    styles.filterOptionRow
+                                                                }
+                                                            >
+                                                                <Text
+                                                                    style={
+                                                                        styles.filterOptionText
+                                                                    }
+                                                                >
+                                                                    {highlightText(
+                                                                        kind,
+                                                                        searchText,
+                                                                        styles.filterOptionText,
+                                                                        styles.highlight
+                                                                    )}
+                                                                </Text>
+
+                                                                <View
+                                                                    style={[
+                                                                        styles.checkbox,
+                                                                        active &&
+                                                                            styles.checkboxActive,
+                                                                    ]}
+                                                                >
+                                                                    {active && (
+                                                                        <Ionicons
+                                                                            name="checkmark"
+                                                                            style={
+                                                                                styles.checkboxIcon
+                                                                            }
+                                                                        />
+                                                                    )}
+                                                                </View>
+                                                            </View>
+                                                        </TouchableOpacity>
+                                                    );
+                                                })}
+                                            </Animated.View>
+                                        )}
+                                    </View>
+                                </View>
+
+                                <ScrollView
+                                    style={styles.modalScroll}
+                                    showsVerticalScrollIndicator={false}
+                                    keyboardShouldPersistTaps="handled"
+                                >
+                                    {filteredDevices.map((dev, index) => {
+                                        const parsed = parseDeviceCode(dev.name);
+                                        const codeText = parsed.code || dev.name;
+
+                                        return (
+                                            <TouchableOpacity
+                                                key={`${dev.name}-${index}`}
+                                                style={styles.deviceRow}
+                                                activeOpacity={0.85}
+                                                onPress={() =>
+                                                    handleOpenDeviceHistory(
+                                                        dev.name
+                                                    )
+                                                }
+                                            >
+                                                <View style={styles.deviceBlock}>
+                                                    <View
+                                                        style={styles.deviceTopRow}
+                                                    >
+                                                        {/* LEFT */}
+                                                        <View
+                                                            style={
+                                                                styles.deviceLeft
+                                                            }
+                                                        >
+                                                            <View
+                                                                style={
+                                                                    styles.deviceTagGroup
+                                                                }
+                                                            >
+                                                                {!!parsed.group && (
+                                                                    <Text
+                                                                        style={
+                                                                            styles.deviceTag
+                                                                        }
+                                                                    >
+                                                                        {highlightText(
+                                                                            parsed.group,
+                                                                            searchText,
+                                                                            styles.deviceTag,
+                                                                            styles.highlight
+                                                                        )}
+                                                                    </Text>
+                                                                )}
+
+                                                                {!!parsed.kind && (
+                                                                    <Text
+                                                                        style={
+                                                                            styles.deviceTag
+                                                                        }
+                                                                    >
+                                                                        {highlightText(
+                                                                            parsed.kind,
+                                                                            searchText,
+                                                                            styles.deviceTag,
+                                                                            styles.highlight
+                                                                        )}
+                                                                    </Text>
+                                                                )}
+
+                                                                {highlightText(
+                                                                    codeText,
+                                                                    searchText,
+                                                                    styles.deviceCode,
+                                                                    styles.highlight
+                                                                )}
+                                                            </View>
+                                                        </View>
+
+                                                        <View
+                                                            onStartShouldSetResponder={() =>
+                                                                true
+                                                            }
+                                                        >
+                                                            <AddHistoryAction
+                                                                appScriptUrl={getApiBase()}
+                                                                sheetId={getSheetId()}
+                                                                sheetName={
+                                                                    selectedGroup ??
+                                                                    ""
+                                                                }
+                                                                deviceName={
+                                                                    dev.name
+                                                                }
+                                                                iconSize={18}
+                                                                disabled={
+                                                                    !selectedGroup
+                                                                }
+                                                                onPosted={async (
+                                                                    row
+                                                                ) => {
+                                                                    await appendHistoryAndSync(
+                                                                        {
+                                                                            sheetName:
+                                                                                selectedGroup ??
+                                                                                "",
+                                                                            row,
+                                                                        }
+                                                                    );
+
+                                                                    if (
+                                                                        selectedDeviceName ===
+                                                                        row.deviceName
+                                                                    ) {
+                                                                        setMaintenanceHistory(
+                                                                            (
+                                                                                prev
+                                                                            ) => [
+                                                                                row as any,
+                                                                                ...prev,
+                                                                            ]
+                                                                        );
+                                                                    }
+                                                                }}
+                                                            />
+                                                        </View>
+                                                    </View>
+
+                                                    {highlightText(
+                                                        dev.type || "",
+                                                        searchText,
+                                                        styles.deviceDesc,
+                                                        styles.highlight
+                                                    )}
                                                 </View>
-                                            </View>
+                                            </TouchableOpacity>
+                                        );
+                                    })}
+                                </ScrollView>
+                            </>
+                        ) : (
+                            <Text style={styles.noData}>
+                                Nhóm này chưa có thiết bị.
+                            </Text>
+                        )}
 
-                                            {/* DESC: giữ highlight */}
-                                            {highlightText(
-                                                dev.type || "",
-                                                searchText,
-                                                styles.deviceDesc,
-                                                styles.highlight
-                                            )}
-                                        </View>
-                                    </TouchableOpacity>
-                                );
-                            })}
-                        </ScrollView>
+                        <AppButton
+                            title="Đóng"
+                            variant="secondary"
+                            onPress={closeDeviceModal}
+                            style={{ marginTop: 8 }}
+                        />
                     </>
-                ) : (
-                    <Text style={styles.noData}>
-                        Nhóm này chưa có thiết bị.
-                    </Text>
                 )}
-
-                <AppButton
-                    title="Đóng"
-                    variant="secondary"
-                    onPress={closeDeviceModal}
-                    style={{ marginTop: 8 }}
-                />
-            </BaseModal>
-
-            {/* MODAL: LỊCH SỬ BẢO TRÌ */}
-            <BaseModal
-                visible={historyModalVisible}
-                onRequestClose={closeHistoryModal}
-                width="90%"
-            >
-                <Text style={styles.modalTitle}>
-                    Lịch sử bảo trì của {selectedDeviceName}
-                </Text>
-
-                {maintenanceHistory.length > 0 ? (
-                    <ScrollView
-                        style={styles.modalScroll}
-                        showsVerticalScrollIndicator={false}
-                    >
-                        {maintenanceHistory.map((item, index) => (
-                            <View
-                                key={`${item.date}-${index}`}
-                                style={styles.historyItem}
-                            >
-                                <View style={styles.historyItemLeft}>
-                                    <Text style={styles.historyDate}>
-                                        {item.date}
-                                    </Text>
-                                </View>
-                                <View style={styles.historyItemRight}>
-                                    <Text style={styles.historyContent}>
-                                        {item.content}
-                                    </Text>
-                                </View>
-                            </View>
-                        ))}
-                    </ScrollView>
-                ) : (
-                    <Text style={styles.noData}>
-                        Không có lịch sử bảo trì cho thiết bị này.
-                    </Text>
-                )}
-
-                <AppButton
-                    title="Đóng"
-                    variant="secondary"
-                    onPress={closeHistoryModal}
-                    style={{ marginTop: 8 }}
-                />
             </BaseModal>
         </AppScreen>
     );
@@ -758,14 +781,12 @@ const styles = StyleSheet.create({
     },
     cardText: {
         color: colors.text,
-        fontSize: 16,
-        fontWeight: "700",
+        ...textStyle(16, { weight: "700", lineHeightPreset: "tight" }),
         textAlign: "center",
     },
 
     modalTitle: {
-        fontSize: 18,
-        fontWeight: "800",
+        ...textStyle(18, { weight: "800", lineHeightPreset: "tight" }),
         color: colors.text,
         marginBottom: 12,
         textAlign: "center",
@@ -779,7 +800,7 @@ const styles = StyleSheet.create({
         color: colors.textMuted,
         textAlign: "center",
         marginTop: 20,
-        fontSize: 14,
+        ...textStyle(14),
     },
 
     // search/filter
@@ -811,7 +832,7 @@ const styles = StyleSheet.create({
     searchInput: {
         flex: 1,
         color: colors.text,
-        fontSize: 14,
+        ...textStyle(14, { lineHeightPreset: "tight" }),
         paddingVertical: 0,
     },
     clearIcon: {
@@ -880,7 +901,7 @@ const styles = StyleSheet.create({
         justifyContent: "space-between",
     },
     filterOptionText: {
-        fontSize: 13,
+        ...textStyle(13, { lineHeightPreset: "tight" }),
         color: colors.text,
     },
 
@@ -938,22 +959,19 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: "rgba(96,165,250,0.7)",
         color: colors.textAccent,
-        fontSize: 12,
-        fontWeight: "600",
+        ...textStyle(12, { weight: "600", lineHeightPreset: "tight" }),
         marginRight: 6,
         marginBottom: 2,
     },
     deviceCode: {
         color: colors.text,
-        fontSize: 15,
-        fontWeight: "700",
+        ...textStyle(15, { weight: "700", lineHeightPreset: "tight" }),
         marginLeft: 4,
     },
     deviceDesc: {
         color: colors.textSoft,
-        fontSize: 14,
+        ...textStyle(14, { lineHeightPreset: "loose" }),
         textAlign: "left",
-        lineHeight: 20,
     },
 
     highlight: {
@@ -990,13 +1008,11 @@ const styles = StyleSheet.create({
     historyItemRight: { flex: 1, justifyContent: "center" },
     historyDate: {
         color: colors.textAccent,
-        fontSize: 13,
-        fontWeight: "700",
+        ...textStyle(13, { weight: "700", lineHeightPreset: "tight" }),
         textAlign: "center",
     },
     historyContent: {
         color: colors.textSoft,
-        fontSize: 13,
-        lineHeight: 18,
+        ...textStyle(13, { lineHeightPreset: "normal" }),
     },
 });

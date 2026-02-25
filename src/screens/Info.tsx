@@ -6,6 +6,7 @@ import { RootStackParamList } from "../types/navigation";
 import { AppScreen } from "../components/ui/AppScreen";
 import HeaderBar from "../components/ui/HeaderBar";
 import { colors } from "../theme/theme";
+import { textStyle } from "../theme/typography";
 import { VERSION } from "../config/apiConfig";
 
 const infoData = [
@@ -96,14 +97,12 @@ const styles = StyleSheet.create({
         elevation: 4,
     },
     title: {
-        fontSize: 16,
-        fontWeight: "700",
+        ...textStyle(16, { weight: "700", lineHeightPreset: "tight" }),
         color: colors.text,
         marginBottom: 6,
     },
     description: {
-        fontSize: 13,
+        ...textStyle(13, { lineHeightPreset: "loose" }),
         color: colors.textSoft,
-        lineHeight: 20,
     },
 });

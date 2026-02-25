@@ -23,6 +23,7 @@ import { RootStackParamList } from "../types/navigation";
 import BackButton from "../components/backButton";
 import { useDeviceGroup } from "../context/DeviceGroupContext";
 import { colors } from "../theme/theme";
+import { textStyle } from "../theme/typography";
 
 import { AddHistoryAction } from "../components/maintenance/AddHistoryButton";
 import { getApiBase, getSheetId } from "../config/apiConfig";
@@ -611,14 +612,13 @@ const styles = StyleSheet.create({
         right: 0,
     },
     title: {
-        fontSize: 20,
-        fontWeight: "bold",
+        ...textStyle(20, { weight: "700", lineHeightPreset: "tight" }),
         marginBottom: 10,
         textAlign: "center",
         color: colors.text,
     },
     content: {
-        fontSize: 15,
+        ...textStyle(15),
         marginBottom: 18,
         textAlign: "center",
         color: colors.textSoft,
@@ -660,20 +660,18 @@ const styles = StyleSheet.create({
     },
     btnText: {
         color: "#FFFFFF",
-        fontWeight: "bold",
-        fontSize: 15,
+        ...textStyle(15, { weight: "700", lineHeightPreset: "tight" }),
         textAlign: "center",
     },
 
     deviceNamePopup: {
-        fontSize: 18,
-        fontWeight: "800",
+        ...textStyle(18, { weight: "800", lineHeightPreset: "tight" }),
         color: colors.text,
         textAlign: "center",
         marginBottom: 4,
     },
     deviceGroupPopup: {
-        fontSize: 13,
+        ...textStyle(13, { lineHeightPreset: "tight" }),
         color: colors.textMuted,
         textAlign: "center",
         marginBottom: 10,
@@ -691,7 +689,7 @@ const styles = StyleSheet.create({
         maxHeight: 250,
     },
     noHistoryText: {
-        fontSize: 13,
+        ...textStyle(13, { lineHeightPreset: "tight" }),
         color: colors.textMuted,
         textAlign: "center",
         paddingVertical: 8,
@@ -703,15 +701,13 @@ const styles = StyleSheet.create({
         borderBottomColor: "rgba(31,41,55,0.8)",
     },
     historyDate: {
-        fontSize: 12,
+        ...textStyle(12, { weight: "600", lineHeightPreset: "tight" }),
         color: colors.textAccent,
         marginBottom: 2,
-        fontWeight: "600",
     },
     historyContent: {
-        fontSize: 13,
+        ...textStyle(13, { lineHeightPreset: "normal" }),
         color: colors.textSoft,
-        lineHeight: 18,
     },
     popup: {
         width: "90%",
@@ -783,16 +779,16 @@ const styles = StyleSheet.create({
 
     popupTitle2: {
         color: colors.textMuted,
-        fontSize: 12,
-        fontWeight: "800",
-        letterSpacing: 0.2,
+        ...textStyle(12, {
+            weight: "800",
+            lineHeightPreset: "tight",
+            letterSpacing: 0.2,
+        }),
     },
     deviceNameBig: {
         color: colors.text,
-        fontSize: 18,
-        fontWeight: "900",
+        ...textStyle(18, { weight: "900", lineHeightPreset: "tight" }),
         marginTop: 4,
-        lineHeight: 22,
     },
 
     metaRow: {
@@ -816,8 +812,7 @@ const styles = StyleSheet.create({
     pillText: {
         marginLeft: 6,
         color: colors.text,
-        fontSize: 12,
-        fontWeight: "800",
+        ...textStyle(12, { weight: "800", lineHeightPreset: "tight" }),
     },
     badgeCount: {
         flexDirection: "row",
@@ -833,8 +828,7 @@ const styles = StyleSheet.create({
     badgeCountText: {
         marginLeft: 6,
         color: colors.text,
-        fontSize: 12,
-        fontWeight: "800",
+        ...textStyle(12, { weight: "800", lineHeightPreset: "tight" }),
     },
 
     historyWrap2: {
@@ -862,8 +856,7 @@ const styles = StyleSheet.create({
     emptyText: {
         marginLeft: 8,
         color: colors.textSoft,
-        fontSize: 13,
-        fontWeight: "700",
+        ...textStyle(13, { weight: "700", lineHeightPreset: "tight" }),
     },
 
     historyCard: {
@@ -882,14 +875,11 @@ const styles = StyleSheet.create({
     historyDate2: {
         marginLeft: 6,
         color: colors.textMuted,
-        fontSize: 12,
-        fontWeight: "900",
+        ...textStyle(12, { weight: "900", lineHeightPreset: "tight" }),
     },
     historyContent2: {
         color: colors.text,
-        fontSize: 13,
-        fontWeight: "700",
-        lineHeight: 18,
+        ...textStyle(13, { weight: "700", lineHeightPreset: "normal" }),
     },
 
     singleBtnRow2: {

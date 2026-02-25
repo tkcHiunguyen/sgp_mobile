@@ -15,6 +15,7 @@ import {
 import Ionicons from "react-native-vector-icons/Ionicons";
 
 import { SingleDatePickerIOSDark } from "../SingleDatePickerIOSDark"; // chỉnh path đúng
+import { inputMetrics, textStyle } from "../../theme/typography";
 import {
     HistoryRow,
     todayDdMmYy,
@@ -335,15 +336,13 @@ const styles = StyleSheet.create({
     /* ===== Text ===== */
     title: {
         color: stylesVars.text,
-        fontSize: 16,
-        fontWeight: "800",
+        ...textStyle(16, { weight: "800", lineHeightPreset: "tight" }),
         marginBottom: 10,
         textAlign: "center",
     },
     label: {
         color: stylesVars.textMuted,
-        fontSize: 12,
-        fontWeight: "700",
+        ...textStyle(12, { weight: "700", lineHeightPreset: "tight" }),
         marginTop: 10,
         marginBottom: 6,
     },
@@ -359,8 +358,7 @@ const styles = StyleSheet.create({
     },
     readonlyText: {
         color: stylesVars.text,
-        fontSize: 14,
-        fontWeight: "700",
+        ...textStyle(14, { weight: "700", lineHeightPreset: "tight" }),
     },
 
     /* ===== Inputs ===== */
@@ -375,10 +373,10 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: "rgba(255,255,255,0.08)",
         paddingHorizontal: 12,
-        paddingVertical: 10,
+        paddingVertical: inputMetrics.paddingVertical,
         color: stylesVars.text,
-        fontSize: 14,
-        fontWeight: "600",
+        ...textStyle(14, { weight: "600", lineHeightPreset: "tight" }),
+        height: inputMetrics.height,
     },
     inputReadonly: {
         opacity: 0.95,
@@ -392,7 +390,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 12,
         paddingVertical: 10,
         color: stylesVars.text,
-        fontSize: 14,
+        ...textStyle(14, { lineHeightPreset: "normal" }),
         minHeight: 120,
         textAlignVertical: "top",
     },
@@ -403,8 +401,7 @@ const styles = StyleSheet.create({
     },
     errorText: {
         color: stylesVars.danger,
-        fontSize: 12,
-        fontWeight: "600",
+        ...textStyle(12, { weight: "600", lineHeightPreset: "tight" }),
     },
 
     /* ===== Footer buttons ===== */
@@ -447,6 +444,6 @@ const styles = StyleSheet.create({
 
     btnText: {
         color: stylesVars.text,
-        fontWeight: "800",
+        ...textStyle(14, { weight: "800", lineHeightPreset: "tight" }),
     },
 });

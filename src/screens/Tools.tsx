@@ -2,6 +2,8 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
+import { colors } from "../theme/theme";
+import { textStyle } from "../theme/typography";
 
 export default function ToolsScreen() {
     return (
@@ -19,13 +21,15 @@ const styles = StyleSheet.create({
         justifyContent: "center",
         alignItems: "center",
         gap: 8,
+        backgroundColor: colors.background,
     },
     title: {
-        fontSize: 24,
-        fontWeight: "600",
+        ...textStyle(24, { weight: "700", lineHeightPreset: "tight" }),
+        color: colors.text,
     },
     caption: {
-        fontSize: 14,
+        ...textStyle(14),
+        color: colors.textMuted,
         opacity: 0.7,
     },
 });

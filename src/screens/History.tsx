@@ -21,6 +21,7 @@ import { BaseModal } from "../components/ui/BaseModal";
 import { EmptyState } from "../components/ui/EmptyState";
 import { AppButton } from "../components/ui/AppButton";
 import { colors } from "../theme/theme";
+import { textStyle } from "../theme/typography";
 import { DateRangeNativePicker } from "../components/DateRangeFilterIOSDark";
 
 type Props = NativeStackScreenProps<RootStackParamList, "History">;
@@ -840,17 +841,16 @@ const styles = StyleSheet.create({
     },
     dropdownText: {
         color: colors.text,
-        fontSize: 14,
+        ...textStyle(14),
         textAlign: "center",
     },
 
     /* ========= GENERIC MODAL STYLES (DÙNG CHUNG) ========= */
     modalTitle: {
-        fontSize: 18,
+        ...textStyle(18, { weight: "700", lineHeightPreset: "tight" }),
         color: colors.text,
         marginBottom: 10,
         textAlign: "center",
-        fontWeight: "700",
     },
     deviceItem: {
         backgroundColor: colors.surface,
@@ -863,7 +863,7 @@ const styles = StyleSheet.create({
     },
     deviceText: {
         color: colors.text,
-        fontSize: 14,
+        ...textStyle(14, { lineHeightPreset: "tight" }),
         textAlign: "center",
     },
     modalCloseButton: {
@@ -892,18 +892,16 @@ const styles = StyleSheet.create({
     },
     summaryLabel: {
         color: colors.textMuted,
-        fontSize: 11,
+        ...textStyle(11, { lineHeightPreset: "tight" }),
         marginBottom: 2,
     },
     summaryValue: {
         color: colors.textAccent,
-        fontSize: 14,
-        fontWeight: "700",
+        ...textStyle(14, { weight: "700", lineHeightPreset: "tight" }),
     },
     summaryValueSmall: {
         color: colors.text,
-        fontSize: 12,
-        fontWeight: "600",
+        ...textStyle(12, { weight: "600", lineHeightPreset: "tight" }),
         textAlign: "right",
     },
     summaryViewButton: {
@@ -946,7 +944,7 @@ const styles = StyleSheet.create({
     searchInput: {
         flex: 1,
         color: colors.text,
-        fontSize: 14,
+        ...textStyle(14, { lineHeightPreset: "tight" }),
         paddingVertical: 0,
     },
 
@@ -1003,7 +1001,7 @@ const styles = StyleSheet.create({
         backgroundColor: "rgba(37,99,235,0.25)",
     },
     filterOptionText: {
-        fontSize: 13,
+        ...textStyle(13, { lineHeightPreset: "tight" }),
         color: colors.text,
     },
 
@@ -1022,7 +1020,7 @@ const styles = StyleSheet.create({
         padding: 10,
     },
     dateHint: {
-        fontSize: 11,
+        ...textStyle(11, { lineHeightPreset: "tight" }),
         color: colors.textMuted,
         marginBottom: 6,
     },
@@ -1033,7 +1031,7 @@ const styles = StyleSheet.create({
     },
     dateLabel: {
         width: 32,
-        fontSize: 12,
+        ...textStyle(12, { lineHeightPreset: "tight" }),
         color: colors.textMuted,
     },
     dateInput: {
@@ -1044,7 +1042,7 @@ const styles = StyleSheet.create({
         borderColor: "rgba(75,85,99,0.9)",
         paddingHorizontal: 8,
         color: colors.text,
-        fontSize: 13,
+        ...textStyle(13, { lineHeightPreset: "tight" }),
         backgroundColor: colors.surfaceAlt,
     },
     dateActionsRow: {
@@ -1053,7 +1051,7 @@ const styles = StyleSheet.create({
         marginTop: 4,
     },
     dateActionText: {
-        fontSize: 12,
+        ...textStyle(12, { lineHeightPreset: "tight" }),
         color: colors.textAccent,
         marginLeft: 16,
     },
@@ -1066,8 +1064,7 @@ const styles = StyleSheet.create({
     },
     sectionHeaderText: {
         color: colors.textMuted,
-        fontSize: 12,
-        fontWeight: "600",
+        ...textStyle(12, { weight: "600", lineHeightPreset: "tight" }),
     },
 
     /* ========= HISTORY CARD ========= */
@@ -1093,19 +1090,17 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: "rgba(96,165,250,0.7)",
         color: colors.textAccent,
-        fontSize: 11,
-        fontWeight: "600",
+        ...textStyle(11, { weight: "600", lineHeightPreset: "tight" }),
         marginRight: 6,
     },
     deviceCode: {
         color: colors.text,
-        fontSize: 15,
-        fontWeight: "700",
+        ...textStyle(15, { weight: "700", lineHeightPreset: "tight" }),
         flexShrink: 1,
     },
     deviceDesc: {
         color: colors.textSoft,
-        fontSize: 13,
+        ...textStyle(13, { lineHeightPreset: "tight" }),
         marginBottom: 4,
     },
 
@@ -1119,8 +1114,7 @@ const styles = StyleSheet.create({
     },
     historyContent: {
         color: colors.textSoft,
-        fontSize: 13,
-        lineHeight: 18,
+        ...textStyle(13, { lineHeightPreset: "normal" }),
     },
 
     highlight: {
@@ -1156,7 +1150,7 @@ const styles = StyleSheet.create({
     },
     topDeviceCount: {
         marginTop: 4,
-        fontSize: 12,
+        ...textStyle(12, { lineHeightPreset: "tight" }),
         color: colors.textMuted,
     },
     filterOptionRow: {
@@ -1180,7 +1174,7 @@ const styles = StyleSheet.create({
         backgroundColor: "rgba(34,197,94,0.12)",
     },
     checkboxIcon: {
-        fontSize: 14,
+        ...textStyle(14, { lineHeightPreset: "tight" }),
         color: "#22C55E",
     },
 });

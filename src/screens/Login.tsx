@@ -27,6 +27,7 @@ import Logo from "../logo.png";
 import { AppScreen } from "../components/ui/AppScreen";
 import { BaseModal } from "../components/ui/BaseModal";
 import { colors, spacing, radius } from "../theme/theme";
+import { inputMetrics, textStyle } from "../theme/typography";
 import { useAuth } from "../context/AuthContext";
 import {
     VERSION,
@@ -370,7 +371,11 @@ export default function LoginScreen({ navigation, route }: Props) {
                                     autoCorrect={false}
                                     placeholder="vd: hieu.nguyen"
                                     placeholderTextColor={colors.textMuted}
-                                    style={styles.input}
+                                    style={[
+                                        styles.input,
+                                        styles.singleLineInput,
+                                        styles.usernameInput,
+                                    ]}
                                     editable={!fpVerifySubmitting}
                                     returnKeyType="next"
                                     onSubmitEditing={() =>
@@ -402,7 +407,11 @@ export default function LoginScreen({ navigation, route }: Props) {
                                     autoCorrect={false}
                                     placeholder="vd: NV00123"
                                     placeholderTextColor={colors.textMuted}
-                                    style={styles.input}
+                                    style={[
+                                        styles.input,
+                                        styles.singleLineInput,
+                                        styles.usernameInput,
+                                    ]}
                                     editable={!fpVerifySubmitting}
                                     returnKeyType="done"
                                     onSubmitEditing={submitVerify}
@@ -484,7 +493,7 @@ export default function LoginScreen({ navigation, route }: Props) {
                             <Text style={styles.fpTitle}>Đặt mật khẩu mới</Text>
                             <Text style={styles.fpDesc}>
                                 Nhập mật khẩu mới cho tài khoản{" "}
-                                <Text style={{ fontWeight: "900" }}>
+                                <Text style={styles.fpDescStrong}>
                                     {fpUsername.trim()}
                                 </Text>
                             </Text>
@@ -814,7 +823,11 @@ export default function LoginScreen({ navigation, route }: Props) {
                                         autoCorrect={false}
                                         placeholder="Email hoặc ID nhân viên"
                                         placeholderTextColor={colors.textMuted}
-                                        style={styles.input}
+                                    style={[
+                                        styles.input,
+                                        styles.singleLineInput,
+                                        styles.usernameInput,
+                                    ]}
                                         editable={!submitting}
                                         returnKeyType="next"
                                         onSubmitEditing={() =>
@@ -1025,13 +1038,12 @@ const styles = StyleSheet.create({
     },
     appName: {
         color: colors.text,
-        fontSize: 34,
-        fontWeight: "800",
+        ...textStyle(34, { weight: "800", lineHeightPreset: "tight" }),
     },
     appTagline: {
         color: colors.textMuted,
         marginTop: 6,
-        fontSize: 15,
+        ...textStyle(15),
     },
 
     welcomeBlock: {
@@ -1040,8 +1052,7 @@ const styles = StyleSheet.create({
     },
     welcomeTitle: {
         color: colors.text,
-        fontSize: 30,
-        fontWeight: "800",
+        ...textStyle(30, { weight: "800", lineHeightPreset: "tight" }),
     },
     descBlock: {
         marginTop: 8,
@@ -1049,7 +1060,7 @@ const styles = StyleSheet.create({
     },
     welcomeDesc: {
         color: colors.textMuted,
-        fontSize: 14,
+        ...textStyle(14),
     },
 
     formCard: {
@@ -1064,7 +1075,7 @@ const styles = StyleSheet.create({
     label: {
         color: colors.textSoft,
         marginBottom: 8,
-        fontSize: 13,
+        ...textStyle(13, { weight: "600" }),
     },
 
     inputWrap: {
@@ -1080,12 +1091,17 @@ const styles = StyleSheet.create({
         flex: 1,
         paddingHorizontal: spacing.sm,
         color: colors.text,
-        fontSize: 15,
+        ...textStyle(15, { lineHeightPreset: "tight" }),
+    },
+    usernameInput: {
+        ...textStyle(17, { weight: "600", lineHeightPreset: "tight" }),
     },
     singleLineInput: {
-        height: 48,
-        paddingVertical: 0,
-        includeFontPadding: false,
+        height: inputMetrics.height,
+        paddingVertical: inputMetrics.paddingVertical,
+        ...(Platform.OS === "android"
+            ? { includeFontPadding: false, textAlignVertical: "center" as const }
+            : null),
     },
     eyeBtn: {
         paddingHorizontal: spacing.md,
@@ -1120,12 +1136,11 @@ const styles = StyleSheet.create({
     },
     rememberText: {
         color: colors.textSoft,
-        fontSize: 13,
+        ...textStyle(13),
     },
     forgotText: {
         color: colors.primary,
-        fontWeight: "700",
-        fontSize: 13,
+        ...textStyle(13, { weight: "700" }),
     },
 
     errorBox: {
@@ -1155,8 +1170,7 @@ const styles = StyleSheet.create({
     },
     buttonText: {
         color: colors.text,
-        fontWeight: "800",
-        fontSize: 16,
+        ...textStyle(16, { weight: "800", lineHeightPreset: "tight" }),
     },
 
     footer: {
@@ -1170,16 +1184,15 @@ const styles = StyleSheet.create({
     },
     footerMuted: {
         color: colors.textMuted,
-        fontSize: 13,
+        ...textStyle(13),
     },
     footerLink: {
         color: colors.primary,
-        fontSize: 13,
-        fontWeight: "800",
+        ...textStyle(13, { weight: "800" }),
     },
     versionText: {
         color: colors.textMuted,
-        fontSize: 12,
+        ...textStyle(12),
         opacity: 0.7,
     },
 
@@ -1208,21 +1221,23 @@ const styles = StyleSheet.create({
     },
     fpTitle: {
         color: colors.text,
-        fontSize: 20,
-        fontWeight: "900",
+        ...textStyle(20, { weight: "900", lineHeightPreset: "tight" }),
         textAlign: "center",
     },
     fpDesc: {
         marginTop: 8,
         color: colors.textMuted,
-        fontSize: 13,
+        ...textStyle(13),
         textAlign: "center",
-        lineHeight: 18,
+    },
+    fpDescStrong: {
+        color: colors.text,
+        ...textStyle(13, { weight: "900" }),
     },
     fpInlineWarn: {
         marginTop: 8,
         color: colors.warning,
-        fontSize: 12.5,
+        ...textStyle(12.5, { weight: "600" }),
     },
     fpBtn: {
         marginTop: spacing.lg,
@@ -1234,8 +1249,7 @@ const styles = StyleSheet.create({
     },
     fpBtnText: {
         color: colors.text,
-        fontWeight: "900",
-        fontSize: 15,
+        ...textStyle(15, { weight: "900", lineHeightPreset: "tight" }),
     },
     fpBtnGhost: {
         marginTop: spacing.md,
@@ -1249,8 +1263,7 @@ const styles = StyleSheet.create({
     },
     fpBtnGhostText: {
         color: colors.textSoft,
-        fontWeight: "800",
-        fontSize: 14,
+        ...textStyle(14, { weight: "800", lineHeightPreset: "tight" }),
         opacity: 0.95,
     },
 
@@ -1275,16 +1288,14 @@ const styles = StyleSheet.create({
     },
     fpSuccessTitle: {
         color: colors.text,
-        fontSize: 20,
-        fontWeight: "900",
+        ...textStyle(20, { weight: "900", lineHeightPreset: "tight" }),
         textAlign: "center",
     },
     fpSuccessDesc: {
         marginTop: 8,
         color: colors.textSoft,
-        fontSize: 13,
+        ...textStyle(13),
         textAlign: "center",
-        lineHeight: 18,
         maxWidth: 320,
         opacity: 0.95,
     },
