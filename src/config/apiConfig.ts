@@ -1,19 +1,31 @@
-// src/config/apiConfig.ts
+﻿// src/config/apiConfig.ts
 import { createMMKV } from "react-native-mmkv";
 
 export const MMKV_ID = "app-storage";
 export const storage = createMMKV({ id: MMKV_ID });
 
-// ---- CÁC KEY DÙNG TRONG MMKV ----
+// Single source of truth for runtime endpoints/ids in this app.
+export const REMOTE_CONFIG = {
+    dataWebappUrl:
+        "https://script.google.com/macros/s/AKfycbwUEEm_Eo30rDi-v-9O3V1vhel8eztYhgAkcU6jj-MfS7syQPBb4BrNYJMcsy9OSMQ/exec",
+    defaultSheetId: "1NQdJA-_9roVzLyAV5IJXeQL2X60wxLa3qC2Z-oNQnCE",
+    otaApiBaseUrl: "https://sgp.skybot.id.vn/",
+    authWebappUrl:
+        "https://script.google.com/macros/s/AKfycby7hdEetvSbbwtuJQiTl0Mp0JP-Jpz1wDn-4Mt5fzDFCah67GxLaU1UMxoqKSEn-Tz5EQ/exec",
+    infoScreenDefaults: {
+        sheetName: "History",
+        deviceName: "TEST_DEVICE_01",
+    },
+} as const;
+
+// Keys in MMKV
 export const KEY_API_BASE = "api_base";
 export const KEY_SHEET_ID = "sheet_id";
 export const KEY_ALL_DATA = "allData";
 
-// ---- GIÁ TRỊ MẶC ĐỊNH ----
-export const DEFAULT_API_BASE =
-    "https://script.google.com/macros/s/AKfycbwUEEm_Eo30rDi-v-9O3V1vhel8eztYhgAkcU6jj-MfS7syQPBb4BrNYJMcsy9OSMQ/exec";
-
-export const DEFAULT_SHEET_ID = "1NQdJA-_9roVzLyAV5IJXeQL2X60wxLa3qC2Z-oNQnCE";
+// Defaults (still exported for compatibility)
+export const DEFAULT_API_BASE = REMOTE_CONFIG.dataWebappUrl;
+export const DEFAULT_SHEET_ID = REMOTE_CONFIG.defaultSheetId;
 
 export const getApiBase = (): string => {
     const saved = storage.getString(KEY_API_BASE);
@@ -55,11 +67,16 @@ export const setSheetId = (value: string | null) => {
     }
 };
 
-export const API_BASE_URL = "https://sgp.skybot.id.vn/";
+export const API_BASE_URL = REMOTE_CONFIG.otaApiBaseUrl;
 export const VERSION = "1.0.7";
-// KEY FOR AUTHENTIACTIONS //
-export const AUTH_WEBAPP_URL =
-    "https://script.google.com/macros/s/AKfycby7hdEetvSbbwtuJQiTl0Mp0JP-Jpz1wDn-4Mt5fzDFCah67GxLaU1UMxoqKSEn-Tz5EQ/exec";
+export const AUTH_WEBAPP_URL = REMOTE_CONFIG.authWebappUrl;
+
+// OTA verification settings:
+// - SHA256 integrity is enforced in otaService.
+// - Signature verification runs when signature is present or when required below.
+export const OTA_SIGNATURE_REQUIRED = false;
+export const OTA_SIGNATURE_PUBLIC_KEYS: Record<string, string> = {};
+export const OTA_SIGNATURE_DEFAULT_KEY_ID = "default";
 
 export const KEY_AUTH_TOKEN = "auth_token";
 export const KEY_AUTH_EXPIRES_AT = "auth_expiresAt";

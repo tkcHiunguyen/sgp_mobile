@@ -2,8 +2,9 @@
     "name": "qr3",
     "version": "0.0.1",
     "private": true,
+    "packageManager": "pnpm@10.29.2",
     "scripts": {
-        "android": "react-native run-android",
+        "android": "react-native run-android --active-arch-only",
         "ios": "react-native run-ios",
         "lint": "eslint .",
         "start": "react-native start",
@@ -69,5 +70,15 @@
     },
     "engines": {
         "node": ">=20"
+    },
+    "pnpm": {
+        "onlyBuiltDependencies": [
+            "@firebase/util",
+            "protobufjs",
+            "react-native-nitro-modules"
+        ],
+        "patchedDependencies": {
+            "react-native-sqlite-storage@6.0.1": "patches/react-native-sqlite-storage@6.0.1.patch"
+        }
     }
 }

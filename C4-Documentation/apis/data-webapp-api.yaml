@@ -1,0 +1,90 @@
+openapi: 3.1.0
+info:
+  title: QR3 Data Web App API
+  version: 1.0.0
+  description: Data API used by mobile app for full dataset sync and maintenance history append.
+servers:
+  - url: https://script.google.com/macros/s/{deploymentId}/exec
+    description: Data Web App deployment URL
+    variables:
+      deploymentId:
+        default: YOUR_DEPLOYMENT_ID
+paths:
+  /exec:
+    get:
+      summary: Fetch full app dataset
+      parameters:
+        - in: query
+          name: action
+          required: true
+          schema:
+            type: string
+            enum: [getAllData]
+        - in: query
+          name: sheetId
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Dataset payload
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                  totalTable:
+                    type: integer
+                  validTable:
+                    type: array
+                    items:
+                      type: string
+                  errTable:
+                    type: array
+                    items:
+                      type: string
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      additionalProperties: true
+                additionalProperties: true
+    post:
+      summary: Append maintenance history row
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [action, sheetId, sheetName, deviceName, date, content]
+              properties:
+                action:
+                  type: string
+                  enum: [appendHistory]
+                sheetId:
+                  type: string
+                sheetName:
+                  type: string
+                deviceName:
+                  type: string
+                date:
+                  type: string
+                  description: dd-MM-yy
+                content:
+                  type: string
+      responses:
+        "200":
+          description: Append result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                  message:
+                    type: string
+                additionalProperties: true

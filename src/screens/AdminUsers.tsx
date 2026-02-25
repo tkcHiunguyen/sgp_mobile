@@ -354,36 +354,10 @@ export default function AdminUsersScreen() {
                     "Thiếu token. Bạn hãy đăng nhập lại."
                 );
 
-            const url =
-                `${AUTH_WEBAPP_URL}?action=admin_list_users&token=` +
-                encodeURIComponent(t);
-
-            const res = await fetch(url, { method: "GET" });
-            const { text, data } = await parseResponseJson(res);
-
-            if (!res.ok) {
-                const msg =
-                    (data && (data.message || data.error)) ||
-                    `HTTP ${res.status}: ${text}`;
-
-                if (isSessionExpiredMessage(msg)) {
-                    throw new SessionExpiredError(msg);
-                }
-
-                setErr(msg);
-                setRows([]);
-                return;
-            }
-
-            if (!data?.ok) {
-                const msg = String(data?.message || "Server error");
-                if (isSessionExpiredMessage(msg)) {
-                    throw new SessionExpiredError(msg);
-                }
-                setErr(msg);
-                setRows([]);
-                return;
-            }
+            const data: any = await postAdminAction({
+                action: "admin_list_users",
+                token: t,
+            });
 
             const list: UserRow[] = Array.isArray(data.users) ? data.users : [];
             setRows(list);

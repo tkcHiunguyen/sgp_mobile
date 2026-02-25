@@ -186,10 +186,10 @@ export default function LoginScreen({ navigation, route }: Props) {
             const deviceName =
                 (await DeviceInfo.getDeviceName()) || `${Platform.OS}-device`;
 
-            const ok = await login(username.trim(), password, deviceName);
+            const result = await login(username.trim(), password, deviceName);
 
             // ✅ login ok -> persist remember theo toggle
-            if (ok) {
+            if (result.ok) {
                 persistRemember(rememberMe, username.trim(), password);
             }
         } finally {

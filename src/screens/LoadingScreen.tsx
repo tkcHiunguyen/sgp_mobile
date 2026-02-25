@@ -5,6 +5,7 @@ import {
     ActivityIndicator,
     StyleSheet,
     Animated,
+    TouchableOpacity,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import Ionicons from "react-native-vector-icons/Ionicons";
@@ -18,7 +19,55 @@ import {
 } from "../config/apiConfig";
 import { colors } from "../theme/theme";
 
-type Status = "checking" | "loadingNew" | "ready";
+type Status = "checking" | "loadingNew" | "ready" | "error";
+
+type CachedData = {
+    data: any;
+    isEmpty: boolean;
+};
+
+const parseCachedData = (rawData?: string | null): CachedData | null => {
+    if (!rawData) {
+        return null;
+    }
+
+    try {
+        const parsed = JSON.parse(rawData);
+        const isEmpty = Array.isArray(parsed)
+            ? parsed.length === 0
+            : parsed && typeof parsed === "object"
+            ? Object.keys(parsed).length === 0
+            : true;
+
+        return { data: parsed, isEmpty };
+    } catch (error) {
+        console.warn("⚠️ Lỗi parse allData từ storage:", error);
+        return null;
+    }
+};
+
+const toUserErrorMessage = (error: unknown): string => {
+    if (error instanceof Error) {
+        if (error.message.includes("HTTP_401")) {
+            return "Xác thực không hợp lệ. Vui lòng kiểm tra cấu hình backend.";
+        }
+        if (error.message.includes("HTTP_403")) {
+            return "Không có quyền truy cập dữ liệu.";
+        }
+        if (error.message.includes("HTTP_404")) {
+            return "Không tìm thấy endpoint dữ liệu.";
+        }
+        if (error.message.includes("HTTP_")) {
+            return "Máy chủ trả về lỗi. Vui lòng thử lại.";
+        }
+        if (error.message === "INVALID_JSON_RESPONSE") {
+            return "Dữ liệu trả về không đúng định dạng.";
+        }
+        return error.message || "Không thể tải dữ liệu.";
+    }
+
+    return "Không thể tải dữ liệu.";
+};
 
 export default function LoadingScreen() {
     const navigation = useNavigation<any>();
@@ -26,6 +75,8 @@ export default function LoadingScreen() {
 
     const [status, setStatus] = useState<Status>("checking");
     const [hasLocalData, setHasLocalData] = useState(false);
+    const [errorMessage, setErrorMessage] = useState("");
+    const [canUseCachedFallback, setCanUseCachedFallback] = useState(false);
     const opacity = useRef(new Animated.Value(1)).current;
 
     // ✅ kiểu timeout chuẩn cho React Native + TS
@@ -38,6 +89,8 @@ export default function LoadingScreen() {
 
     const fetchAllData = async () => {
         setStatus("loadingNew");
+        setErrorMessage("");
+        setCanUseCachedFallback(false);
 
         try {
             const apiBase = getApiBase();
@@ -66,26 +119,15 @@ export default function LoadingScreen() {
             const rawText = await res.text();
             // console.log("📨 [Loading] Raw response text từ server:\n", rawText);
 
-            // nếu status không ok thì log thêm, rồi dừng (tuỳ bạn muốn xử lý sao)
             if (!res.ok) {
-                console.error(
-                    "❌ [Loading] Response không OK, status =",
-                    res.status
-                );
-                // có thể set state báo lỗi ở đây nếu cần
-                return;
+                throw new Error(`HTTP_${res.status}:${rawText.slice(0, 160)}`);
             }
 
             let result: any;
             try {
                 result = JSON.parse(rawText);
-            } catch (parseErr) {
-                console.error(
-                    "⚠️ [Loading] Lỗi parse JSON từ rawText:",
-                    parseErr
-                );
-                // ở đây dừng lại luôn vì không parse được JSON
-                return;
+            } catch {
+                throw new Error("INVALID_JSON_RESPONSE");
             }
 
             console.log("📌 [Loading] Parsed JSON result:", result);
@@ -113,6 +155,11 @@ export default function LoadingScreen() {
                 "❌ [Loading] Lỗi khi lấy dữ liệu tất cả các bảng:",
                 err
             );
+
+            const cached = parseCachedData(storage.getString(KEY_ALL_DATA));
+            setCanUseCachedFallback(Boolean(cached && !cached.isEmpty));
+            setErrorMessage(toUserErrorMessage(err));
+            setStatus("error");
         }
     };
 
@@ -121,52 +168,24 @@ export default function LoadingScreen() {
             try {
                 setStatus("checking");
 
-                const savedData = storage.getString(KEY_ALL_DATA);
-
-                if (savedData) {
-                    let allData: any = null;
-                    let isEmpty = false;
-
-                    try {
-                        allData = JSON.parse(savedData);
-
-                        if (Array.isArray(allData)) {
-                            isEmpty = allData.length === 0;
-                        } else if (allData && typeof allData === "object") {
-                            isEmpty = Object.keys(allData).length === 0;
-                        } else {
-                            isEmpty = true;
-                        }
-                    } catch (e) {
-                        console.warn(
-                            "⚠️ Lỗi parse allData từ storage, sẽ tải mới:",
-                            e
-                        );
-                        isEmpty = true;
-                    }
-
-                    if (!isEmpty) {
-                        console.log(
-                            "📌 Dữ liệu lấy từ bộ nhớ (CŨ, có nội dung):",
-                            allData
-                        );
-
-                        setDeviceGroups(allData);
-                        setHasLocalData(true);
-                        setIsDataFromCache(true); // dùng cache + auto sync sau
-                        setStatus("ready");
-                        return;
-                    }
-
+                const cached = parseCachedData(storage.getString(KEY_ALL_DATA));
+                if (cached && !cached.isEmpty) {
                     console.log(
-                        "ℹ️ allData trong storage rỗng -> sẽ tải dữ liệu mới"
+                        "📌 Dữ liệu lấy từ bộ nhớ (CŨ, có nội dung):",
+                        cached.data
                     );
+                    setDeviceGroups(cached.data);
+                    setHasLocalData(true);
+                    setIsDataFromCache(true);
+                    setStatus("ready");
+                    return;
                 }
 
-                // Không có savedData hoặc rỗng -> tải mới
                 await fetchAllData();
             } catch (error) {
                 console.error("Lỗi khi bootstrap dữ liệu:", error);
+                setErrorMessage(toUserErrorMessage(error));
+                setStatus("error");
             }
         };
 
@@ -180,29 +199,63 @@ export default function LoadingScreen() {
     }, [setDeviceGroups, setIsDataFromCache]);
 
     useEffect(() => {
-        if (status === "ready") {
-            timeoutRef.current = setTimeout(() => {
-                Animated.timing(opacity, {
-                    toValue: 0,
-                    duration: 300,
-                    useNativeDriver: true,
-                }).start(() => {
-                    navigation.replace("Home");
-                });
-            }, 2000);
+        if (timeoutRef.current) {
+            clearTimeout(timeoutRef.current);
+            timeoutRef.current = null;
         }
+
+        if (status !== "ready") {
+            return;
+        }
+
+        timeoutRef.current = setTimeout(() => {
+            Animated.timing(opacity, {
+                toValue: 0,
+                duration: 300,
+                useNativeDriver: true,
+            }).start(() => {
+                navigation.replace("Home");
+            });
+        }, 2000);
+
+        return () => {
+            if (timeoutRef.current) {
+                clearTimeout(timeoutRef.current);
+                timeoutRef.current = null;
+            }
+        };
     }, [status, navigation, opacity]);
 
     const renderTitle = () => {
         if (status === "checking") return "Đang kiểm tra dữ liệu...";
         if (status === "loadingNew") return "Đang tải dữ liệu lần đầu...";
+        if (status === "error") return "Không thể tải dữ liệu";
         if (status === "ready" && hasLocalData)
             return "Đã có dữ liệu trong bộ nhớ";
         if (status === "ready" && !hasLocalData) return "Tải dữ liệu hoàn tất";
         return "";
     };
 
+    const handleRetry = () => {
+        void fetchAllData();
+    };
+
+    const handleUseCachedData = () => {
+        const cached = parseCachedData(storage.getString(KEY_ALL_DATA));
+        if (!cached || cached.isEmpty) {
+            setCanUseCachedFallback(false);
+            setErrorMessage("Không tìm thấy dữ liệu cũ để sử dụng.");
+            return;
+        }
+
+        setDeviceGroups(cached.data);
+        setHasLocalData(true);
+        setIsDataFromCache(true);
+        setStatus("ready");
+    };
+
     const isDone = status === "ready";
+    const isError = status === "error";
     const hasMeta = totalTable !== null;
 
     return (
@@ -214,6 +267,12 @@ export default function LoadingScreen() {
                             name="checkmark-done-circle-outline"
                             size={80}
                             color={colors.success}
+                        />
+                    ) : isError ? (
+                        <Ionicons
+                            name="alert-circle-outline"
+                            size={80}
+                            color={colors.danger}
                         />
                     ) : (
                         <ActivityIndicator
@@ -229,6 +288,32 @@ export default function LoadingScreen() {
                     <Text style={styles.subText}>
                         Sử dụng tạm dữ liệu trong bộ nhớ...
                     </Text>
+                )}
+
+                {isError && (
+                    <>
+                        <Text style={styles.errorText}>
+                            {errorMessage || "Không thể tải dữ liệu."}
+                        </Text>
+
+                        <TouchableOpacity
+                            style={styles.primaryButton}
+                            onPress={handleRetry}
+                        >
+                            <Text style={styles.primaryButtonText}>Thử lại</Text>
+                        </TouchableOpacity>
+
+                        {canUseCachedFallback && (
+                            <TouchableOpacity
+                                style={styles.secondaryButton}
+                                onPress={handleUseCachedData}
+                            >
+                                <Text style={styles.secondaryButtonText}>
+                                    Dùng dữ liệu cũ
+                                </Text>
+                            </TouchableOpacity>
+                        )}
+                    </>
                 )}
 
                 {isDone && !hasLocalData && (
@@ -299,6 +384,42 @@ const styles = StyleSheet.create({
         color: colors.textMuted,
         fontSize: 14,
         textAlign: "center",
+    },
+    errorText: {
+        marginTop: 10,
+        color: colors.danger,
+        fontSize: 14,
+        textAlign: "center",
+        maxWidth: 280,
+    },
+    primaryButton: {
+        marginTop: 14,
+        minWidth: 140,
+        paddingVertical: 10,
+        paddingHorizontal: 16,
+        borderRadius: 10,
+        backgroundColor: colors.primary,
+        alignItems: "center",
+    },
+    primaryButtonText: {
+        color: "#FFFFFF",
+        fontSize: 14,
+        fontWeight: "700",
+    },
+    secondaryButton: {
+        marginTop: 8,
+        minWidth: 140,
+        paddingVertical: 10,
+        paddingHorizontal: 16,
+        borderRadius: 10,
+        borderWidth: 1,
+        borderColor: colors.primary,
+        alignItems: "center",
+    },
+    secondaryButtonText: {
+        color: colors.primary,
+        fontSize: 14,
+        fontWeight: "700",
     },
     metaText: {
         marginTop: 4,

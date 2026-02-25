@@ -1,0 +1,79 @@
+openapi: 3.1.0
+info:
+  title: QR3 Auth Web App API
+  version: 1.0.0
+  description: Action-based API exposed by Google Apps Script for authentication, admin, and profile operations.
+servers:
+  - url: https://script.google.com/macros/s/{deploymentId}/exec
+    description: Google Apps Script Web App deployment URL
+    variables:
+      deploymentId:
+        default: YOUR_DEPLOYMENT_ID
+paths:
+  /exec:
+    get:
+      summary: GET action endpoint
+      parameters:
+        - in: query
+          name: action
+          required: true
+          schema:
+            type: string
+            enum: [auth_me, admin_list_users, test, test_drive]
+        - in: query
+          name: token
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Action response payload
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+    post:
+      summary: POST action endpoint
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [action]
+              properties:
+                action:
+                  type: string
+                  enum:
+                    - auth_login
+                    - auth_logout
+                    - auth_me
+                    - admin_list_users
+                    - admin_create_user
+                    - auth_register
+                    - admin_set_user_role
+                    - admin_set_user_active
+                    - auth_verify_reset
+                    - auth_reset_password
+                    - auth_change_password
+                    - auth_upload_avatar
+                token:
+                  type: string
+                username:
+                  type: string
+                password:
+                  type: string
+                deviceId:
+                  type: string
+                userId:
+                  type: string
+              additionalProperties: true
+      responses:
+        "200":
+          description: Action response payload
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true

@@ -4,12 +4,14 @@ Ung dung React Native cho quan ly va quet QR. Tai lieu nay tap trung vao cach va
 
 ## Yeu cau
 - Node.js >= 20
+- pnpm >= 10
 - Android Studio (Android) hoac Xcode (iOS)
 - JDK va SDK theo huong dan React Native
 
 ## Cai dat
 ```sh
-npm install
+corepack enable
+pnpm install
 ```
 
 ## Cau hinh
@@ -23,21 +25,21 @@ OPENAI_API_KEY=your_key_here
 ## Chay ung dung
 ```sh
 # Mo Metro
-npm start
+pnpm start
 
 # Android
-npm run android
+pnpm android
 
 # iOS
-npm run ios
+pnpm ios
 ```
 
 ## Test va lint
 ```sh
-npm test
-npm run test:watch
-npm run test:coverage
-npm run lint
+pnpm test
+pnpm test:watch
+pnpm test:coverage
+pnpm lint
 ```
 
 ## Cau truc thu muc

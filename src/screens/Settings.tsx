@@ -25,7 +25,6 @@ import {
     DEFAULT_SHEET_ID,
     resetConfig,
     KEY_ALL_DATA,
-    VERSION,
 } from "../config/apiConfig";
 import { useOta } from "../context/OtaContext";
 import {
@@ -75,7 +74,6 @@ export default function SettingsScreen({ navigation }: Props) {
     const [pendingOta, setPendingOta] = useState<OtaInfo | null>(null);
     const {
         appVersion,
-        buildVersion,
         isDownloading,
         downloadProgress,
         startDownload,
@@ -216,12 +214,12 @@ export default function SettingsScreen({ navigation }: Props) {
                 return;
             }
 
-            const hasNew = isNewerVersion(ota.version, buildVersion);
+            const hasNew = isNewerVersion(ota.version, appVersion);
             if (!hasNew) {
                 openOtaModal(
                     "info",
                     "Cập nhật",
-                    `Bạn đang dùng phiên bản mới nhất (${VERSION}).`
+                    `Bạn đang dùng phiên bản mới nhất (${appVersion}).`
                 );
                 return;
             }
@@ -309,6 +307,13 @@ export default function SettingsScreen({ navigation }: Props) {
                         "Không mở được file",
                         e.message ||
                             "Tải xong nhưng không mở được file cài đặt. Hãy thử mở file APK trong thư mục Download."
+                    );
+                } else if (e.kind === "VERIFY") {
+                    openOtaModal(
+                        "error",
+                        "Xác minh OTA thất bại",
+                        e.message ||
+                            "Không thể xác minh tính toàn vẹn/chữ ký của file APK."
                     );
                 } else if (e.kind === "PLATFORM") {
                     openOtaModal(
@@ -457,9 +462,6 @@ export default function SettingsScreen({ navigation }: Props) {
                                 </Text>
                                 <Text style={styles.versionValue}>
                                     {appVersion}
-                                </Text>
-                                <Text style={styles.versionSubText}>
-                                    Build đang chạy: {buildVersion}
                                 </Text>
                             </View>
                             <TouchableOpacity
@@ -816,11 +818,6 @@ const styles = StyleSheet.create({
         fontSize: 14,
         fontWeight: "600",
         color: colors.text,
-        marginTop: 2,
-    },
-    versionSubText: {
-        fontSize: 11,
-        color: "#6B7280",
         marginTop: 2,
     },
     otaButton: {

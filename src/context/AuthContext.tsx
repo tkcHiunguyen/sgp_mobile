@@ -207,30 +207,6 @@ async function postActionJson<T = any>(body: Record<string, any>): Promise<T> {
     return json as T;
 }
 
-/**
- * GET action helper
- * ⚠️ Không dựa status code; chỉ dựa payload json.ok
- */
-async function getActionJson<T = any>(
-    action: string,
-    token?: string
-): Promise<T> {
-    if (!AUTH_WEBAPP_URL) throw new Error("Bạn chưa cấu hình AUTH_WEBAPP_URL");
-
-    const url =
-        `${AUTH_WEBAPP_URL}?action=${encodeURIComponent(action)}` +
-        (token ? `&token=${encodeURIComponent(String(token))}` : "");
-
-    const { text, json } = await fetchJsonText(url, { method: "GET" });
-
-    if (!json) {
-        throw new Error(
-            `SERVER_INVALID_JSON: ${String(text || "").slice(0, 200)}`
-        );
-    }
-    return json as T;
-}
-
 export const AuthProvider: React.FC<React.PropsWithChildren> = ({
     children,
 }) => {
@@ -355,7 +331,10 @@ export const AuthProvider: React.FC<React.PropsWithChildren> = ({
             }
 
             // call auth_me to validate token
-            const me: any = await getActionJson("auth_me", savedToken);
+            const me: any = await postActionJson({
+                action: "auth_me",
+                token: savedToken,
+            });
 
             if (me?.ok) {
                 const meUser = (me.user || savedUser) as AuthUser | null;
@@ -541,7 +520,10 @@ export const AuthProvider: React.FC<React.PropsWithChildren> = ({
     const refreshMe = async () => {
         if (!token) return false;
         try {
-            const me: any = await getActionJson("auth_me", token);
+            const me: any = await postActionJson({
+                action: "auth_me",
+                token: String(token),
+            });
             if (me?.ok) {
                 const meUser = (me.user || user) as AuthUser | null;
                 const nextExpiresAt = String(
@@ -578,21 +560,11 @@ export const AuthProvider: React.FC<React.PropsWithChildren> = ({
 
             try {
                 if (args.method === "GET") {
-                    const data: any = await getActionJson(args.action, token);
-
-                    if (!data?.ok) {
-                        const msg = String(
-                            data?.message || data?.error || "Server error"
-                        );
-
-                        if (isSessionInvalidByServerMessage(msg)) {
-                            handleSessionExpired({ mode, message: msg });
-                            throw new Error("SESSION_EXPIRED");
-                        }
-
-                        // không logout (vd: không có quyền admin)
-                        throw new Error(msg);
-                    }
+                    const data: any = await postActionJson({
+                        action: args.action,
+                        token: String(token),
+                        ...(args.payload || {}),
+                    });
 
                     return data as T;
                 }
