@@ -79,3 +79,28 @@ git push origin main
 ## Luu y ve secret
 - Khong commit `.env` hoac API key.
 - Neu push bi chan do secret, xoa key khoi code va commit lai.
+
+## Tool migrate app Windows -> macOS
+Script moi: `tools/windows_to_macos_migration.ps1`
+
+1. Tao inventory + chon app + sinh Brewfile
+```powershell
+powershell -ExecutionPolicy Bypass -File .\tools\windows_to_macos_migration.ps1
+```
+
+2. Chay nhanh khong can prompt (tu dong lay cac app da map)
+```powershell
+powershell -ExecutionPolicy Bypass -File .\tools\windows_to_macos_migration.ps1 -NonInteractive
+```
+
+3. Neu can, edit file `apps_selected.csv` roi tao lai Brewfile
+```powershell
+powershell -ExecutionPolicy Bypass -File .\tools\windows_to_macos_migration.ps1 `
+  -BuildBrewfileFromCsv `
+  -SelectedCsvPath .\migration-output\apps_selected.csv
+```
+
+4. Copy `migration-output/Brewfile.generated` sang Mac va chay:
+```bash
+brew bundle --file ./Brewfile.generated
+```

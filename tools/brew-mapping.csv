@@ -1,0 +1,31 @@
+winget_id,program_name,brew_type,brew_name,notes
+Git.Git,,brew,git,Git CLI
+OpenJS.NodeJS,,brew,node,Node.js
+OpenJS.NodeJS.LTS,,brew,node,Node.js LTS
+Python.Python.3,,brew,python,Python 3
+Microsoft.PowerShell,,brew,powershell,PowerShell
+Google.Chrome,,cask,google-chrome,Google Chrome
+Mozilla.Firefox,,cask,firefox,Mozilla Firefox
+Microsoft.VisualStudioCode,,cask,visual-studio-code,VS Code
+Docker.DockerDesktop,,cask,docker,Docker Desktop
+Postman.Postman,,cask,postman,Postman
+VideoLAN.VLC,,cask,vlc,VLC
+SlackTechnologies.Slack,,cask,slack,Slack
+Zoom.Zoom,,cask,zoom,Zoom
+Spotify.Spotify,,cask,spotify,Spotify
+Discord.Discord,,cask,discord,Discord
+Telegram.TelegramDesktop,,cask,telegram,Telegram
+Notion.Notion,,cask,notion,Notion
+JetBrains.Toolbox,,cask,jetbrains-toolbox,JetBrains Toolbox
+7zip.7zip,,brew,p7zip,7-Zip alternative
+,Visual Studio Code,cask,visual-studio-code,Name mapping fallback
+,Google Chrome,cask,google-chrome,Name mapping fallback
+,Mozilla Firefox,cask,firefox,Name mapping fallback
+,Docker Desktop,cask,docker,Name mapping fallback
+,Postman,cask,postman,Name mapping fallback
+,Slack,cask,slack,Name mapping fallback
+,Zoom,cask,zoom,Name mapping fallback
+,Spotify,cask,spotify,Name mapping fallback
+,Git,brew,git,Name mapping fallback
+,Node.js,brew,node,Name mapping fallback
+,Python,brew,python,Name mapping fallback
