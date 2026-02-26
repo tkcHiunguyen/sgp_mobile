@@ -9,20 +9,23 @@ import {
     TextInput,
     ScrollView,
 } from "react-native";
-import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import Ionicons from "react-native-vector-icons/Ionicons";
 
-import { RootStackParamList } from "../types/navigation";
-import { useDeviceGroup } from "../context/DeviceGroupContext";
 
+import { DateRangeNativePicker } from "../components/DateRangeFilter";
+import { AppButton } from "../components/ui/AppButton";
 import { AppScreen } from "../components/ui/AppScreen";
-import HeaderBar from "../components/ui/HeaderBar";
 import { BaseModal } from "../components/ui/BaseModal";
 import { EmptyState } from "../components/ui/EmptyState";
-import { AppButton } from "../components/ui/AppButton";
-import { colors } from "../theme/theme";
+import HeaderBar from "../components/ui/HeaderBar";
+import { useDeviceGroup } from "../context/DeviceGroupContext";
+import { useTheme } from "../context/ThemeContext";
 import { textStyle } from "../theme/typography";
-import { DateRangeNativePicker } from "../components/DateRangeFilterIOSDark";
+import { useThemedStyles } from "../theme/useThemedStyles";
+import { RootStackParamList } from "../types/navigation";
+
+import type { ThemeColors } from "../theme/theme";
+import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 
 type Props = NativeStackScreenProps<RootStackParamList, "History">;
 
@@ -113,6 +116,8 @@ interface DeviceRow {
 }
 
 export default function HistoryScreen({ navigation }: Props) {
+    const { colors } = useTheme();
+    const styles = useThemedStyles(createStyles);
     const { deviceGroups } = useDeviceGroup();
 
     const [modalVisible, setModalVisible] = useState(false);
@@ -220,7 +225,7 @@ export default function HistoryScreen({ navigation }: Props) {
             if (hasTo) {
                 toTime = parseDate(toDate.trim()).getTime();
             }
-        } catch (e) {
+        } catch {
             // nếu date nhập sai format thì coi như không áp dụng
             fromTime = 0;
             toTime = 0;
@@ -482,10 +487,13 @@ export default function HistoryScreen({ navigation }: Props) {
                         onClose={() => setDateFilterOpen(false)}
                         fromDate={fromDate}
                         toDate={toDate}
-                        onChange={({ fromDate, toDate }) => {
-                            setFromDate(fromDate);
-                            setToDate(toDate);
+                        onChange={({ fromDate: nextFromDate, toDate: nextToDate }) => {
+                            setFromDate(nextFromDate);
+                            setToDate(nextToDate);
                         }}
+                        title="Lọc thời gian"
+                        fromLabel="Từ ngày"
+                        toLabel="Đến ngày"
                     />
 
                     {/* FILTER BY DEVICE */}
@@ -644,11 +652,10 @@ export default function HistoryScreen({ navigation }: Props) {
                     keyExtractor={(item, index) =>
                         `${item.deviceName}-${item.date}-${index}`
                     }
+                    stickySectionHeadersEnabled
                     renderSectionHeader={({ section: { title } }) => (
                         <View style={styles.sectionHeader}>
-                            <Text style={styles.sectionHeaderText}>
-                                {title}
-                            </Text>
+                            <Text style={styles.sectionHeaderText}>{title}</Text>
                         </View>
                     )}
                     renderItem={renderHistoryItem}
@@ -809,7 +816,8 @@ export default function HistoryScreen({ navigation }: Props) {
     );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+    StyleSheet.create({
     /* ========= SCREEN LAYOUT ========= */
     content: {
         flex: 1,
@@ -859,7 +867,7 @@ const styles = StyleSheet.create({
         marginVertical: 6,
         borderRadius: 10,
         borderWidth: 1,
-        borderColor: "rgba(75,85,99,0.8)",
+        borderColor: colors.primarySoftBorder,
     },
     deviceText: {
         color: colors.text,
@@ -879,7 +887,7 @@ const styles = StyleSheet.create({
         borderRadius: 12,
         backgroundColor: colors.surface,
         borderWidth: 1,
-        borderColor: "rgba(55,65,81,0.9)",
+        borderColor: colors.primarySoftBorder,
         marginBottom: 10,
     },
     summaryItem: {
@@ -926,7 +934,7 @@ const styles = StyleSheet.create({
         alignItems: "center",
         borderRadius: 12,
         borderWidth: 1,
-        borderColor: "rgba(75,85,99,0.9)",
+        borderColor: colors.primarySoftBorder,
         backgroundColor: colors.surface,
         paddingHorizontal: 10,
         height: 40,
@@ -960,13 +968,13 @@ const styles = StyleSheet.create({
         height: 40,
         borderRadius: 12,
         borderWidth: 1,
-        borderColor: "rgba(96,165,250,0.8)",
+        borderColor: colors.primarySoftBorder,
         backgroundColor: colors.surface,
         justifyContent: "center",
         alignItems: "center",
     },
     filterBoxActive: {
-        backgroundColor: "rgba(37,99,235,0.2)",
+        backgroundColor: colors.backgroundAlt,
     },
     filterIcon: {
         fontSize: 20,
@@ -987,7 +995,7 @@ const styles = StyleSheet.create({
         borderRadius: 10,
         backgroundColor: colors.surface,
         borderWidth: 1,
-        borderColor: "rgba(96,165,250,0.8)",
+        borderColor: colors.primarySoftBorder,
         zIndex: 999,
         elevation: 10,
         maxHeight: 260,
@@ -998,7 +1006,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 12,
     },
     filterOptionActive: {
-        backgroundColor: "rgba(37,99,235,0.25)",
+        backgroundColor: colors.backgroundAlt,
     },
     filterOptionText: {
         ...textStyle(13, { lineHeightPreset: "tight" }),
@@ -1014,7 +1022,7 @@ const styles = StyleSheet.create({
         borderRadius: 10,
         backgroundColor: colors.surface,
         borderWidth: 1,
-        borderColor: "rgba(96,165,250,0.8)",
+        borderColor: colors.primarySoftBorder,
         zIndex: 999,
         elevation: 10,
         padding: 10,
@@ -1039,7 +1047,7 @@ const styles = StyleSheet.create({
         height: 32,
         borderRadius: 8,
         borderWidth: 1,
-        borderColor: "rgba(75,85,99,0.9)",
+        borderColor: colors.primarySoftBorder,
         paddingHorizontal: 8,
         color: colors.text,
         ...textStyle(13, { lineHeightPreset: "tight" }),
@@ -1058,13 +1066,18 @@ const styles = StyleSheet.create({
 
     /* ========= SECTION HEADER (THEO NGÀY) ========= */
     sectionHeader: {
-        marginTop: 4,
-        marginBottom: 4,
-        paddingVertical: 4,
+        marginTop: 0,
+        marginBottom: 0,
+        paddingTop: 4,
+        paddingBottom: 4,
+        paddingHorizontal: 2,
+        backgroundColor: colors.background,
+        zIndex: 2,
+        elevation: 2,
     },
     sectionHeaderText: {
-        color: colors.textMuted,
-        ...textStyle(12, { weight: "600", lineHeightPreset: "tight" }),
+        color: colors.textSoft,
+        ...textStyle(12, { weight: "700", lineHeightPreset: "tight" }),
     },
 
     /* ========= HISTORY CARD ========= */
@@ -1075,7 +1088,7 @@ const styles = StyleSheet.create({
         borderRadius: 12,
         marginBottom: 8,
         borderWidth: 1,
-        borderColor: "rgba(55,65,81,0.9)",
+        borderColor: colors.primarySoftBorder,
     },
     deviceLine: {
         flexDirection: "row",
@@ -1088,7 +1101,7 @@ const styles = StyleSheet.create({
         paddingVertical: 3,
         borderRadius: 999,
         borderWidth: 1,
-        borderColor: "rgba(96,165,250,0.7)",
+        borderColor: colors.primarySoftBorder,
         color: colors.textAccent,
         ...textStyle(11, { weight: "600", lineHeightPreset: "tight" }),
         marginRight: 6,
@@ -1118,8 +1131,8 @@ const styles = StyleSheet.create({
     },
 
     highlight: {
-        backgroundColor: "#FACC15",
-        color: "#111827",
+        backgroundColor: colors.warning,
+        color: colors.background,
         borderRadius: 10,
         overflow: "hidden",
     },
@@ -1146,7 +1159,7 @@ const styles = StyleSheet.create({
         marginVertical: 6,
         borderRadius: 10,
         borderWidth: 1,
-        borderColor: "rgba(75,85,99,0.8)",
+        borderColor: colors.primarySoftBorder,
     },
     topDeviceCount: {
         marginTop: 4,
@@ -1164,17 +1177,17 @@ const styles = StyleSheet.create({
         height: 18,
         borderRadius: 4,
         borderWidth: 1.5,
-        borderColor: "rgba(156,163,175,0.9)",
+        borderColor: colors.primarySoftBorder,
         alignItems: "center",
         justifyContent: "center",
         backgroundColor: "transparent",
     },
     checkboxActive: {
-        borderColor: "#22C55E",
+        borderColor: colors.success,
         backgroundColor: "rgba(34,197,94,0.12)",
     },
     checkboxIcon: {
         ...textStyle(14, { lineHeightPreset: "tight" }),
-        color: "#22C55E",
+        color: colors.success,
     },
-});
+    });

@@ -1,5 +1,5 @@
 // src/screens/Scanner.tsx (hoặc ScannerScreen.tsx)
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
     StyleSheet,
     Text,
@@ -10,23 +10,26 @@ import {
     Animated,
     Dimensions,
 } from "react-native";
+import Ionicons from "react-native-vector-icons/Ionicons";
 import {
     Camera,
     useCameraDevice,
     useCameraPermission,
     useCodeScanner,
 } from "react-native-vision-camera";
-import Ionicons from "react-native-vector-icons/Ionicons";
-import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 
-import { RootStackParamList } from "../types/navigation";
+
 import BackButton from "../components/backButton";
-import { useDeviceGroup } from "../context/DeviceGroupContext";
-import { colors } from "../theme/theme";
-import { textStyle } from "../theme/typography";
-
 import { AddHistoryAction } from "../components/maintenance/AddHistoryButton";
 import { getApiBase, getSheetId } from "../config/apiConfig";
+import { useDeviceGroup } from "../context/DeviceGroupContext";
+import { useTheme } from "../context/ThemeContext";
+import { textStyle } from "../theme/typography";
+import { useThemedStyles } from "../theme/useThemedStyles";
+import { RootStackParamList } from "../types/navigation";
+
+import type { ThemeColors } from "../theme/theme";
+import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 
 type Props = NativeStackScreenProps<RootStackParamList, "Scanner">;
 
@@ -49,19 +52,6 @@ const parseDate = (value: string): Date => {
     return new Date(year, month, day);
 };
 
-const parseDeviceCode = (fullCode: string) => {
-    if (!fullCode) return { group: "", kind: "", code: "" };
-
-    const parts = fullCode.split("-");
-    if (parts.length < 2) return { group: "", kind: "", code: fullCode };
-
-    const group = parts[0] || "";
-    const kind = parts[1] || "";
-    const code = parts.slice(2).join("-") || "";
-
-    return { group, kind, code };
-};
-
 // phán đoán có phải URL hay không
 const isProbablyUrl = (value: string): boolean => {
     const trimmed = value.trim();
@@ -71,6 +61,8 @@ const isProbablyUrl = (value: string): boolean => {
 };
 
 export default function ScannerScreen({ navigation }: Props) {
+    const { colors } = useTheme();
+    const styles = useThemedStyles(createStyles);
     const device = useCameraDevice("back");
     const { hasPermission, requestPermission } = useCameraPermission();
 
@@ -122,37 +114,40 @@ export default function ScannerScreen({ navigation }: Props) {
     const toggleFlash = () => setFlashOn((prev) => !prev);
 
     // Tìm xem value có phải là tên thiết bị trong allData hay không
-    const findDeviceInfo = (value: string) => {
-        for (const g of deviceGroups as any[]) {
-            const devicesRows = (g.devices?.rows ?? []) as {
-                id: number;
-                name: string;
-                freq: string | number | null;
-            }[];
+    const findDeviceInfo = useCallback(
+        (value: string) => {
+            for (const g of deviceGroups as any[]) {
+                const devicesRows = (g.devices?.rows ?? []) as {
+                    id: number;
+                    name: string;
+                    freq: string | number | null;
+                }[];
 
-            const foundDevice = devicesRows.find((d) => d.name === value);
-            if (foundDevice) {
-                const historyRows =
-                    ((g.history?.rows ?? []) as HistoryRow[]) || [];
+                const foundDevice = devicesRows.find((d) => d.name === value);
+                if (foundDevice) {
+                    const historyRows =
+                        ((g.history?.rows ?? []) as HistoryRow[]) || [];
 
-                const filtered = historyRows.filter(
-                    (h) => h.deviceName === value
-                );
+                    const filtered = historyRows.filter(
+                        (h) => h.deviceName === value
+                    );
 
-                const sorted = [...filtered].sort(
-                    (a, b) =>
-                        parseDate(b.date).getTime() -
-                        parseDate(a.date).getTime()
-                );
+                    const sorted = [...filtered].sort(
+                        (a, b) =>
+                            parseDate(b.date).getTime() -
+                            parseDate(a.date).getTime()
+                    );
 
-                return {
-                    groupName: g.table as string,
-                    history: sorted,
-                };
+                    return {
+                        groupName: g.table as string,
+                        history: sorted,
+                    };
+                }
             }
-        }
-        return null;
-    };
+            return null;
+        },
+        [deviceGroups]
+    );
 
     const resetPopupState = () => {
         setShowPopup(false);
@@ -165,28 +160,31 @@ export default function ScannerScreen({ navigation }: Props) {
         captureAnim.setValue(0);
     };
 
-    const processScannedValue = (value: string) => {
-        const deviceInfo = findDeviceInfo(value);
-        if (deviceInfo) {
-            setScannedValue(value);
-            setScanType("device");
-            setDeviceGroupName(deviceInfo.groupName);
-            setDeviceHistory(deviceInfo.history);
-            setShowPopup(true);
-            return;
-        }
+    const processScannedValue = useCallback(
+        (value: string) => {
+            const deviceInfo = findDeviceInfo(value);
+            if (deviceInfo) {
+                setScannedValue(value);
+                setScanType("device");
+                setDeviceGroupName(deviceInfo.groupName);
+                setDeviceHistory(deviceInfo.history);
+                setShowPopup(true);
+                return;
+            }
 
-        if (isProbablyUrl(value)) {
-            setScannedValue(value);
-            setScanType("url");
-            setShowPopup(true);
-            return;
-        }
+            if (isProbablyUrl(value)) {
+                setScannedValue(value);
+                setScanType("url");
+                setShowPopup(true);
+                return;
+            }
 
-        setScannedValue(value);
-        setScanType("text");
-        setShowPopup(true);
-    };
+            setScannedValue(value);
+            setScanType("text");
+            setShowPopup(true);
+        },
+        [findDeviceInfo]
+    );
 
     useEffect(() => {
         if (isCapturing && pendingValue) {
@@ -208,7 +206,7 @@ export default function ScannerScreen({ navigation }: Props) {
                 setPendingValue(null);
             });
         }
-    }, [isCapturing, pendingValue, captureAnim]);
+    }, [isCapturing, pendingValue, captureAnim, processScannedValue]);
 
     const codeScanner = useCodeScanner({
         codeTypes: ["qr"],
@@ -500,7 +498,7 @@ export default function ScannerScreen({ navigation }: Props) {
                 <Ionicons
                     name={flashOn ? "flash" : "flash-off"}
                     size={35}
-                    color="#FFFFFF"
+                    color={colors.text}
                 />
             </TouchableOpacity>
 
@@ -513,7 +511,8 @@ export default function ScannerScreen({ navigation }: Props) {
     );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+    StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: colors.background,
@@ -659,7 +658,7 @@ const styles = StyleSheet.create({
         backgroundColor: colors.danger,
     },
     btnText: {
-        color: "#FFFFFF",
+        color: colors.text,
         ...textStyle(15, { weight: "700", lineHeightPreset: "tight" }),
         textAlign: "center",
     },
@@ -680,7 +679,7 @@ const styles = StyleSheet.create({
         maxHeight: 260,
         borderRadius: 12,
         borderWidth: 1,
-        borderColor: "rgba(55,65,81,0.9)",
+        borderColor: colors.primarySoftBorder,
         backgroundColor: colors.background,
         padding: 10,
         marginBottom: 12,
@@ -698,7 +697,7 @@ const styles = StyleSheet.create({
         marginBottom: 8,
         paddingBottom: 6,
         borderBottomWidth: 1,
-        borderBottomColor: "rgba(31,41,55,0.8)",
+        borderBottomColor: colors.primarySoftBorder,
     },
     historyDate: {
         ...textStyle(12, { weight: "600", lineHeightPreset: "tight" }),
@@ -714,7 +713,7 @@ const styles = StyleSheet.create({
         padding: 26,
         borderRadius: 18,
         backgroundColor: colors.surface,
-        shadowColor: "#000",
+        shadowColor: colors.accent,
         shadowOpacity: 0.35,
         shadowRadius: 12,
         shadowOffset: { width: 0, height: 6 },
@@ -751,9 +750,9 @@ const styles = StyleSheet.create({
         justifyContent: "space-between",
         padding: 14,
         borderRadius: 16,
-        backgroundColor: "rgba(2,6,23,0.55)",
+        backgroundColor: colors.backgroundAlt,
         borderWidth: 1,
-        borderColor: "rgba(22,163,74,0.28)",
+        borderColor: colors.primarySoftBorder,
         marginBottom: 12,
     },
     headerLeft: {
@@ -771,9 +770,9 @@ const styles = StyleSheet.create({
         borderRadius: 12,
         alignItems: "center",
         justifyContent: "center",
-        backgroundColor: "rgba(255,255,255,0.06)",
+        backgroundColor: colors.backgroundAlt,
         borderWidth: 1,
-        borderColor: "rgba(255,255,255,0.10)",
+        borderColor: colors.primarySoftBorder,
         marginRight: 10,
     },
 
@@ -820,9 +819,9 @@ const styles = StyleSheet.create({
         paddingHorizontal: 10,
         paddingVertical: 6,
         borderRadius: 999,
-        backgroundColor: "rgba(255,255,255,0.05)",
+        backgroundColor: colors.backgroundAlt,
         borderWidth: 1,
-        borderColor: "rgba(255,255,255,0.10)",
+        borderColor: colors.primarySoftBorder,
         marginBottom: 8,
     },
     badgeCountText: {
@@ -833,9 +832,9 @@ const styles = StyleSheet.create({
 
     historyWrap2: {
         borderRadius: 16,
-        backgroundColor: "rgba(15,23,42,0.35)",
+        backgroundColor: colors.backgroundAlt,
         borderWidth: 1,
-        borderColor: "rgba(255,255,255,0.08)",
+        borderColor: colors.primarySoftBorder,
         padding: 12,
         marginBottom: 10,
     },
@@ -849,9 +848,9 @@ const styles = StyleSheet.create({
         paddingVertical: 14,
         paddingHorizontal: 12,
         borderRadius: 12,
-        backgroundColor: "rgba(255,255,255,0.04)",
+        backgroundColor: colors.backgroundAlt,
         borderWidth: 1,
-        borderColor: "rgba(255,255,255,0.08)",
+        borderColor: colors.primarySoftBorder,
     },
     emptyText: {
         marginLeft: 8,
@@ -862,9 +861,9 @@ const styles = StyleSheet.create({
     historyCard: {
         padding: 12,
         borderRadius: 14,
-        backgroundColor: "rgba(17,24,39,0.65)",
+        backgroundColor: colors.surfaceAlt,
         borderWidth: 1,
-        borderColor: "rgba(255,255,255,0.08)",
+        borderColor: colors.primarySoftBorder,
         marginBottom: 10,
     },
     historyCardTop: {
@@ -893,4 +892,4 @@ const styles = StyleSheet.create({
     closeBtn2: {
         backgroundColor: colors.danger,
     },
-});
+    });

@@ -14,14 +14,20 @@ import {
 } from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
 
-import { SingleDatePickerIOSDark } from "../SingleDatePickerIOSDark"; // chỉnh path đúng
+import { useTheme } from "../../context/ThemeContext";
+import { MIN_TOUCH_TARGET_SIZE } from "../../theme/touchTargets";
 import { inputMetrics, textStyle } from "../../theme/typography";
+import { useThemedStyles } from "../../theme/useThemedStyles";
 import {
     HistoryRow,
     todayDdMmYy,
     isValidDdMmYy,
     postAppendHistoryToAppScript,
 } from "../../utils/historyAdd";
+import { logger } from "../../utils/logger";
+import { SingleDatePickerIOSDark } from "../SingleDatePickerIOSDark"; // chỉnh path đúng
+
+import type { ThemeColors } from "../../theme/theme";
 
 type Props = {
     appScriptUrl: string;
@@ -42,6 +48,8 @@ export function AddHistoryAction({
     iconSize = 20,
     disabled,
 }: Props) {
+    const { colors, mode } = useTheme();
+    const styles = useThemedStyles(createStyles);
     const defaultDate = useMemo(() => todayDdMmYy(), []);
     const [open, setOpen] = useState(false);
 
@@ -78,13 +86,13 @@ export function AddHistoryAction({
         };
 
         // ✅ LOG: kiểm tra props/row ngay trước khi gọi POST
-        console.log("🧩 [AddHistory] PROPS =", {
+        logger.debug("🧩 [AddHistory] PROPS =", {
             appScriptUrl,
             sheetId,
             sheetName,
             deviceName,
         });
-        console.log("🧩 [AddHistory] ROW =", row);
+        logger.debug("🧩 [AddHistory] ROW =", row);
 
         setSubmitting(true);
         const result = await postAppendHistoryToAppScript({
@@ -95,13 +103,13 @@ export function AddHistoryAction({
         });
 
         if (!result.ok) {
-            console.warn("⚠️ [AddHistory] POST FAILED =", result);
+            logger.warn("⚠️ [AddHistory] POST FAILED =", result);
             setSubmitting(false);
             setError(result.message || "Không thể lưu lịch sử");
             return;
         }
 
-        console.log("✅ [AddHistory] POST OK");
+        logger.debug("✅ [AddHistory] POST OK");
         setSubmitting(false);
         setOpen(false);
         onPosted?.(row);
@@ -123,7 +131,7 @@ export function AddHistoryAction({
                 <Ionicons
                     name="add"
                     size={iconSize}
-                    color={stylesVars.primary}
+                    color={colors.textAccent}
                 />
             </Pressable>
 
@@ -135,7 +143,12 @@ export function AddHistoryAction({
                 onRequestClose={() => setOpen(false)}
             >
                 <KeyboardAvoidingView
-                    style={styles.overlay}
+                    style={[
+                        styles.overlay,
+                        mode === "dark"
+                            ? styles.overlayDark
+                            : styles.overlayLight,
+                    ]}
                     behavior={Platform.OS === "ios" ? "padding" : "height"}
                     keyboardVerticalOffset={Platform.OS === "ios" ? 12 : 0}
                 >
@@ -172,9 +185,7 @@ export function AddHistoryAction({
                                         editable={false}
                                         selectTextOnFocus={false}
                                         placeholder="Chọn ngày..."
-                                        placeholderTextColor={
-                                            stylesVars.textMuted
-                                        }
+                                        placeholderTextColor={colors.textMuted}
                                         style={[
                                             styles.input,
                                             styles.inputReadonly,
@@ -198,6 +209,9 @@ export function AddHistoryAction({
                                     <SingleDatePickerIOSDark
                                         value={date}
                                         onChange={setDate}
+                                        interaction="direct"
+                                        title="Chọn ngày bảo trì"
+                                        fieldLabel="Ngày bảo trì"
                                     />
                                 </View>
                             </View>
@@ -207,7 +221,7 @@ export function AddHistoryAction({
                                 value={content}
                                 onChangeText={setContent}
                                 placeholder="Nhập nội dung bảo trì..."
-                                placeholderTextColor={stylesVars.textMuted}
+                                placeholderTextColor={colors.textMuted}
                                 style={[
                                     styles.textarea,
                                     touched && !contentOk && styles.inputError,
@@ -260,7 +274,7 @@ export function AddHistoryAction({
                                     disabled={!canSave && touched}
                                 >
                                     {submitting ? (
-                                        <ActivityIndicator />
+                                        <ActivityIndicator color={colors.text} />
                                     ) : (
                                         <Text style={styles.btnText}>Lưu</Text>
                                     )}
@@ -276,28 +290,18 @@ export function AddHistoryAction({
     );
 }
 
-const stylesVars = {
-    background: "#020617",
-    surfaceAlt: "#111827",
-    text: "#E5F2FF",
-    textMuted: "#9CA3AF",
-
-    primary: "#3B82F6",
-    danger: "#DC2626",
-    success: "#16A34A", // ✅ xanh lá
-};
-
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+    StyleSheet.create({
     /* ===== Nút dấu cộng (GIỮ NGUYÊN) ===== */
     addBtn: {
-        width: 34,
-        height: 34,
-        borderRadius: 10,
+        width: MIN_TOUCH_TARGET_SIZE,
+        height: MIN_TOUCH_TARGET_SIZE,
+        borderRadius: 12,
         alignItems: "center",
         justifyContent: "center",
-        backgroundColor: "rgba(59,130,246,0.15)",
+        backgroundColor: colors.backgroundAlt,
         borderWidth: 1,
-        borderColor: "rgba(59,130,246,0.45)",
+        borderColor: colors.primarySoftBorder,
     },
     addBtnPressed: {
         transform: [{ scale: 0.98 }],
@@ -310,10 +314,15 @@ const styles = StyleSheet.create({
     /* ===== Overlay ===== */
     overlay: {
         flex: 1,
-        backgroundColor: "rgba(15,23,42,0.85)",
         justifyContent: "center",
         alignItems: "center",
         paddingHorizontal: 16,
+    },
+    overlayDark: {
+        backgroundColor: "rgba(15,23,42,0.85)",
+    },
+    overlayLight: {
+        backgroundColor: "rgba(15,23,42,0.35)",
     },
 
     /* ===== Card ===== */
@@ -321,10 +330,10 @@ const styles = StyleSheet.create({
         width: "96%",
         maxWidth: 560,
         maxHeight: "88%",
-        backgroundColor: stylesVars.background,
+        backgroundColor: colors.surface,
         borderRadius: 16,
         borderWidth: 1,
-        borderColor: "rgba(59,130,246,0.5)",
+        borderColor: colors.primarySoftBorder,
         paddingTop: 18,
         paddingHorizontal: 16,
         paddingBottom: 12,
@@ -335,13 +344,13 @@ const styles = StyleSheet.create({
 
     /* ===== Text ===== */
     title: {
-        color: stylesVars.text,
+        color: colors.text,
         ...textStyle(16, { weight: "800", lineHeightPreset: "tight" }),
         marginBottom: 10,
         textAlign: "center",
     },
     label: {
-        color: stylesVars.textMuted,
+        color: colors.textMuted,
         ...textStyle(12, { weight: "700", lineHeightPreset: "tight" }),
         marginTop: 10,
         marginBottom: 6,
@@ -349,15 +358,15 @@ const styles = StyleSheet.create({
 
     /* ===== Readonly ===== */
     readonlyBox: {
-        backgroundColor: stylesVars.surfaceAlt,
+        backgroundColor: colors.background,
         borderRadius: 12,
         borderWidth: 1,
-        borderColor: "rgba(255,255,255,0.08)",
+        borderColor: colors.primarySoftBorder,
         paddingHorizontal: 12,
         paddingVertical: 10,
     },
     readonlyText: {
-        color: stylesVars.text,
+        color: colors.text,
         ...textStyle(14, { weight: "700", lineHeightPreset: "tight" }),
     },
 
@@ -368,13 +377,13 @@ const styles = StyleSheet.create({
     },
 
     input: {
-        backgroundColor: stylesVars.surfaceAlt,
+        backgroundColor: colors.background,
         borderRadius: 12,
         borderWidth: 1,
-        borderColor: "rgba(255,255,255,0.08)",
+        borderColor: colors.primarySoftBorder,
         paddingHorizontal: 12,
         paddingVertical: inputMetrics.paddingVertical,
-        color: stylesVars.text,
+        color: colors.text,
         ...textStyle(14, { weight: "600", lineHeightPreset: "tight" }),
         height: inputMetrics.height,
     },
@@ -383,13 +392,13 @@ const styles = StyleSheet.create({
     },
 
     textarea: {
-        backgroundColor: stylesVars.surfaceAlt,
+        backgroundColor: colors.background,
         borderRadius: 12,
         borderWidth: 1,
-        borderColor: "rgba(255,255,255,0.08)",
+        borderColor: colors.primarySoftBorder,
         paddingHorizontal: 12,
         paddingVertical: 10,
-        color: stylesVars.text,
+        color: colors.text,
         ...textStyle(14, { lineHeightPreset: "normal" }),
         minHeight: 120,
         textAlignVertical: "top",
@@ -397,10 +406,10 @@ const styles = StyleSheet.create({
 
     /* ===== Errors ===== */
     inputError: {
-        borderColor: "rgba(220,38,38,0.65)",
+        borderColor: colors.danger,
     },
     errorText: {
-        color: stylesVars.danger,
+        color: colors.danger,
         ...textStyle(12, { weight: "600", lineHeightPreset: "tight" }),
     },
 
@@ -412,7 +421,7 @@ const styles = StyleSheet.create({
 
     btn: {
         flex: 1,
-        height: 44,
+        minHeight: MIN_TOUCH_TARGET_SIZE,
         borderRadius: 12,
         alignItems: "center",
         justifyContent: "center",
@@ -421,20 +430,20 @@ const styles = StyleSheet.create({
 
     /* ✅ Nút LƯU — XANH LÁ #16A34A */
     btnPrimary: {
-        backgroundColor: "#16A34A",
-        borderColor: stylesVars.success,
+        backgroundColor: colors.success,
+        borderColor: colors.success,
     },
 
     /* ❌ Nút HỦY — GIỮ NGUYÊN */
     btnSecondary: {
-        backgroundColor: "#DC2626",
-        borderColor: "rgba(255,255,255,0.12)",
+        backgroundColor: colors.danger,
+        borderColor: colors.danger,
     },
 
     btnDisabled: {
         opacity: 0.5,
-        backgroundColor: "rgba(255,255,255,0.04)",
-        borderColor: "rgba(255,255,255,0.12)",
+        backgroundColor: colors.backgroundAlt,
+        borderColor: colors.primarySoftBorder,
     },
 
     btnPressed: {
@@ -443,7 +452,7 @@ const styles = StyleSheet.create({
     },
 
     btnText: {
-        color: stylesVars.text,
+        color: "#F8FAFC",
         ...textStyle(14, { weight: "800", lineHeightPreset: "tight" }),
     },
-});
+    });

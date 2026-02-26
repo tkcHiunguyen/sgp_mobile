@@ -1,8 +1,12 @@
 // src/components/ui/EmptyState.tsx
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
-import { colors, spacing } from "../../theme/theme";
+
+
 import { textStyle } from "../../theme/typography";
+import { useThemedStyles } from "../../theme/useThemedStyles";
+
+import type { ThemeColors } from "../../theme/theme";
 
 type Props = {
     message: string;
@@ -10,6 +14,8 @@ type Props = {
 };
 
 export function EmptyState({ message, title }: Props) {
+    const styles = useThemedStyles(createStyles);
+
     return (
         <View style={styles.wrapper}>
             {title ? <Text style={styles.title}>{title}</Text> : null}
@@ -18,7 +24,8 @@ export function EmptyState({ message, title }: Props) {
     );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+    StyleSheet.create({
     wrapper: {
         flex: 1,
         justifyContent: "center",
@@ -37,4 +44,4 @@ const styles = StyleSheet.create({
         ...textStyle(13),
         textAlign: "center",
     },
-});
+    });

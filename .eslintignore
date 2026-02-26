@@ -1,0 +1,11 @@
+node_modules
+android
+ios
+vendor
+patches
+docs
+C4-Documentation
+.codex
+coverage
+dist
+build

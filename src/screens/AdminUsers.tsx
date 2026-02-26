@@ -1,4 +1,5 @@
 // src/screens/AdminUsers.tsx
+import { useNavigation } from "@react-navigation/native";
 import React, { useEffect, useMemo, useState } from "react";
 import {
     ActivityIndicator,
@@ -12,22 +13,23 @@ import {
     View,
 } from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
-import { useNavigation } from "@react-navigation/native";
 
 import { AppScreen } from "../components/ui/AppScreen";
-import HeaderBar from "../components/ui/HeaderBar";
 import { EmptyState } from "../components/ui/EmptyState";
-import { colors } from "../theme/theme";
-import { textStyle } from "../theme/typography";
-import { useAuth } from "../context/AuthContext";
+import HeaderBar from "../components/ui/HeaderBar";
 import { AUTH_WEBAPP_URL } from "../config/apiConfig";
-
+import { useAuth } from "../context/AuthContext";
+import { useTheme } from "../context/ThemeContext";
+import { textStyle } from "../theme/typography";
+import { useThemedStyles } from "../theme/useThemedStyles";
 import {
     ROLE_OPTIONS,
     ROLE_LABEL,
     normalizeRoleId,
     type RoleId,
 } from "../types/roles";
+
+import type { ThemeColors } from "../theme/theme";
 
 type UserRow = {
     userId: string;
@@ -119,6 +121,8 @@ function ConfirmModal({
     busy: boolean;
     onClose: () => void;
 }) {
+    const { colors } = useTheme();
+    const styles = useThemedStyles(createStyles);
     if (!state.visible) return null;
 
     return (
@@ -196,6 +200,8 @@ function SessionExpiredModal({
     onClose: () => void;
     onGoLogin: () => void;
 }) {
+    const { colors } = useTheme();
+    const styles = useThemedStyles(createStyles);
     if (!state.visible) return null;
 
     return (
@@ -243,6 +249,8 @@ function SessionExpiredModal({
 }
 
 export default function AdminUsersScreen() {
+    const { colors } = useTheme();
+    const styles = useThemedStyles(createStyles);
     const navigation = useNavigation<any>();
     const { token, user, logout } = useAuth() as any;
 
@@ -878,7 +886,8 @@ export default function AdminUsersScreen() {
     );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+    StyleSheet.create({
     topArea: {
         paddingHorizontal: 12,
         paddingTop: 10,
@@ -900,7 +909,7 @@ const styles = StyleSheet.create({
         borderRadius: 14,
         backgroundColor: colors.surfaceAlt,
         borderWidth: 1,
-        borderColor: "rgba(255,255,255,0.08)",
+        borderColor: colors.primarySoftBorder,
     },
     searchInput: {
         flex: 1,
@@ -914,7 +923,7 @@ const styles = StyleSheet.create({
         borderRadius: 14,
         borderWidth: 1,
         borderColor: colors.primarySoftBorder,
-        backgroundColor: "rgba(59,130,246,0.12)",
+        backgroundColor: colors.backgroundAlt,
         alignItems: "center",
         justifyContent: "center",
     },
@@ -929,14 +938,14 @@ const styles = StyleSheet.create({
         height: 38,
         borderRadius: 12,
         borderWidth: 1,
-        borderColor: "rgba(255,255,255,0.08)",
-        backgroundColor: "rgba(255,255,255,0.04)",
+        borderColor: colors.primarySoftBorder,
+        backgroundColor: colors.backgroundAlt,
         alignItems: "center",
         justifyContent: "center",
     },
     tabBtnActive: {
-        backgroundColor: "rgba(59,130,246,0.18)",
-        borderColor: "rgba(59,130,246,0.45)",
+        backgroundColor: colors.background,
+        borderColor: colors.primaryBorderStrong,
     },
     tabText: {
         color: colors.textMuted,
@@ -959,7 +968,7 @@ const styles = StyleSheet.create({
         borderRadius: 16,
         backgroundColor: colors.surface,
         borderWidth: 1,
-        borderColor: "rgba(255,255,255,0.08)",
+        borderColor: colors.primarySoftBorder,
     },
 
     rowTop: {
@@ -990,8 +999,8 @@ const styles = StyleSheet.create({
         height: 28,
         borderRadius: 999,
         borderWidth: 1,
-        borderColor: "rgba(255,255,255,0.10)",
-        backgroundColor: "rgba(255,255,255,0.04)",
+        borderColor: colors.primarySoftBorder,
+        backgroundColor: colors.backgroundAlt,
         maxWidth: "45%",
     },
     roleChipInlineText: {
@@ -1057,7 +1066,7 @@ const styles = StyleSheet.create({
         borderRadius: 16,
         backgroundColor: colors.background,
         borderWidth: 1,
-        borderColor: "rgba(59,130,246,0.45)",
+        borderColor: colors.primaryBorderStrong,
         padding: 12,
         maxHeight: "70%",
     },
@@ -1094,7 +1103,7 @@ const styles = StyleSheet.create({
         borderRadius: 12,
         backgroundColor: colors.surfaceAlt,
         borderWidth: 1,
-        borderColor: "rgba(255,255,255,0.08)",
+        borderColor: colors.primarySoftBorder,
         marginBottom: 8,
     },
     roleItemText: {
@@ -1112,7 +1121,7 @@ const styles = StyleSheet.create({
         borderRadius: 16,
         backgroundColor: colors.background,
         borderWidth: 1,
-        borderColor: "rgba(255,255,255,0.10)",
+        borderColor: colors.primarySoftBorder,
         padding: 12,
     },
     confirmHeader: {
@@ -1149,15 +1158,15 @@ const styles = StyleSheet.create({
     },
     btnGhost: {
         backgroundColor: "transparent",
-        borderColor: "rgba(255,255,255,0.12)",
+        borderColor: colors.primarySoftBorder,
     },
     btnGhostText: {
         color: colors.text,
         ...textStyle(14, { weight: "900", lineHeightPreset: "tight" }),
     },
     btnPrimary: {
-        backgroundColor: "rgba(59,130,246,0.22)",
-        borderColor: "rgba(59,130,246,0.45)",
+        backgroundColor: colors.backgroundAlt,
+        borderColor: colors.primaryBorderStrong,
     },
     btnDanger: {
         backgroundColor: "rgba(220,38,38,0.18)",
@@ -1177,7 +1186,7 @@ const styles = StyleSheet.create({
         borderRadius: 16,
         backgroundColor: colors.background,
         borderWidth: 1,
-        borderColor: "rgba(59,130,246,0.45)",
+        borderColor: colors.primaryBorderStrong,
         padding: 12,
     },
-});
+    });

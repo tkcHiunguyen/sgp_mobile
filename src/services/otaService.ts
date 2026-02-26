@@ -1,13 +1,15 @@
 ﻿// src/services/otaService.ts
 import { Platform } from "react-native";
-import RNFS from "react-native-fs";
 import FileViewer from "react-native-file-viewer";
+import RNFS from "react-native-fs";
+
 import {
     API_BASE_URL,
     OTA_SIGNATURE_DEFAULT_KEY_ID,
     OTA_SIGNATURE_PUBLIC_KEYS,
     OTA_SIGNATURE_REQUIRED,
 } from "../config/apiConfig";
+import { logger } from "../utils/logger";
 
 export type OtaInfo = {
     version: string;
@@ -46,14 +48,14 @@ export async function fetchLatestOta(): Promise<OtaInfo | null> {
     const base = API_BASE_URL.replace(/\/$/, "");
     const url = `${base}/ota/latest`;
 
-    console.log("🔗 OTA check URL:", url);
+    logger.debug("🔗 OTA check URL:", url);
 
     let res: Response;
 
     try {
         res = await fetch(url);
     } catch (err) {
-        console.log("❌ fetchLatestOta network error:", err);
+        logger.debug("❌ fetchLatestOta network error:", err);
         throw new OtaError(
             "NETWORK",
             "Không kết nối được tới server OTA. Vui lòng kiểm tra lại Wi-Fi/4G hoặc địa chỉ server."
@@ -61,7 +63,7 @@ export async function fetchLatestOta(): Promise<OtaInfo | null> {
     }
 
     if (!res.ok) {
-        console.log("❌ fetchLatestOta HTTP status:", res.status);
+        logger.debug("❌ fetchLatestOta HTTP status:", res.status);
         throw new OtaError(
             "HTTP",
             `Server OTA trả về lỗi HTTP ${res.status}.`,
@@ -74,7 +76,7 @@ export async function fetchLatestOta(): Promise<OtaInfo | null> {
         if (!data.update) return null;
         return data as OtaInfo;
     } catch (err) {
-        console.log("❌ fetchLatestOta parse error:", err);
+        logger.debug("❌ fetchLatestOta parse error:", err);
         throw new OtaError(
             "UNKNOWN",
             "Dữ liệu OTA từ server không hợp lệ. Hãy kiểm tra lại API /ota/latest."
@@ -151,7 +153,7 @@ function utf8Encode(value: string): Uint8Array {
 function manualBase64Decode(base64: string): Uint8Array {
     const alphabet =
         "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-    const clean = normalizeBase64(base64).replace(/=+$/, "");
+    const clean = normalizeBase64(base64).replace(/[=]+$/, "");
 
     const bytes: number[] = [];
     let buffer = 0;
@@ -302,7 +304,7 @@ async function verifyDownloadedApk(localPath: string, ota: OtaInfo) {
     try {
         actualSha256 = normalizeSha256(await RNFS.hash(localPath, "sha256"));
     } catch (err) {
-        console.log("❌ OTA hash error:", err);
+        logger.debug("❌ OTA hash error:", err);
         throw new OtaError(
             "VERIFY",
             "Không thể tính checksum file APK sau khi tải."
@@ -321,7 +323,7 @@ async function verifyDownloadedApk(localPath: string, ota: OtaInfo) {
         const stat = await RNFS.stat(localPath);
         actualSize = Number(stat.size || 0);
     } catch (err) {
-        console.log("❌ OTA stat error:", err);
+        logger.debug("❌ OTA stat error:", err);
         throw new OtaError("VERIFY", "Không đọc được kích thước file APK đã tải.");
     }
 
@@ -413,14 +415,14 @@ export async function downloadAndInstallApk(
                     }
                 }
             } catch (err) {
-                console.log("⚠️ [OTA] Không đọc được thư mục:", dir, err);
+                logger.debug("⚠️ [OTA] Không đọc được thư mục:", dir, err);
             }
 
             return collected;
         };
 
         const rootFiles = await RNFS.readDir(downloadsDir);
-        console.log(
+        logger.debug(
             "📂 [OTA] Files trong Download (root):",
             rootFiles.map((f) => ({
                 name: f.name,
@@ -432,30 +434,30 @@ export async function downloadAndInstallApk(
         const oldApks = await scanDir(downloadsDir);
 
         if (oldApks.length > 0) {
-            console.log(
+            logger.debug(
                 "🧹 [OTA] Xoá APK cũ tìm thấy:",
                 oldApks.map((f) => f.path)
             );
         } else {
-            console.log("🧹 [OTA] Không tìm thấy APK cũ để xoá.");
+            logger.debug("🧹 [OTA] Không tìm thấy APK cũ để xoá.");
         }
 
         for (const f of oldApks) {
             try {
                 await RNFS.unlink(f.path);
-                console.log("✅ [OTA] Đã xoá:", f.path);
+                logger.debug("✅ [OTA] Đã xoá:", f.path);
             } catch (err) {
-                console.log("⚠️ [OTA] Không xoá được file:", f.path, err);
+                logger.debug("⚠️ [OTA] Không xoá được file:", f.path, err);
             }
         }
     } catch (err) {
-        console.log("⚠️ [OTA] Lỗi khi xử lý xoá file APK cũ:", err);
+        logger.debug("⚠️ [OTA] Lỗi khi xử lý xoá file APK cũ:", err);
     }
 
     const localPath = `${downloadsDir}/${fileName}`;
 
-    console.log("⬇️ OTA download from:", downloadUrl);
-    console.log("📁 OTA save to:", localPath);
+    logger.debug("⬇️ OTA download from:", downloadUrl);
+    logger.debug("📁 OTA save to:", localPath);
 
     let result: RNFS.DownloadResult;
 
@@ -474,14 +476,14 @@ export async function downloadAndInstallApk(
 
         result = await task.promise;
     } catch (err) {
-        console.log("❌ OTA download network error:", err);
+        logger.debug("❌ OTA download network error:", err);
         throw new OtaError(
             "NETWORK",
             "Không tải được file cập nhật từ server. Vui lòng kiểm tra lại kết nối mạng."
         );
     }
 
-    console.log("📦 Download result:", result);
+    logger.debug("📦 Download result:", result);
 
     if (result.statusCode !== 200) {
         throw new OtaError(
@@ -498,7 +500,7 @@ export async function downloadAndInstallApk(
             showOpenWithDialog: true,
         });
     } catch (err) {
-        console.log("❌ OTA open file error:", err);
+        logger.debug("❌ OTA open file error:", err);
         throw new OtaError(
             "DOWNLOAD",
             "Tải xong nhưng không mở được file cài đặt. Hãy thử mở file APK trong thư mục Download."

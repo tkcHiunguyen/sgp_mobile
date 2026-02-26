@@ -16,18 +16,16 @@
 ## Quick Wins (Tuần 1-2)
 
 - [x] Sửa Loading flow: thêm state lỗi rõ ràng + nút retry + fallback cache an toàn.
-- [ ] Giảm log production (auth/data/ota), chuẩn hóa logger theo env.
-- [ ] Chuẩn hóa touch target chính >= 44pt iOS / 48dp Android.
-- [ ] Tắt tạm tính năng "Thêm lịch sử" bằng feature flag (Devices + Scanner) nếu chưa cần dùng.
-- [ ] Bỏ lưu plaintext password; chỉ giữ username hoặc chuyển secure storage.
-- [ ] Bổ sung cấu hình ESLint tối thiểu để `pnpm lint` chạy được.
+- [x] Giảm log production (auth/data/ota), chuẩn hóa logger theo env. *(đã thêm `src/utils/logger.ts`, chuyển các log auth/data/ota sang logger theo env; production chỉ giữ error)*.
+- [x] Chuẩn hóa touch target chính >= 44pt iOS / 48dp Android. *(đã chuẩn hóa qua token `MIN_TOUCH_TARGET_SIZE` và áp vào các nút chính: AppButton/BackButton/Login/Register/Settings/Devices/DateRange/AddHistory)*.
+- [x] Bổ sung cấu hình ESLint tối thiểu để `pnpm lint` chạy được. *(đã thêm `.eslintrc.cjs` + `.eslintignore`, lệnh `pnpm lint` chạy pass)*.
 
 ## Medium (Tuần 3-4)
 
 - [ ] Refactor các màn hình lớn: `Devices`, `Scanner`, `Me`, `AdminUsers` theo module + hooks.
 - [ ] Hợp nhất tầng API (tránh lặp logic auth/admin/profile).
-- [ ] Chuyển list nặng sang `FlatList/FlashList`, bỏ key theo index.
-- [ ] Siết type navigation, giảm `useNavigation<any>` ở các luồng chính.
+- [ ] Chuyển list nặng sang `FlatList/FlashList`, bỏ key theo index. *(partial: Home đã dùng FlatList + key ổn; Devices/Scanner/History vẫn còn key theo index/map trong scroll)*.
+- [ ] Siết type navigation, giảm `useNavigation<any>` ở các luồng chính. *(partial: đã có `RootStackParamList`, nhưng còn nhiều `useNavigation<any>`/`as any`)*.
 - [ ] Thêm analytics tối thiểu: login success, time-to-home, scan success, add-history success/fail.
 
 ## Long-term (Tuần 5-6)
@@ -42,14 +40,22 @@
 ## 3) Thứ tự ưu tiên thực thi (đề xuất)
 
 - [x] P1: Loading + retry + fallback.
-- [ ] P1: Loại log nhạy cảm + bỏ lưu plaintext password.
-- [ ] P1: Chuẩn hóa touch target + accessibility cơ bản.
+- [x] P1: Loại log nhạy cảm (logger theo env).
+- [ ] P1: Chuẩn hóa touch target + accessibility cơ bản. *(partial)*.
 - [ ] P2: Refactor `Devices/Scanner` + tối ưu list.
 - [ ] P2: CI + E2E smoke path.
 
 ---
 
-## 4) KPI theo dõi sau nâng cấp
+## 4) Đã làm nhưng trước đó chưa phản ánh trong checklist
+
+- [x] Refactor theme dùng context + token màu + `useThemedStyles` cho nhiều màn hình/components.
+- [x] Tách cụm date picker iOS thành module riêng (`src/components/datePicker/*`) và dùng lại trong filter.
+- [x] Bổ sung checklist QA giao diện iOS theo theme tại `docs/theme-ios-qa-checklist.md`.
+
+---
+
+## 5) KPI theo dõi sau nâng cấp
 
 - Crash-free sessions (%)
 - Thời gian vào Home (cold start)

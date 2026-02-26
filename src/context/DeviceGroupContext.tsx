@@ -1,10 +1,12 @@
 import React, { createContext, useState, useContext, useCallback } from "react";
+
 import {
     storage,
     getApiBase,
     getSheetId,
     KEY_ALL_DATA,
 } from "../config/apiConfig";
+import { logger } from "../utils/logger";
 
 interface DeviceGroupContextType {
     deviceGroups: any[];
@@ -43,7 +45,7 @@ export const DeviceGroupProvider: React.FC<{ children: React.ReactNode }> = ({
     const refreshAllData = useCallback(async () => {
         if (isSyncing) return;
 
-        console.log("🔄 [SYNC] BẮT ĐẦU tải dữ liệu mới...");
+        logger.debug("🔄 [SYNC] BẮT ĐẦU tải dữ liệu mới...");
         const start = Date.now();
 
         try {
@@ -60,7 +62,7 @@ export const DeviceGroupProvider: React.FC<{ children: React.ReactNode }> = ({
             );
 
             const result = await res.json();
-            console.log("📌 [SYNC] Raw result:", result);
+            logger.debug("📌 [SYNC] Raw result:", result);
 
             const allData = result.data ?? [];
 
@@ -68,9 +70,9 @@ export const DeviceGroupProvider: React.FC<{ children: React.ReactNode }> = ({
             setDeviceGroups(allData);
             setIsDataFromCache(false);
 
-            console.log(`✅ [SYNC] HOÀN TẤT (mất ${Date.now() - start}ms)`);
+            logger.debug(`✅ [SYNC] HOÀN TẤT (mất ${Date.now() - start}ms)`);
         } catch (err) {
-            console.error("❌ [SYNC] Lỗi khi đồng bộ:", err);
+            logger.error("❌ [SYNC] Lỗi khi đồng bộ:", err);
         } finally {
             setIsSyncing(false);
         }
@@ -132,4 +134,3 @@ export const DeviceGroupProvider: React.FC<{ children: React.ReactNode }> = ({
         </DeviceGroupContext.Provider>
     );
 };
-

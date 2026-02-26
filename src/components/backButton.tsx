@@ -2,7 +2,12 @@
 import React, { useRef } from "react";
 import { Animated, Pressable, StyleSheet, ViewStyle } from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
-import { colors } from "../theme/theme";
+
+import { useTheme } from "../context/ThemeContext";
+import { MIN_TOUCH_TARGET_SIZE } from "../theme/touchTargets";
+import { useThemedStyles } from "../theme/useThemedStyles";
+
+import type { ThemeColors } from "../theme/theme";
 
 type Props = {
     onPress: () => void;
@@ -10,7 +15,10 @@ type Props = {
 };
 
 export default function BackButton({ onPress, style }: Props) {
+    const { mode } = useTheme();
+    const styles = useThemedStyles(createStyles);
     const scale = useRef(new Animated.Value(1)).current;
+    const iconColor = mode === "dark" ? "#FFFFFF" : "#0F172A";
 
     const pressIn = () => {
         Animated.spring(scale, {
@@ -38,37 +46,47 @@ export default function BackButton({ onPress, style }: Props) {
                 onPressOut={pressOut}
                 style={({ pressed }) => [
                     styles.btn,
-                    pressed && { opacity: 0.92 },
+                    mode === "dark" ? styles.btnDark : styles.btnLight,
+                    pressed && styles.btnPressed,
                 ]}
                 hitSlop={10}
             >
-                <Ionicons name="chevron-back" size={24} color={colors.text} />
+                <Ionicons name="chevron-back" size={24} color={iconColor} />
             </Pressable>
         </Animated.View>
     );
 }
 
-const styles = StyleSheet.create({
-    wrap: {
-        position: "absolute",
-        top: 22,
-        left: 14,
-        zIndex: 9999,
-        elevation: 12,
-        shadowColor: "#000",
-        shadowOpacity: 0.28,
-        shadowRadius: 8,
-        shadowOffset: { width: 0, height: 4 },
-    },
-    btn: {
-        width: 44,
-        height: 44,
-        borderRadius: 22,
-        alignItems: "center",
-        justifyContent: "center",
-
-        backgroundColor: "rgba(15, 23, 42, 0.72)", 
-        borderWidth: 1,
-        borderColor: "rgba(59,130,246,0.35)", 
-    },
-});
+const createStyles = (colors: ThemeColors) =>
+    StyleSheet.create({
+        wrap: {
+            position: "absolute",
+            top: 22,
+            left: 14,
+            zIndex: 9999,
+            elevation: 12,
+            shadowColor: colors.accent,
+            shadowOpacity: 0.22,
+            shadowRadius: 8,
+            shadowOffset: { width: 0, height: 4 },
+        },
+        btn: {
+            width: MIN_TOUCH_TARGET_SIZE,
+            height: MIN_TOUCH_TARGET_SIZE,
+            borderRadius: MIN_TOUCH_TARGET_SIZE / 2,
+            alignItems: "center",
+            justifyContent: "center",
+            borderWidth: 1,
+        },
+        btnDark: {
+            backgroundColor: colors.surface,
+            borderColor: colors.primarySoftBorder,
+        },
+        btnLight: {
+            backgroundColor: colors.surface,
+            borderColor: colors.primaryBorderStrong,
+        },
+        btnPressed: {
+            opacity: 0.92,
+        },
+    });

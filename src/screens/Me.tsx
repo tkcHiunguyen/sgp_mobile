@@ -1,4 +1,5 @@
 // src/screens/Me.tsx
+import { useNavigation } from "@react-navigation/native";
 import React, { useMemo, useState } from "react";
 import {
     ActivityIndicator,
@@ -14,17 +15,20 @@ import {
     PermissionsAndroid,
     Linking,
 } from "react-native";
-import Ionicons from "react-native-vector-icons/Ionicons";
-import LinearGradient from "react-native-linear-gradient";
-import { useNavigation } from "@react-navigation/native";
 import { launchImageLibrary } from "react-native-image-picker";
+import LinearGradient from "react-native-linear-gradient";
+import Ionicons from "react-native-vector-icons/Ionicons";
 
 import { AppScreen } from "../components/ui/AppScreen";
 import HeaderBar from "../components/ui/HeaderBar";
-import { colors } from "../theme/theme";
-import { textStyle } from "../theme/typography";
-import { useAuth } from "../context/AuthContext";
 import { AUTH_WEBAPP_URL } from "../config/apiConfig";
+import { useAuth } from "../context/AuthContext";
+import { useTheme } from "../context/ThemeContext";
+import { textStyle } from "../theme/typography";
+import { useThemedStyles } from "../theme/useThemedStyles";
+import { logger } from "../utils/logger";
+
+import type { ThemeColors } from "../theme/theme";
 
 type ConfirmState =
     | {
@@ -47,6 +51,8 @@ function ConfirmModal({
     busy: boolean;
     onClose: () => void;
 }) {
+    const { colors } = useTheme();
+    const styles = useThemedStyles(createStyles);
     if (!state.visible) return null;
 
     return (
@@ -140,6 +146,8 @@ function PermissionModal({
     onClose: () => void;
     onOpenSettings: () => void;
 }) {
+    const { colors } = useTheme();
+    const styles = useThemedStyles(createStyles);
     if (!state.visible) return null;
 
     return (
@@ -257,7 +265,7 @@ async function postAuthAction<T = any>(args: {
         data = null;
     }
 
-    console.log("[AUTH_API]", {
+    logger.debug("[AUTH_API]", {
         action,
         status: res.status,
         okHttp: res.ok,
@@ -328,6 +336,8 @@ function safeFolderName(input: string) {
 }
 
 export default function MeScreen() {
+    const { colors } = useTheme();
+    const styles = useThemedStyles(createStyles);
     const navigation = useNavigation<any>();
     const auth = useAuth() as any;
     const { user, token, logout } = auth;
@@ -702,103 +712,105 @@ export default function MeScreen() {
                 contentContainerStyle={{ padding: 12, paddingBottom: 28 }}
                 showsVerticalScrollIndicator={false}
             >
-                <LinearGradient
-                    colors={[colors.surface, colors.background]}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 1 }}
-                    style={styles.profileCard}
-                >
-                    <View style={styles.profileTop}>
-                        <Pressable
-                            onPress={pickAndUploadAvatar}
-                            style={({ pressed }) => [
-                                styles.avatarWrap,
-                                pressed && styles.pressedSm,
-                            ]}
-                            disabled={avatarBusy}
-                        >
-                            {avatarUri ? (
-                                <Image
-                                    source={{ uri: avatarUri }}
-                                    style={styles.avatarImg}
-                                />
-                            ) : (
-                                <View style={styles.avatarFallback}>
-                                    <Ionicons
-                                        name="person"
-                                        size={26}
-                                        color={colors.text}
+                <View style={styles.profileCardShadow}>
+                    <LinearGradient
+                        colors={[colors.surface, colors.background]}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 1 }}
+                        style={styles.profileCard}
+                    >
+                        <View style={styles.profileTop}>
+                            <Pressable
+                                onPress={pickAndUploadAvatar}
+                                style={({ pressed }) => [
+                                    styles.avatarWrap,
+                                    pressed && styles.pressedSm,
+                                ]}
+                                disabled={avatarBusy}
+                            >
+                                {avatarUri ? (
+                                    <Image
+                                        source={{ uri: avatarUri }}
+                                        style={styles.avatarImg}
                                     />
-                                </View>
-                            )}
-
-                            <View style={styles.avatarBadge}>
-                                {avatarBusy ? (
-                                    <ActivityIndicator />
                                 ) : (
-                                    <Ionicons
-                                        name="camera-outline"
-                                        size={16}
-                                        color={colors.text}
-                                    />
+                                    <View style={styles.avatarFallback}>
+                                        <Ionicons
+                                            name="person"
+                                            size={26}
+                                            color={colors.text}
+                                        />
+                                    </View>
                                 )}
-                            </View>
-                        </Pressable>
 
-                        <View style={{ flex: 1, minWidth: 0 }}>
-                            <Text style={styles.fullName} numberOfLines={1}>
-                                {displayName}
-                            </Text>
-
-                            {!!user?.username && (
-                                <Text style={styles.username} numberOfLines={1}>
-                                    @{String(user.username)}
-                                </Text>
-                            )}
-
-                            <View style={styles.chipRow}>
-                                <View style={styles.chip}>
-                                    <Text style={styles.chipText}>
-                                        {badgeRole}
-                                    </Text>
+                                <View style={styles.avatarBadge}>
+                                    {avatarBusy ? (
+                                        <ActivityIndicator />
+                                    ) : (
+                                        <Ionicons
+                                            name="camera-outline"
+                                            size={16}
+                                            color={colors.text}
+                                        />
+                                    )}
                                 </View>
+                            </Pressable>
 
-                                <View style={[styles.chip, styles.chipOk]}>
-                                    <Text style={styles.chipText}>
-                                        ĐÃ KÍCH HOẠT
+                            <View style={{ flex: 1, minWidth: 0 }}>
+                                <Text style={styles.fullName} numberOfLines={1}>
+                                    {displayName}
+                                </Text>
+
+                                {!!user?.username && (
+                                    <Text style={styles.username} numberOfLines={1}>
+                                        @{String(user.username)}
                                     </Text>
+                                )}
+
+                                <View style={styles.chipRow}>
+                                    <View style={styles.chip}>
+                                        <Text style={styles.chipText}>
+                                            {badgeRole}
+                                        </Text>
+                                    </View>
+
+                                    <View style={[styles.chip, styles.chipOk]}>
+                                        <Text style={styles.chipText}>
+                                            ĐÃ KÍCH HOẠT
+                                        </Text>
+                                    </View>
                                 </View>
                             </View>
                         </View>
-                    </View>
 
-                    <View style={styles.metaBlock}>
-                        <Text style={styles.metaText}>
-                            User ID:{" "}
-                            <Text style={styles.metaTextStrong}>
-                                {String(user?.userId || "-")}
+                        <View style={styles.metaBlock}>
+                            <Text style={styles.metaText}>
+                                User ID:{" "}
+                                <Text style={styles.metaTextStrong}>
+                                    {String(user?.userId || "-")}
+                                </Text>
                             </Text>
-                        </Text>
 
-                        <Text style={styles.metaText}>
-                            Mã nhân viên:{" "}
-                            <Text style={styles.metaTextStrong}>
-                                {String(user?.code || "-")}
+                            <Text style={styles.metaText}>
+                                Mã nhân viên:{" "}
+                                <Text style={styles.metaTextStrong}>
+                                    {String(user?.code || "-")}
+                                </Text>
                             </Text>
-                        </Text>
 
-                        <Text style={styles.metaText}>
-                            Thư mục avatar:{" "}
-                            <Text style={styles.metaTextStrong}>
-                                {avatarFolderName || "-"}
+                            <Text style={styles.metaText}>
+                                Thư mục avatar:{" "}
+                                <Text style={styles.metaTextStrong}>
+                                    {avatarFolderName || "-"}
+                                </Text>
                             </Text>
-                        </Text>
-                    </View>
+                        </View>
 
-                    <Text style={styles.avatarHint}>
-                        Nhấn vào ảnh để đổi ảnh đại diện
-                    </Text>
-                </LinearGradient>
+                        <Text style={styles.avatarHint}>
+                            Nhấn vào ảnh để đổi ảnh đại diện
+                        </Text>
+                    </LinearGradient>
+                </View>
 
                 <View style={styles.sectionTitleRow}>
                     <Text style={styles.sectionTitle}>Tác vụ nhanh</Text>
@@ -1066,7 +1078,8 @@ export default function MeScreen() {
     );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+    StyleSheet.create({
     pressedSm: {
         opacity: 0.9,
         transform: [{ scale: 0.99 }],
@@ -1075,9 +1088,12 @@ const styles = StyleSheet.create({
     profileCard: {
         borderRadius: 18,
         borderWidth: 1,
-        borderColor: "rgba(59,130,246,0.35)",
+        borderColor: colors.primarySoftBorder,
         padding: 12,
-        shadowColor: "#1D4ED8",
+    },
+    profileCardShadow: {
+        borderRadius: 18,
+        shadowColor: colors.accent,
         shadowOpacity: 0.18,
         shadowRadius: 10,
         elevation: 3,
@@ -1100,15 +1116,15 @@ const styles = StyleSheet.create({
         borderRadius: 18,
         backgroundColor: colors.surface,
         borderWidth: 1,
-        borderColor: "rgba(255,255,255,0.10)",
+        borderColor: colors.primarySoftBorder,
     },
     avatarFallback: {
         width: 62,
         height: 62,
         borderRadius: 18,
-        backgroundColor: "rgba(255,255,255,0.04)",
+        backgroundColor: colors.backgroundAlt,
         borderWidth: 1,
-        borderColor: "rgba(255,255,255,0.10)",
+        borderColor: colors.primarySoftBorder,
         alignItems: "center",
         justifyContent: "center",
     },
@@ -1121,7 +1137,7 @@ const styles = StyleSheet.create({
         borderRadius: 14,
         backgroundColor: colors.background,
         borderWidth: 1,
-        borderColor: "rgba(59,130,246,0.35)",
+        borderColor: colors.primarySoftBorder,
         alignItems: "center",
         justifyContent: "center",
     },
@@ -1152,8 +1168,8 @@ const styles = StyleSheet.create({
         height: 26,
         borderRadius: 999,
         borderWidth: 1,
-        borderColor: "rgba(255,255,255,0.10)",
-        backgroundColor: "rgba(255,255,255,0.04)",
+        borderColor: colors.primarySoftBorder,
+        backgroundColor: colors.backgroundAlt,
         alignItems: "center",
         justifyContent: "center",
     },
@@ -1170,7 +1186,7 @@ const styles = StyleSheet.create({
         marginTop: 12,
         paddingTop: 10,
         borderTopWidth: 1,
-        borderTopColor: "rgba(255,255,255,0.08)",
+        borderTopColor: colors.primarySoftBorder,
         gap: 6,
     },
     metaText: {
@@ -1202,7 +1218,7 @@ const styles = StyleSheet.create({
         height: 52,
         borderRadius: 14,
         borderWidth: 1,
-        borderColor: "rgba(255,255,255,0.08)",
+        borderColor: colors.primarySoftBorder,
         backgroundColor: colors.surface,
         paddingHorizontal: 12,
     },
@@ -1210,9 +1226,9 @@ const styles = StyleSheet.create({
         width: 34,
         height: 34,
         borderRadius: 12,
-        backgroundColor: "rgba(37,99,235,0.12)",
+        backgroundColor: colors.backgroundAlt,
         borderWidth: 1,
-        borderColor: "rgba(59,130,246,0.35)",
+        borderColor: colors.primarySoftBorder,
         alignItems: "center",
         justifyContent: "center",
     },
@@ -1273,7 +1289,7 @@ const styles = StyleSheet.create({
         borderRadius: 16,
         backgroundColor: colors.background,
         borderWidth: 1,
-        borderColor: "rgba(59,130,246,0.35)",
+        borderColor: colors.primarySoftBorder,
         padding: 12,
     },
     pwdHeader: {
@@ -1295,7 +1311,7 @@ const styles = StyleSheet.create({
         borderRadius: 14,
         backgroundColor: colors.surfaceAlt,
         borderWidth: 1,
-        borderColor: "rgba(255,255,255,0.08)",
+        borderColor: colors.primarySoftBorder,
     },
     input: {
         flex: 1,
@@ -1318,7 +1334,7 @@ const styles = StyleSheet.create({
         borderRadius: 16,
         backgroundColor: colors.background,
         borderWidth: 1,
-        borderColor: "rgba(255,255,255,0.10)",
+        borderColor: colors.primarySoftBorder,
         padding: 12,
         maxHeight: "70%",
     },
@@ -1332,7 +1348,7 @@ const styles = StyleSheet.create({
         borderRadius: 16,
         backgroundColor: colors.background,
         borderWidth: 1,
-        borderColor: "rgba(59,130,246,0.35)",
+        borderColor: colors.primarySoftBorder,
         padding: 12,
     },
 
@@ -1360,8 +1376,8 @@ const styles = StyleSheet.create({
         marginTop: 6,
         borderRadius: 12,
         borderWidth: 1,
-        borderColor: "rgba(255,255,255,0.10)",
-        backgroundColor: "rgba(255,255,255,0.03)",
+        borderColor: colors.primarySoftBorder,
+        backgroundColor: colors.backgroundAlt,
         overflow: "hidden",
     },
     confirmMessageScroll: {
@@ -1394,15 +1410,15 @@ const styles = StyleSheet.create({
     },
     btnGhost: {
         backgroundColor: "transparent",
-        borderColor: "rgba(255,255,255,0.12)",
+        borderColor: colors.primarySoftBorder,
     },
     btnGhostText: {
         color: colors.text,
         ...textStyle(14, { weight: "900", lineHeightPreset: "tight" }),
     },
     btnPrimary: {
-        backgroundColor: "rgba(59,130,246,0.22)",
-        borderColor: "rgba(59,130,246,0.45)",
+        backgroundColor: colors.backgroundAlt,
+        borderColor: colors.primaryBorderStrong,
     },
     btnDanger: {
         backgroundColor: "rgba(220,38,38,0.18)",
@@ -1412,4 +1428,4 @@ const styles = StyleSheet.create({
         color: colors.text,
         ...textStyle(14, { weight: "900", lineHeightPreset: "tight" }),
     },
-});
+    });

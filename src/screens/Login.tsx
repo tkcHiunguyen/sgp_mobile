@@ -3,6 +3,9 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
     ActivityIndicator,
     Animated,
+    Dimensions,
+    Image,
+    Keyboard,
     KeyboardAvoidingView,
     Platform,
     Pressable,
@@ -10,25 +13,15 @@ import {
     StyleSheet,
     Text,
     TextInput,
-    View,
-    Dimensions,
     TouchableOpacity,
     TouchableWithoutFeedback,
-    Keyboard,
+    View,
 } from "react-native";
-
+import DeviceInfo from "react-native-device-info";
 import Ionicons from "react-native-vector-icons/Ionicons";
-import { Image } from "react-native";
-import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 
-import type { RootStackParamList } from "../types/navigation";
-
-import Logo from "../logo.png";
 import { AppScreen } from "../components/ui/AppScreen";
 import { BaseModal } from "../components/ui/BaseModal";
-import { colors, spacing, radius } from "../theme/theme";
-import { inputMetrics, textStyle } from "../theme/typography";
-import { useAuth } from "../context/AuthContext";
 import {
     VERSION,
     storage,
@@ -36,14 +29,26 @@ import {
     KEY_REMEMBERED_USERNAME,
     KEY_REMEMBERED_PASSWORD,
 } from "../config/apiConfig";
-import DeviceInfo from "react-native-device-info";
+import { useAuth } from "../context/AuthContext";
+import { useTheme } from "../context/ThemeContext";
+import Logo from "../logo.png";
+import { spacing, radius } from "../theme/theme";
+import { MIN_TOUCH_TARGET_SIZE } from "../theme/touchTargets";
+import { inputMetrics, textStyle } from "../theme/typography";
+import { useThemedStyles } from "../theme/useThemedStyles";
+
+import type { ThemeColors } from "../theme/theme";
+import type { RootStackParamList } from "../types/navigation";
+import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 
 type Props = NativeStackScreenProps<RootStackParamList, "Login">;
 
 export default function LoginScreen({ navigation, route }: Props) {
+    const { colors } = useTheme();
+    const styles = useThemedStyles(createStyles);
     const { login, verifyReset, resetPassword, error } = useAuth();
 
-    const [username, setUsername] = useState("admin");
+    const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
     const [submitting, setSubmitting] = useState(false);
 
@@ -938,6 +943,7 @@ export default function LoginScreen({ navigation, route }: Props) {
                                         activeOpacity={0.8}
                                         onPress={openForgot}
                                         disabled={submitting}
+                                        style={styles.forgotBtn}
                                     >
                                         <Text style={styles.forgotText}>
                                             Quên mật khẩu?
@@ -1021,7 +1027,8 @@ export default function LoginScreen({ navigation, route }: Props) {
     );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+    StyleSheet.create({
     container: {
         flex: 1,
         paddingHorizontal: spacing.xl,
@@ -1119,6 +1126,7 @@ const styles = StyleSheet.create({
     rememberRow: {
         flexDirection: "row",
         alignItems: "center",
+        minHeight: MIN_TOUCH_TARGET_SIZE,
         gap: 10,
     },
     checkbox: {
@@ -1142,6 +1150,11 @@ const styles = StyleSheet.create({
         color: colors.primary,
         ...textStyle(13, { weight: "700" }),
     },
+    forgotBtn: {
+        minHeight: MIN_TOUCH_TARGET_SIZE,
+        justifyContent: "center",
+        paddingHorizontal: 6,
+    },
 
     errorBox: {
         marginTop: spacing.md,
@@ -1160,8 +1173,10 @@ const styles = StyleSheet.create({
         marginTop: spacing.lg,
         backgroundColor: colors.primary,
         paddingVertical: 14,
+        minHeight: MIN_TOUCH_TARGET_SIZE,
         borderRadius: radius.md,
         alignItems: "center",
+        justifyContent: "center",
     },
     buttonRow: {
         flexDirection: "row",
@@ -1243,6 +1258,7 @@ const styles = StyleSheet.create({
         marginTop: spacing.lg,
         backgroundColor: colors.primary,
         paddingVertical: 12,
+        minHeight: MIN_TOUCH_TARGET_SIZE,
         borderRadius: radius.md,
         alignItems: "center",
         justifyContent: "center",
@@ -1253,10 +1269,11 @@ const styles = StyleSheet.create({
     },
     fpBtnGhost: {
         marginTop: spacing.md,
-        backgroundColor: "rgba(255,255,255,0.04)",
+        backgroundColor: colors.backgroundAlt,
         borderWidth: 1,
-        borderColor: "rgba(255,255,255,0.08)",
+        borderColor: colors.primarySoftBorder,
         paddingVertical: 12,
+        minHeight: MIN_TOUCH_TARGET_SIZE,
         borderRadius: radius.md,
         alignItems: "center",
         justifyContent: "center",
@@ -1281,7 +1298,7 @@ const styles = StyleSheet.create({
         borderRadius: 16,
         backgroundColor: "rgba(22,163,74,0.2)",
         borderWidth: 1,
-        borderColor: "rgba(22,163,74,0.35)",
+        borderColor: colors.success,
         alignItems: "center",
         justifyContent: "center",
         marginBottom: spacing.md,
@@ -1308,4 +1325,4 @@ const styles = StyleSheet.create({
         paddingTop: 0,
         paddingBottom: 0,
     },
-});
+    });

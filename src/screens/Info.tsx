@@ -1,13 +1,16 @@
 ﻿import React from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
-import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 
-import { RootStackParamList } from "../types/navigation";
+
 import { AppScreen } from "../components/ui/AppScreen";
 import HeaderBar from "../components/ui/HeaderBar";
-import { colors } from "../theme/theme";
-import { textStyle } from "../theme/typography";
 import { VERSION } from "../config/apiConfig";
+import { textStyle } from "../theme/typography";
+import { useThemedStyles } from "../theme/useThemedStyles";
+import { RootStackParamList } from "../types/navigation";
+
+import type { ThemeColors } from "../theme/theme";
+import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 
 const infoData = [
     {
@@ -53,6 +56,8 @@ const infoData = [
 type Props = NativeStackScreenProps<RootStackParamList, "Info">;
 
 export default function InfoScreen({ navigation }: Props) {
+    const styles = useThemedStyles(createStyles);
+
     return (
         <AppScreen topPadding={0}>
             <HeaderBar title="Thông tin" onBack={() => navigation.goBack()} />
@@ -73,7 +78,8 @@ export default function InfoScreen({ navigation }: Props) {
     );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+    StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: colors.background,
@@ -91,7 +97,7 @@ const styles = StyleSheet.create({
         marginBottom: 16,
         borderWidth: 1,
         borderColor: colors.primarySoftBorder,
-        shadowColor: "#1D4ED8",
+        shadowColor: colors.accent,
         shadowOpacity: 0.18,
         shadowRadius: 8,
         elevation: 4,
@@ -105,4 +111,4 @@ const styles = StyleSheet.create({
         ...textStyle(13, { lineHeightPreset: "loose" }),
         color: colors.textSoft,
     },
-});
+    });

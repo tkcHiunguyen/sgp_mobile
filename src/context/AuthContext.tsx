@@ -7,6 +7,7 @@ import React, {
     useMemo,
     useState,
 } from "react";
+
 import {
     AUTH_WEBAPP_URL,
     storage,
@@ -14,6 +15,7 @@ import {
     KEY_AUTH_EXPIRES_AT,
     KEY_AUTH_USER,
 } from "../config/apiConfig";
+import { logger } from "../utils/logger";
 
 export type AuthUser = {
     userId: string;
@@ -176,8 +178,8 @@ async function postActionJson<T = any>(body: Record<string, any>): Promise<T> {
     if (safeBody.password) safeBody.password = "***";
     if (safeBody.newPassword) safeBody.newPassword = "***";
 
-    console.log(`🛰️ [AUTH ${requestId}] POST ${AUTH_WEBAPP_URL}`);
-    console.log(`🧾 [AUTH ${requestId}] body:`, safeBody);
+    logger.debug(`🛰️ [AUTH ${requestId}] POST ${AUTH_WEBAPP_URL}`);
+    logger.debug(`🧾 [AUTH ${requestId}] body:`, safeBody);
 
     const { text, json } = await fetchJsonText(AUTH_WEBAPP_URL, {
         method: "POST",
@@ -185,8 +187,8 @@ async function postActionJson<T = any>(body: Record<string, any>): Promise<T> {
         body: JSON.stringify(body),
     });
 
-    console.log(`📦 [AUTH ${requestId}] raw:`, text);
-    console.log(`✅ [AUTH ${requestId}] json:`, json);
+    logger.debug(`📦 [AUTH ${requestId}] raw:`, text);
+    logger.debug(`✅ [AUTH ${requestId}] json:`, json);
 
     if (!json) {
         throw new Error(
@@ -236,20 +238,23 @@ export const AuthProvider: React.FC<React.PropsWithChildren> = ({
         [token, user, expiresAt]
     );
 
-    const persist = (next: {
-        token: string | null;
-        expiresAt: string | null;
-        user: AuthUser | null;
-    }) => {
-        if (next.token) storage.set(KEY_AUTH_TOKEN, next.token);
-        else storage.remove(KEY_AUTH_TOKEN);
+    const persist = useCallback(
+        (next: {
+            token: string | null;
+            expiresAt: string | null;
+            user: AuthUser | null;
+        }) => {
+            if (next.token) storage.set(KEY_AUTH_TOKEN, next.token);
+            else storage.remove(KEY_AUTH_TOKEN);
 
-        if (next.expiresAt) storage.set(KEY_AUTH_EXPIRES_AT, next.expiresAt);
-        else storage.remove(KEY_AUTH_EXPIRES_AT);
+            if (next.expiresAt) storage.set(KEY_AUTH_EXPIRES_AT, next.expiresAt);
+            else storage.remove(KEY_AUTH_EXPIRES_AT);
 
-        if (next.user) storage.set(KEY_AUTH_USER, JSON.stringify(next.user));
-        else storage.remove(KEY_AUTH_USER);
-    };
+            if (next.user) storage.set(KEY_AUTH_USER, JSON.stringify(next.user));
+            else storage.remove(KEY_AUTH_USER);
+        },
+        []
+    );
 
     const clearLocal = useCallback(() => {
         setToken(null);
@@ -257,7 +262,7 @@ export const AuthProvider: React.FC<React.PropsWithChildren> = ({
         setUser(null);
         setError(null);
         persist({ token: null, expiresAt: null, user: null });
-    }, []);
+    }, [persist]);
 
     const handleSessionExpired = useCallback(
         (opts?: { mode?: SessionExpiredMode; message?: string }) => {
@@ -311,7 +316,7 @@ export const AuthProvider: React.FC<React.PropsWithChildren> = ({
         await logout({ reason: "expired", callServer: false });
     }, [logout]);
 
-    const hydrate = async () => {
+    const hydrate = useCallback(async () => {
         try {
             const savedToken = storage.getString(KEY_AUTH_TOKEN) || null;
             const savedExpiresAt =
@@ -383,7 +388,7 @@ export const AuthProvider: React.FC<React.PropsWithChildren> = ({
                 clearLocal();
             }
         }
-    };
+    }, [clearLocal, persist]);
 
     useEffect(() => {
         (async () => {
@@ -391,7 +396,7 @@ export const AuthProvider: React.FC<React.PropsWithChildren> = ({
             await hydrate();
             setLoading(false);
         })();
-    }, []);
+    }, [hydrate]);
 
     const login = async (
         username: string,

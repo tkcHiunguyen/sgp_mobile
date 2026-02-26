@@ -1,24 +1,25 @@
 // src/navigation/AppNavigator.tsx
-import React from "react";
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import React from "react";
 
-import type { RootStackParamList } from "../types/navigation";
 
-import LoadingScreen from "../screens/LoadingScreen";
-import IndexScreen from "../screens/index";
-import ScannerScreen from "../screens/Scanner";
+import { useAuth } from "../context/AuthContext";
+import AdminUsersScreen from "../screens/AdminUsers";
 import DevicesScreen from "../screens/Devices";
 import HistoryScreen from "../screens/History";
-import ToolsScreen from "../screens/Tools";
+import IndexScreen from "../screens/index";
 import InfoScreen from "../screens/Info";
-import WebViewerScreen from "../screens/WebViewerScreen";
-import SettingsScreen from "../screens/Settings";
+import LoadingScreen from "../screens/LoadingScreen";
 import LoginScreen from "../screens/Login";
-import RegisterScreen from "../screens/Register";
-import AdminUsersScreen from "../screens/AdminUsers";
-import { useAuth } from "../context/AuthContext";
 import MeScreen from "../screens/Me";
+import RegisterScreen from "../screens/Register";
+import ScannerScreen from "../screens/Scanner";
+import SettingsScreen from "../screens/Settings";
+import ToolsScreen from "../screens/Tools";
+import WebViewerScreen from "../screens/WebViewerScreen";
+
+import type { RootStackParamList } from "../types/navigation";
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export default function AppNavigator() {

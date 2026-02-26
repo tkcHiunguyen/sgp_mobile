@@ -108,7 +108,7 @@ export const syncDataToDB = async (data: {
         );
     }
 
-    console.log("✅ syncDataToDB: data synced", {
+    console.warn("✅ syncDataToDB: data synced", {
         systemsCount: systems.length,
         devicesCount: devices.length,
         historiesCount: histories.length,

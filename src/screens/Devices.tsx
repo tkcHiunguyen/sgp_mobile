@@ -1,3 +1,4 @@
+import { useFocusEffect } from "@react-navigation/native";
 import React, {
     useMemo,
     useState,
@@ -15,23 +16,24 @@ import {
     TextInput,
     Animated,
 } from "react-native";
-import { useFocusEffect } from "@react-navigation/native";
-import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import Ionicons from "react-native-vector-icons/Ionicons";
 
-import { RootStackParamList } from "../types/navigation";
-import { useDeviceGroup } from "../context/DeviceGroupContext";
-
+import { AddHistoryAction } from "../components/maintenance/AddHistoryButton";
+import { AppButton } from "../components/ui/AppButton";
 import { AppScreen } from "../components/ui/AppScreen";
-import HeaderBar from "../components/ui/HeaderBar";
 import { BaseModal } from "../components/ui/BaseModal";
 import { EmptyState } from "../components/ui/EmptyState";
-import { AppButton } from "../components/ui/AppButton";
-import { colors } from "../theme/theme";
-import { textStyle } from "../theme/typography";
-
+import HeaderBar from "../components/ui/HeaderBar";
 import { getSheetId, getApiBase } from "../config/apiConfig";
-import { AddHistoryAction } from "../components/maintenance/AddHistoryButton";
+import { useDeviceGroup } from "../context/DeviceGroupContext";
+import { useTheme } from "../context/ThemeContext";
+import { MIN_TOUCH_TARGET_SIZE } from "../theme/touchTargets";
+import { textStyle } from "../theme/typography";
+import { useThemedStyles } from "../theme/useThemedStyles";
+
+import type { ThemeColors } from "../theme/theme";
+import type { RootStackParamList } from "../types/navigation";
+import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 
 type Props = NativeStackScreenProps<RootStackParamList, "Devices">;
 
@@ -89,15 +91,11 @@ const highlightText = (
 
     while (matchIndex !== -1) {
         if (matchIndex > currentIndex) {
-            parts.push(
-                <Text key={currentIndex} style={baseStyle}>
-                    {text.slice(currentIndex, matchIndex)}
-                </Text>
-            );
+            parts.push(text.slice(currentIndex, matchIndex));
         }
 
         parts.push(
-            <Text key={matchIndex} style={[baseStyle, highlightStyle]}>
+            <Text key={`${matchIndex}-${currentIndex}`} style={highlightStyle}>
                 {text.slice(matchIndex, matchIndex + q.length)}
             </Text>
         );
@@ -107,20 +105,18 @@ const highlightText = (
     }
 
     if (currentIndex < text.length) {
-        parts.push(
-            <Text key={`${currentIndex}-end`} style={baseStyle}>
-                {text.slice(currentIndex)}
-            </Text>
-        );
+        parts.push(text.slice(currentIndex));
     }
 
-    return <Text>{parts}</Text>;
+    return <Text style={baseStyle}>{parts}</Text>;
 };
 
 export default function DevicesScreen({ navigation }: Props) {
+    const { colors } = useTheme();
+    const styles = useThemedStyles(createStyles);
     const { deviceGroups, appendHistoryAndSync } = useDeviceGroup();
 
-    const groups = deviceGroups || [];
+    const groups = useMemo(() => deviceGroups ?? [], [deviceGroups]);
 
     const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
     const [deviceModalVisible, setDeviceModalVisible] = useState(false);
@@ -174,8 +170,10 @@ export default function DevicesScreen({ navigation }: Props) {
         [groups, selectedGroup]
     );
 
-    const devicesInGroup: DeviceRow[] =
-        (selectedGroupData?.devices?.rows as DeviceRow[]) || [];
+    const devicesInGroup = useMemo(
+        () => ((selectedGroupData?.devices?.rows as DeviceRow[]) ?? []),
+        [selectedGroupData]
+    );
 
     const availableKinds = useMemo(() => {
         const set = new Set<string>();
@@ -555,18 +553,12 @@ export default function DevicesScreen({ navigation }: Props) {
                                                                     styles.filterOptionRow
                                                                 }
                                                             >
-                                                                <Text
-                                                                    style={
-                                                                        styles.filterOptionText
-                                                                    }
-                                                                >
-                                                                    {highlightText(
-                                                                        kind,
-                                                                        searchText,
-                                                                        styles.filterOptionText,
-                                                                        styles.highlight
-                                                                    )}
-                                                                </Text>
+                                                                {highlightText(
+                                                                    kind,
+                                                                    searchText,
+                                                                    styles.filterOptionText,
+                                                                    styles.highlight
+                                                                )}
 
                                                                 <View
                                                                     style={[
@@ -612,62 +604,42 @@ export default function DevicesScreen({ navigation }: Props) {
                                                         dev.name
                                                     )
                                                 }
-                                            >
+                                                >
                                                 <View style={styles.deviceBlock}>
                                                     <View
                                                         style={styles.deviceTopRow}
                                                     >
-                                                        {/* LEFT */}
                                                         <View
                                                             style={
-                                                                styles.deviceLeft
+                                                                styles.deviceTagGroup
                                                             }
                                                         >
-                                                            <View
-                                                                style={
-                                                                    styles.deviceTagGroup
-                                                                }
-                                                            >
-                                                                {!!parsed.group && (
-                                                                    <Text
-                                                                        style={
-                                                                            styles.deviceTag
-                                                                        }
-                                                                    >
-                                                                        {highlightText(
-                                                                            parsed.group,
-                                                                            searchText,
-                                                                            styles.deviceTag,
-                                                                            styles.highlight
-                                                                        )}
-                                                                    </Text>
-                                                                )}
-
-                                                                {!!parsed.kind && (
-                                                                    <Text
-                                                                        style={
-                                                                            styles.deviceTag
-                                                                        }
-                                                                    >
-                                                                        {highlightText(
-                                                                            parsed.kind,
-                                                                            searchText,
-                                                                            styles.deviceTag,
-                                                                            styles.highlight
-                                                                        )}
-                                                                    </Text>
-                                                                )}
-
-                                                                {highlightText(
-                                                                    codeText,
+                                                            {!!parsed.group &&
+                                                                highlightText(
+                                                                    parsed.group,
                                                                     searchText,
-                                                                    styles.deviceCode,
+                                                                    styles.deviceTag,
                                                                     styles.highlight
                                                                 )}
-                                                            </View>
+
+                                                            {!!parsed.kind &&
+                                                                highlightText(
+                                                                    parsed.kind,
+                                                                    searchText,
+                                                                    styles.deviceTag,
+                                                                    styles.highlight
+                                                                )}
+
+                                                            {highlightText(
+                                                                codeText,
+                                                                searchText,
+                                                                styles.deviceCode,
+                                                                styles.highlight
+                                                            )}
                                                         </View>
 
                                                         <View
+                                                            style={styles.addActionWrap}
                                                             onStartShouldSetResponder={() =>
                                                                 true
                                                             }
@@ -747,7 +719,8 @@ export default function DevicesScreen({ navigation }: Props) {
     );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+    StyleSheet.create({
     content: {
         flex: 1,
         paddingHorizontal: 20,
@@ -773,7 +746,7 @@ const styles = StyleSheet.create({
         borderColor: colors.primarySoftBorder,
         justifyContent: "center",
         alignItems: "center",
-        shadowColor: "#1D4ED8",
+        shadowColor: colors.accent,
         shadowOpacity: 0.18,
         shadowRadius: 8,
         elevation: 4,
@@ -793,7 +766,7 @@ const styles = StyleSheet.create({
     },
     modalScroll: {
         marginBottom: 16,
-        paddingHorizontal: 8,
+        paddingHorizontal: 0,
     },
     noData: {
         paddingBottom: 20,
@@ -808,7 +781,7 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         alignItems: "center",
         marginBottom: 10,
-        paddingHorizontal: 8,
+        paddingHorizontal: 0,
     },
     searchWrapper: {
         flex: 1,
@@ -819,7 +792,7 @@ const styles = StyleSheet.create({
         alignItems: "center",
         borderRadius: 12,
         borderWidth: 1,
-        borderColor: "rgba(75,85,99,0.9)",
+        borderColor: colors.primarySoftBorder,
         backgroundColor: colors.surface,
         paddingHorizontal: 10,
         height: 40,
@@ -848,18 +821,18 @@ const styles = StyleSheet.create({
         position: "relative",
     },
     filterBox: {
-        width: 42,
-        height: 40,
+        width: MIN_TOUCH_TARGET_SIZE,
+        height: MIN_TOUCH_TARGET_SIZE,
         borderRadius: 12,
         borderWidth: 1,
-        borderColor: "rgba(96,165,250,0.8)",
+        borderColor: colors.primarySoftBorder,
         backgroundColor: colors.surface,
         justifyContent: "center",
         alignItems: "center",
     },
     filterBoxActive: {
-        borderColor: "#60A5FA",
-        backgroundColor: "rgba(37,99,235,0.18)",
+        borderColor: colors.primaryBorderStrong,
+        backgroundColor: colors.backgroundAlt,
     },
     filterIcon: {
         fontSize: 20,
@@ -872,7 +845,7 @@ const styles = StyleSheet.create({
         width: 6,
         height: 6,
         borderRadius: 999,
-        backgroundColor: "#22C55E",
+        backgroundColor: colors.success,
     },
 
     filterDropdown: {
@@ -883,17 +856,19 @@ const styles = StyleSheet.create({
         borderRadius: 10,
         backgroundColor: colors.surface,
         borderWidth: 1,
-        borderColor: "rgba(96,165,250,0.8)",
+        borderColor: colors.primarySoftBorder,
         zIndex: 999,
         elevation: 10,
         paddingVertical: 4,
     },
     filterOption: {
+        minHeight: MIN_TOUCH_TARGET_SIZE,
         paddingVertical: 6,
         paddingHorizontal: 10,
+        justifyContent: "center",
     },
     filterOptionActive: {
-        backgroundColor: "rgba(37,99,235,0.25)",
+        backgroundColor: colors.backgroundAlt,
     },
     filterOptionRow: {
         flexDirection: "row",
@@ -903,6 +878,8 @@ const styles = StyleSheet.create({
     filterOptionText: {
         ...textStyle(13, { lineHeightPreset: "tight" }),
         color: colors.text,
+        flexShrink: 1,
+        paddingRight: 8,
     },
 
     checkbox: {
@@ -910,54 +887,54 @@ const styles = StyleSheet.create({
         height: 18,
         borderRadius: 4,
         borderWidth: 1.5,
-        borderColor: "rgba(156,163,175,0.9)",
+        borderColor: colors.primarySoftBorder,
         alignItems: "center",
         justifyContent: "center",
         backgroundColor: "transparent",
     },
     checkboxActive: {
-        borderColor: "#22C55E",
+        borderColor: colors.success,
         backgroundColor: "rgba(34,197,94,0.12)",
     },
     checkboxIcon: {
         fontSize: 14,
-        color: "#22C55E",
+        color: colors.success,
     },
 
     // devices
     deviceRow: {
         marginBottom: 10,
+        width: "100%",
     },
     deviceBlock: {
+        width: "100%",
         borderWidth: 1,
-        borderColor: "rgba(75,85,99,0.9)",
+        borderColor: colors.primarySoftBorder,
         borderRadius: 10,
         paddingVertical: 10,
         paddingHorizontal: 12,
         backgroundColor: colors.surface,
     },
     deviceTopRow: {
-        flexDirection: "row",
-        alignItems: "flex-start",
-        justifyContent: "space-between",
+        position: "relative",
+        minHeight: 34,
         marginBottom: 6,
-    },
-    deviceLeft: {
-        flex: 1,
-        paddingRight: 10,
     },
     deviceTagGroup: {
         flexDirection: "row",
-        alignItems: "center",
+        alignItems: "flex-start",
+        flex: 1,
+        minWidth: 0,
         flexShrink: 1,
         flexWrap: "wrap",
+        paddingRight: 44,
     },
     deviceTag: {
         paddingHorizontal: 8,
         paddingVertical: 3,
         borderRadius: 999,
         borderWidth: 1,
-        borderColor: "rgba(96,165,250,0.7)",
+        borderColor: colors.primarySoftBorder,
         color: colors.textAccent,
         ...textStyle(12, { weight: "600", lineHeightPreset: "tight" }),
         marginRight: 6,
@@ -966,17 +943,23 @@ const styles = StyleSheet.create({
     deviceCode: {
         color: colors.text,
         ...textStyle(15, { weight: "700", lineHeightPreset: "tight" }),
-        marginLeft: 4,
+        marginLeft: 0,
+        flexShrink: 1,
     },
     deviceDesc: {
         color: colors.textSoft,
         ...textStyle(14, { lineHeightPreset: "loose" }),
         textAlign: "left",
     },
+    addActionWrap: {
+        position: "absolute",
+        right: 0,
+        top: 0,
+    },
 
     highlight: {
-        backgroundColor: "#FACC15",
-        color: "#111827",
+        backgroundColor: colors.warning,
+        color: colors.background,
         borderRadius: 3,
         overflow: "hidden",
     },
@@ -989,7 +972,7 @@ const styles = StyleSheet.create({
         borderRadius: 12,
         marginBottom: 8,
         borderWidth: 1,
-        borderColor: "rgba(55,65,81,0.9)",
+        borderColor: colors.primarySoftBorder,
     },
     historyItemLeft: {
         width: 90,
@@ -999,8 +982,8 @@ const styles = StyleSheet.create({
         borderRadius: 10,
         backgroundColor: colors.surfaceAlt,
         borderWidth: 1,
-        borderColor: "rgba(96,165,250,0.6)",
-        shadowColor: "#1E3A8A",
+        borderColor: colors.primarySoftBorder,
+        shadowColor: colors.accent,
         shadowOpacity: 0.25,
         shadowRadius: 6,
         elevation: 3,
@@ -1015,4 +998,4 @@ const styles = StyleSheet.create({
         color: colors.textSoft,
         ...textStyle(13, { lineHeightPreset: "normal" }),
     },
-});
+    });

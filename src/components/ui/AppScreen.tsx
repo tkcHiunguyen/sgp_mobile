@@ -1,7 +1,10 @@
 import React from "react";
 import { View, StyleSheet, ViewStyle, StyleProp } from "react-native";
-import { colors, spacing } from "../../theme/theme";
 import { SafeAreaView } from "react-native-safe-area-context";
+
+import { useThemedStyles } from "../../theme/useThemedStyles";
+
+import type { ThemeColors } from "../../theme/theme";
 
 type Props = {
     children: React.ReactNode;
@@ -16,6 +19,8 @@ export function AppScreen({
     withHorizontalPadding = true,
     topPadding = 40,
 }: Props) {
+    const styles = useThemedStyles(createStyles);
+
     return (
         <SafeAreaView style={styles.safeArea}>
             <View
@@ -32,7 +37,8 @@ export function AppScreen({
     );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+    StyleSheet.create({
     safeArea: {
         flex: 1,
         backgroundColor: colors.background,
@@ -44,4 +50,4 @@ const styles = StyleSheet.create({
     horizontalPadding: {
         paddingHorizontal: 0,
     },
-});
+    });

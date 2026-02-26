@@ -1,9 +1,12 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
+
+import { textStyle } from "../../theme/typography";
+import { useThemedStyles } from "../../theme/useThemedStyles";
 import BackButton from "../backButton";
 import DataSyncIndicator from "../DataSyncIndicator";
-import { colors } from "../../theme/theme";
-import { textStyle } from "../../theme/typography";
+
+import type { ThemeColors } from "../../theme/theme";
 
 interface HeaderBarProps {
     title: string;
@@ -11,6 +14,7 @@ interface HeaderBarProps {
 }
 
 export function HeaderBar({ title, onBack }: HeaderBarProps) {
+    const styles = useThemedStyles(createStyles);
     const handleBack = onBack ?? (() => {});
 
     return (
@@ -32,7 +36,8 @@ export function HeaderBar({ title, onBack }: HeaderBarProps) {
     );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+    StyleSheet.create({
     wrapper: {
         width: "100%",
         paddingHorizontal: 12, // ↓ giảm từ 20 xuống 12
@@ -57,10 +62,6 @@ const styles = StyleSheet.create({
         position: "relative",
         top: 0,
         left: 0,
-        width: 36,
-        height: 36,
-        backgroundColor: "rgba(0,0,0,0.55)",
-        borderRadius: 18,
     },
 
     title: {
@@ -69,6 +70,6 @@ const styles = StyleSheet.create({
         textAlign: "center",
         color: colors.text,
     },
-});
+    });
 
 export default HeaderBar;

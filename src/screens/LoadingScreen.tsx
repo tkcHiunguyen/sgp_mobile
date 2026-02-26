@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useRef } from "react";
+import { useNavigation } from "@react-navigation/native";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
     View,
     Text,
@@ -7,18 +8,21 @@ import {
     Animated,
     TouchableOpacity,
 } from "react-native";
-import { useNavigation } from "@react-navigation/native";
 import Ionicons from "react-native-vector-icons/Ionicons";
 
-import { useDeviceGroup } from "../context/DeviceGroupContext";
 import {
     storage,
     getApiBase,
     getSheetId,
     KEY_ALL_DATA,
 } from "../config/apiConfig";
-import { colors } from "../theme/theme";
+import { useDeviceGroup } from "../context/DeviceGroupContext";
+import { useTheme } from "../context/ThemeContext";
 import { textStyle } from "../theme/typography";
+import { useThemedStyles } from "../theme/useThemedStyles";
+import { logger } from "../utils/logger";
+
+import type { ThemeColors } from "../theme/theme";
 
 type Status = "checking" | "loadingNew" | "ready" | "error";
 
@@ -42,7 +46,7 @@ const parseCachedData = (rawData?: string | null): CachedData | null => {
 
         return { data: parsed, isEmpty };
     } catch (error) {
-        console.warn("⚠️ Lỗi parse allData từ storage:", error);
+        logger.warn("⚠️ Lỗi parse allData từ storage:", error);
         return null;
     }
 };
@@ -71,6 +75,8 @@ const toUserErrorMessage = (error: unknown): string => {
 };
 
 export default function LoadingScreen() {
+    const { colors } = useTheme();
+    const styles = useThemedStyles(createStyles);
     const navigation = useNavigation<any>();
     const { setDeviceGroups, setIsDataFromCache } = useDeviceGroup();
 
@@ -88,7 +94,7 @@ export default function LoadingScreen() {
     const [validTable, setValidTable] = useState<string[]>([]);
     const [errTable, setErrTable] = useState<string[]>([]);
 
-    const fetchAllData = async () => {
+    const fetchAllData = useCallback(async () => {
         setStatus("loadingNew");
         setErrorMessage("");
         setCanUseCachedFallback(false);
@@ -101,15 +107,15 @@ export default function LoadingScreen() {
                 sheetId
             )}`;
 
-            console.log("🔧 [Loading] apiBase:", apiBase);
-            console.log("🔧 [Loading] sheetId (client gửi):", sheetId);
-            console.log("🔗 [Loading] Request URL:", url);
+            logger.debug("🔧 [Loading] apiBase:", apiBase);
+            logger.debug("🔧 [Loading] sheetId (client gửi):", sheetId);
+            logger.debug("🔗 [Loading] Request URL:", url);
 
             const res = await fetch(url, {
                 method: "GET",
             });
 
-            console.log(
+            logger.debug(
                 "📡 [Loading] HTTP status:",
                 res.status,
                 "| ok:",
@@ -118,7 +124,7 @@ export default function LoadingScreen() {
 
             // đọc raw text để biết server trả gì
             const rawText = await res.text();
-            // console.log("📨 [Loading] Raw response text từ server:\n", rawText);
+            // logger.debug("📨 [Loading] Raw response text từ server:\n", rawText);
 
             if (!res.ok) {
                 throw new Error(`HTTP_${res.status}:${rawText.slice(0, 160)}`);
@@ -131,15 +137,15 @@ export default function LoadingScreen() {
                 throw new Error("INVALID_JSON_RESPONSE");
             }
 
-            console.log("📌 [Loading] Parsed JSON result:", result);
+            logger.debug("📌 [Loading] Parsed JSON result:", result);
 
             const total = result.totalTable ?? 0;
             const valid = result.validTable ?? [];
             const err = result.errTable ?? [];
             const allData = result.data ?? [];
 
-            console.log("📌 [Loading] Dữ liệu tất cả các bảng (mới):", allData);
-            console.log("🔎 [Loading] Meta:", { total, valid, err });
+            logger.debug("📌 [Loading] Dữ liệu tất cả các bảng (mới):", allData);
+            logger.debug("🔎 [Loading] Meta:", { total, valid, err });
 
             setTotalTable(total);
             setValidTable(valid);
@@ -152,7 +158,7 @@ export default function LoadingScreen() {
             setIsDataFromCache(false);
             setStatus("ready");
         } catch (err) {
-            console.error(
+            logger.error(
                 "❌ [Loading] Lỗi khi lấy dữ liệu tất cả các bảng:",
                 err
             );
@@ -162,7 +168,7 @@ export default function LoadingScreen() {
             setErrorMessage(toUserErrorMessage(err));
             setStatus("error");
         }
-    };
+    }, [setDeviceGroups, setIsDataFromCache]);
 
     useEffect(() => {
         const bootstrap = async () => {
@@ -171,7 +177,7 @@ export default function LoadingScreen() {
 
                 const cached = parseCachedData(storage.getString(KEY_ALL_DATA));
                 if (cached && !cached.isEmpty) {
-                    console.log(
+                    logger.debug(
                         "📌 Dữ liệu lấy từ bộ nhớ (CŨ, có nội dung):",
                         cached.data
                     );
@@ -184,7 +190,7 @@ export default function LoadingScreen() {
 
                 await fetchAllData();
             } catch (error) {
-                console.error("Lỗi khi bootstrap dữ liệu:", error);
+                logger.error("Lỗi khi bootstrap dữ liệu:", error);
                 setErrorMessage(toUserErrorMessage(error));
                 setStatus("error");
             }
@@ -197,7 +203,7 @@ export default function LoadingScreen() {
                 clearTimeout(timeoutRef.current);
             }
         };
-    }, [setDeviceGroups, setIsDataFromCache]);
+    }, [fetchAllData, setDeviceGroups, setIsDataFromCache]);
 
     useEffect(() => {
         if (timeoutRef.current) {
@@ -352,7 +358,8 @@ export default function LoadingScreen() {
     );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+    StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: colors.background, // thay #0A0F1C
@@ -368,7 +375,7 @@ const styles = StyleSheet.create({
         height: 140,
         borderRadius: 70,
         borderWidth: 3,
-        borderColor: "rgba(78,168,255,0.4)",
+        borderColor: colors.primarySoftBorder,
         alignItems: "center",
         justifyContent: "center",
         backgroundColor: colors.surfaceAlt,
@@ -402,7 +409,7 @@ const styles = StyleSheet.create({
         alignItems: "center",
     },
     primaryButtonText: {
-        color: "#FFFFFF",
+        color: "#F8FAFC",
         ...textStyle(14, { weight: "700", lineHeightPreset: "tight" }),
     },
     secondaryButton: {
@@ -431,4 +438,4 @@ const styles = StyleSheet.create({
         ...textStyle(12, { lineHeightPreset: "tight" }),
         textAlign: "center",
     },
-});
+    });
