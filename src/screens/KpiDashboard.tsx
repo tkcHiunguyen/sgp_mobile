@@ -14,6 +14,7 @@ import { AppScreen } from "../components/ui/AppScreen";
 import { BaseModal } from "../components/ui/BaseModal";
 import { EmptyState } from "../components/ui/EmptyState";
 import HeaderBar from "../components/ui/HeaderBar";
+import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../context/ThemeContext";
 import {
     clearAnalyticsSummary,
@@ -64,7 +65,9 @@ const payloadText = (payload: Record<string, unknown> | null): string => {
 
 export default function KpiDashboardScreen({ navigation }: Props) {
     const { colors } = useTheme();
+    const { user } = useAuth();
     const styles = useThemedStyles(createStyles);
+    const isAdmin = String(user?.role || "").toLowerCase() === "administrator";
     const [summary, setSummary] = useState<AnalyticsSummaryItem[]>(() =>
         getAnalyticsSummary()
     );
@@ -76,9 +79,25 @@ export default function KpiDashboardScreen({ navigation }: Props) {
 
     useFocusEffect(
         useCallback(() => {
+            if (!isAdmin) {
+                navigation.replace("Home");
+                return;
+            }
             refresh();
-        }, [refresh])
+        }, [isAdmin, navigation, refresh])
     );
+
+    if (!isAdmin) {
+        return (
+            <AppScreen topPadding={0}>
+                <HeaderBar title="KPI Usage" onBack={() => navigation.replace("Home")} />
+                <EmptyState
+                    title="Không có quyền truy cập"
+                    message="Màn hình KPI chỉ dành cho tài khoản admin."
+                />
+            </AppScreen>
+        );
+    }
 
     const totalEvents = useMemo(
         () => summary.reduce((acc, item) => acc + item.count, 0),
@@ -292,4 +311,3 @@ const createStyles = (colors: ThemeColors) =>
         gap: 10,
     },
     });
-

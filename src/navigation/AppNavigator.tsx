@@ -24,7 +24,8 @@ import type { RootStackParamList } from "../types/navigation";
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export default function AppNavigator() {
-    const { isAuthed } = useAuth();
+    const { isAuthed, user } = useAuth();
+    const isAdmin = String(user?.role || "").toLowerCase() === "administrator";
 
     return (
         <NavigationContainer>
@@ -72,10 +73,12 @@ export default function AppNavigator() {
                             name="AdminUsers"
                             component={AdminUsersScreen}
                         />
-                        <Stack.Screen
-                            name="KpiDashboard"
-                            component={KpiDashboardScreen}
-                        />
+                        {isAdmin && (
+                            <Stack.Screen
+                                name="KpiDashboard"
+                                component={KpiDashboardScreen}
+                            />
+                        )}
                         <Stack.Screen name="Me" component={MeScreen} />
                     </>
                 )}
