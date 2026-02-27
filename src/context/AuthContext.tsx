@@ -15,6 +15,7 @@ import {
     KEY_AUTH_EXPIRES_AT,
     KEY_AUTH_USER,
 } from "../config/apiConfig";
+import { secureTokenStorage } from "../services/secureTokenStorage";
 import { logger } from "../utils/logger";
 
 export type AuthUser = {
@@ -24,6 +25,8 @@ export type AuthUser = {
     code?: string;
     role?: string;
     active?: string | number;
+    avatar?: string;
+    avatarUrl?: string;
 };
 
 export type RegisterPayload = {
@@ -215,7 +218,7 @@ export const AuthProvider: React.FC<React.PropsWithChildren> = ({
     const [loading, setLoading] = useState(true);
 
     const [token, setToken] = useState<string | null>(
-        () => storage.getString(KEY_AUTH_TOKEN) ?? null
+        () => secureTokenStorage.getToken()
     );
     const [expiresAt, setExpiresAt] = useState<string | null>(
         () => storage.getString(KEY_AUTH_EXPIRES_AT) ?? null
@@ -244,8 +247,14 @@ export const AuthProvider: React.FC<React.PropsWithChildren> = ({
             expiresAt: string | null;
             user: AuthUser | null;
         }) => {
-            if (next.token) storage.set(KEY_AUTH_TOKEN, next.token);
-            else storage.remove(KEY_AUTH_TOKEN);
+            if (next.token) {
+                secureTokenStorage.setToken(next.token);
+                // cleanup legacy plain token key if present
+                storage.remove(KEY_AUTH_TOKEN);
+            } else {
+                secureTokenStorage.clearToken();
+                storage.remove(KEY_AUTH_TOKEN);
+            }
 
             if (next.expiresAt) storage.set(KEY_AUTH_EXPIRES_AT, next.expiresAt);
             else storage.remove(KEY_AUTH_EXPIRES_AT);
@@ -318,12 +327,20 @@ export const AuthProvider: React.FC<React.PropsWithChildren> = ({
 
     const hydrate = useCallback(async () => {
         try {
-            const savedToken = storage.getString(KEY_AUTH_TOKEN) || null;
+            const secureToken = secureTokenStorage.getToken();
+            const legacyToken = storage.getString(KEY_AUTH_TOKEN) || null;
+            const savedToken = secureToken || legacyToken;
             const savedExpiresAt =
                 storage.getString(KEY_AUTH_EXPIRES_AT) || null;
             const savedUser = safeJsonParse<AuthUser>(
                 storage.getString(KEY_AUTH_USER) || null
             );
+
+            if (!secureToken && legacyToken) {
+                // one-time migration: plain MMKV -> encrypted MMKV
+                secureTokenStorage.setToken(legacyToken);
+                storage.remove(KEY_AUTH_TOKEN);
+            }
 
             if (!savedToken) {
                 clearLocal();
@@ -372,7 +389,7 @@ export const AuthProvider: React.FC<React.PropsWithChildren> = ({
             clearLocal();
         } catch {
             // lỗi mạng: nếu local token còn hạn thì cho vào app
-            const savedToken = storage.getString(KEY_AUTH_TOKEN) || null;
+            const savedToken = secureTokenStorage.getToken();
             const savedExpiresAt =
                 storage.getString(KEY_AUTH_EXPIRES_AT) || null;
             const savedUser = safeJsonParse<AuthUser>(

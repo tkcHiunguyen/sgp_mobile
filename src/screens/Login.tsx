@@ -32,6 +32,7 @@ import {
 import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../context/ThemeContext";
 import Logo from "../logo.png";
+import { markLoginSuccess } from "../services/analytics";
 import { spacing, radius } from "../theme/theme";
 import { MIN_TOUCH_TARGET_SIZE } from "../theme/touchTargets";
 import { inputMetrics, textStyle } from "../theme/typography";
@@ -196,6 +197,7 @@ export default function LoginScreen({ navigation, route }: Props) {
 
             // ✅ login ok -> persist remember theo toggle
             if (result.ok) {
+                markLoginSuccess();
                 persistRemember(rememberMe, username.trim(), password);
             }
         } finally {

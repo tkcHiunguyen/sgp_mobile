@@ -6,7 +6,7 @@ import {
     View,
     Modal,
     TouchableOpacity,
-    ScrollView,
+    FlatList,
     Animated,
     Dimensions,
 } from "react-native";
@@ -24,11 +24,15 @@ import { AddHistoryAction } from "../components/maintenance/AddHistoryButton";
 import { getApiBase, getSheetId } from "../config/apiConfig";
 import { useDeviceGroup } from "../context/DeviceGroupContext";
 import { useTheme } from "../context/ThemeContext";
+import { trackScanSuccess } from "../services/analytics";
 import { textStyle } from "../theme/typography";
 import { useThemedStyles } from "../theme/useThemedStyles";
 import { RootStackParamList } from "../types/navigation";
 
+import { useScannerDeviceLookup } from "./scanner/hooks/useScannerDeviceLookup";
+
 import type { ThemeColors } from "../theme/theme";
+import type { HistoryRow } from "../types/deviceGroup";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 
 type Props = NativeStackScreenProps<RootStackParamList, "Scanner">;
@@ -36,12 +40,6 @@ type Props = NativeStackScreenProps<RootStackParamList, "Scanner">;
 const SCAN_SIZE = 250;
 
 type ScanType = "device" | "url" | "text" | null;
-
-interface HistoryRow {
-    deviceName: string;
-    date: string; // dd-MM-yy
-    content: string;
-}
 
 // helper: parse "dd-MM-yy" -> Date
 const parseDate = (value: string): Date => {
@@ -51,6 +49,9 @@ const parseDate = (value: string): Date => {
     const year = 2000 + parseInt(yy, 10);
     return new Date(year, month, day);
 };
+
+const getHistoryRowKey = (item: HistoryRow): string =>
+    `${item.deviceName || "device"}-${item.date || "date"}-${item.content || ""}`;
 
 // phán đoán có phải URL hay không
 const isProbablyUrl = (value: string): boolean => {
@@ -113,41 +114,7 @@ export default function ScannerScreen({ navigation }: Props) {
 
     const toggleFlash = () => setFlashOn((prev) => !prev);
 
-    // Tìm xem value có phải là tên thiết bị trong allData hay không
-    const findDeviceInfo = useCallback(
-        (value: string) => {
-            for (const g of deviceGroups as any[]) {
-                const devicesRows = (g.devices?.rows ?? []) as {
-                    id: number;
-                    name: string;
-                    freq: string | number | null;
-                }[];
-
-                const foundDevice = devicesRows.find((d) => d.name === value);
-                if (foundDevice) {
-                    const historyRows =
-                        ((g.history?.rows ?? []) as HistoryRow[]) || [];
-
-                    const filtered = historyRows.filter(
-                        (h) => h.deviceName === value
-                    );
-
-                    const sorted = [...filtered].sort(
-                        (a, b) =>
-                            parseDate(b.date).getTime() -
-                            parseDate(a.date).getTime()
-                    );
-
-                    return {
-                        groupName: g.table as string,
-                        history: sorted,
-                    };
-                }
-            }
-            return null;
-        },
-        [deviceGroups]
-    );
+    const { findDeviceInfo } = useScannerDeviceLookup(deviceGroups);
 
     const resetPopupState = () => {
         setShowPopup(false);
@@ -164,6 +131,7 @@ export default function ScannerScreen({ navigation }: Props) {
         (value: string) => {
             const deviceInfo = findDeviceInfo(value);
             if (deviceInfo) {
+                trackScanSuccess("device");
                 setScannedValue(value);
                 setScanType("device");
                 setDeviceGroupName(deviceInfo.groupName);
@@ -173,12 +141,14 @@ export default function ScannerScreen({ navigation }: Props) {
             }
 
             if (isProbablyUrl(value)) {
+                trackScanSuccess("url");
                 setScannedValue(value);
                 setScanType("url");
                 setShowPopup(true);
                 return;
             }
 
+            trackScanSuccess("text");
             setScannedValue(value);
             setScanType("text");
             setShowPopup(true);
@@ -304,7 +274,7 @@ export default function ScannerScreen({ navigation }: Props) {
                                 disabled={!deviceGroupName}
                                 onPosted={async (row) => {
                                     setDeviceHistory((prev) => {
-                                        const next = [row as any, ...prev];
+                                        const next = [row, ...prev];
                                         return next.sort(
                                             (a, b) =>
                                                 parseDate(b.date).getTime() -
@@ -334,13 +304,13 @@ export default function ScannerScreen({ navigation }: Props) {
                                 </Text>
                             </View>
                         ) : (
-                            <ScrollView
+                            <FlatList
+                                data={deviceHistory}
+                                keyExtractor={getHistoryRowKey}
                                 style={styles.historyScroll2}
                                 showsVerticalScrollIndicator={false}
-                            >
-                                {deviceHistory.map((item, index) => (
+                                renderItem={({ item }) => (
                                     <View
-                                        key={`${item.date}-${index}`}
                                         style={styles.historyCard}
                                     >
                                         <View style={styles.historyCardTop}>
@@ -357,9 +327,9 @@ export default function ScannerScreen({ navigation }: Props) {
                                             {item.content}
                                         </Text>
                                     </View>
-                                ))}
-                                <View style={{ height: 6 }} />
-                            </ScrollView>
+                                )}
+                                ListFooterComponent={<View style={{ height: 6 }} />}
+                            />
                         )}
                     </View>
 

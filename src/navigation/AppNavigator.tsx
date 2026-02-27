@@ -10,6 +10,7 @@ import DevicesScreen from "../screens/Devices";
 import HistoryScreen from "../screens/History";
 import IndexScreen from "../screens/index";
 import InfoScreen from "../screens/Info";
+import KpiDashboardScreen from "../screens/KpiDashboard";
 import LoadingScreen from "../screens/LoadingScreen";
 import LoginScreen from "../screens/Login";
 import MeScreen from "../screens/Me";
@@ -70,6 +71,10 @@ export default function AppNavigator() {
                         <Stack.Screen
                             name="AdminUsers"
                             component={AdminUsersScreen}
+                        />
+                        <Stack.Screen
+                            name="KpiDashboard"
+                            component={KpiDashboardScreen}
                         />
                         <Stack.Screen name="Me" component={MeScreen} />
                     </>

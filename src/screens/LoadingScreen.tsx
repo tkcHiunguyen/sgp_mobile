@@ -23,6 +23,8 @@ import { useThemedStyles } from "../theme/useThemedStyles";
 import { logger } from "../utils/logger";
 
 import type { ThemeColors } from "../theme/theme";
+import type { RootStackParamList } from "../types/navigation";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
 type Status = "checking" | "loadingNew" | "ready" | "error";
 
@@ -77,7 +79,8 @@ const toUserErrorMessage = (error: unknown): string => {
 export default function LoadingScreen() {
     const { colors } = useTheme();
     const styles = useThemedStyles(createStyles);
-    const navigation = useNavigation<any>();
+    const navigation =
+        useNavigation<NativeStackNavigationProp<RootStackParamList>>();
     const { setDeviceGroups, setIsDataFromCache } = useDeviceGroup();
 
     const [status, setStatus] = useState<Status>("checking");

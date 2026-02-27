@@ -15,6 +15,7 @@ import {
 import Ionicons from "react-native-vector-icons/Ionicons";
 
 import { useTheme } from "../../context/ThemeContext";
+import { trackAddHistoryResult } from "../../services/analytics";
 import { MIN_TOUCH_TARGET_SIZE } from "../../theme/touchTargets";
 import { inputMetrics, textStyle } from "../../theme/typography";
 import { useThemedStyles } from "../../theme/useThemedStyles";
@@ -95,24 +96,32 @@ export function AddHistoryAction({
         logger.debug("🧩 [AddHistory] ROW =", row);
 
         setSubmitting(true);
-        const result = await postAppendHistoryToAppScript({
-            appScriptUrl,
-            sheetId,
-            sheetName,
-            row,
-        });
+        try {
+            const result = await postAppendHistoryToAppScript({
+                appScriptUrl,
+                sheetId,
+                sheetName,
+                row,
+            });
 
-        if (!result.ok) {
-            logger.warn("⚠️ [AddHistory] POST FAILED =", result);
+            if (!result.ok) {
+                trackAddHistoryResult(false, { deviceName, sheetName });
+                logger.warn("⚠️ [AddHistory] POST FAILED =", result);
+                setError(result.message || "Không thể lưu lịch sử");
+                return;
+            }
+
+            trackAddHistoryResult(true, { deviceName, sheetName });
+            logger.debug("✅ [AddHistory] POST OK");
+            setOpen(false);
+            onPosted?.(row);
+        } catch (e: any) {
+            trackAddHistoryResult(false, { deviceName, sheetName });
+            logger.error("❌ [AddHistory] POST ERROR =", e);
+            setError(String(e?.message || "Không thể lưu lịch sử"));
+        } finally {
             setSubmitting(false);
-            setError(result.message || "Không thể lưu lịch sử");
-            return;
         }
-
-        logger.debug("✅ [AddHistory] POST OK");
-        setSubmitting(false);
-        setOpen(false);
-        onPosted?.(row);
     };
 
     return (

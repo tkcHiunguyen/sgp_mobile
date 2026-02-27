@@ -1,5 +1,5 @@
 import { useNavigation } from "@react-navigation/native";
-import React, { useRef, useMemo } from "react";
+import React, { useEffect, useRef, useMemo } from "react";
 import {
     Animated,
     FlatList,
@@ -18,13 +18,39 @@ import { AppScreen } from "../components/ui/AppScreen";
 import { ScreenTitle } from "../components/ui/ScreenTitle";
 import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../context/ThemeContext";
+import { trackTimeToHomeIfPending } from "../services/analytics";
 import { textStyle } from "../theme/typography";
 import { useThemedStyles } from "../theme/useThemedStyles";
 
 import type { ThemeColors } from "../theme/theme";
+import type { RootStackParamList } from "../types/navigation";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
-type FeaturesArray = ReturnType<typeof getFeatures>;
-type FeatureItem = FeaturesArray[number];
+type AppNavigation = NativeStackNavigationProp<RootStackParamList, "Home">;
+type FeatureRoute = Extract<
+    {
+        [K in keyof RootStackParamList]: RootStackParamList[K] extends undefined
+            ? K
+            : never;
+    }[keyof RootStackParamList],
+    | "Scanner"
+    | "Devices"
+    | "History"
+    | "Tools"
+    | "Info"
+    | "AdminUsers"
+    | "KpiDashboard"
+    | "Settings"
+    | "Me"
+>;
+type FeatureItem = {
+    id: string;
+    title: string;
+    icon: string;
+    route?: FeatureRoute;
+    isReady: boolean;
+};
+
 const IOS_MENU_CENTER_OFFSET = Platform.OS === "ios" ? -11 : 0;
 
 const getResponsiveLayout = (width: number) => {
@@ -41,48 +67,47 @@ const getResponsiveLayout = (width: number) => {
     return { horizontalPadding, columnGap, numColumns, tileWidth, gridWidth };
 };
 // ====== DANH SÁCH CHỨC NĂNG ======
-const getFeatures = (isAdmin: boolean) =>
+const getFeatures = (isAdmin: boolean): FeatureItem[] =>
     [
         {
             id: "scan",
             title: "Quét mã QR",
             icon: "qr-code-outline",
-            route: "Scanner",
+            route: "Scanner" as FeatureRoute,
             isReady: true,
         },
         {
             id: "device",
             title: "Quản lý thiết bị",
             icon: "server-outline",
-            route: "Devices",
+            route: "Devices" as FeatureRoute,
             isReady: true,
         },
         {
             id: "history",
             title: "Lịch sử",
             icon: "time-outline",
-            route: "History",
+            route: "History" as FeatureRoute,
             isReady: true,
         },
         {
             id: "tools",
             title: "Công cụ",
             icon: "construct-outline",
-            route: "Tools",
+            route: "Tools" as FeatureRoute,
             isReady: false,
         },
         {
             id: "info",
             title: "Thông tin",
             icon: "information-circle-outline",
-            route: "Info",
+            route: "Info" as FeatureRoute,
             isReady: true,
         },
         {
             id: "database",
             title: "Cơ sở dữ liệu",
             icon: "analytics-outline",
-            route: "Database",
             isReady: false,
         },
 
@@ -92,7 +117,14 @@ const getFeatures = (isAdmin: boolean) =>
                       id: "admin-users",
                       title: "Quản trị Users",
                       icon: "people-outline",
-                      route: "AdminUsers",
+                      route: "AdminUsers" as FeatureRoute,
+                      isReady: true,
+                  },
+                  {
+                      id: "kpi-dashboard",
+                      title: "KPI Usage",
+                      icon: "stats-chart-outline",
+                      route: "KpiDashboard" as FeatureRoute,
                       isReady: true,
                   },
               ]
@@ -102,17 +134,17 @@ const getFeatures = (isAdmin: boolean) =>
             id: "settings",
             title: "Cài đặt",
             icon: "settings-outline",
-            route: "Settings",
+            route: "Settings" as FeatureRoute,
             isReady: true,
         },
         {
             id: "me",
             title: "Tài khoản",
             icon: "person-circle-outline",
-            route: "Me",
+            route: "Me" as FeatureRoute,
             isReady: true,
         },
-    ] as const;
+    ];
 
 function FeatureTile({
     item,
@@ -123,7 +155,7 @@ function FeatureTile({
 }) {
     const { colors } = useTheme();
     const styles = useThemedStyles(createStyles);
-    const navigation = useNavigation<any>();
+    const navigation = useNavigation<AppNavigation>();
     const scale = useRef(new Animated.Value(1)).current;
 
     const handlePressIn = () => {
@@ -224,9 +256,13 @@ function FeatureTile({
 
 export default function IndexScreen() {
     const styles = useThemedStyles(createStyles);
-    const { user } = useAuth() as any; // bạn chỉnh type nếu AuthContext đã có type
+    const { user } = useAuth();
     const isAdmin = String(user?.role || "").toLowerCase() === "administrator";
     const { width } = useWindowDimensions();
+
+    useEffect(() => {
+        trackTimeToHomeIfPending();
+    }, []);
 
     const features = useMemo(() => getFeatures(isAdmin), [isAdmin]);
     const { horizontalPadding, columnGap, numColumns, tileWidth, gridWidth } =

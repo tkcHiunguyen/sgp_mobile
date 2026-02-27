@@ -23,6 +23,9 @@ class MMKVMock {
     delete(key) {
         this.store.delete(key);
     }
+    remove(key) {
+        this.delete(key);
+    }
     clearAll() {
         this.store.clear();
     }

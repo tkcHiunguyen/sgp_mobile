@@ -5,9 +5,9 @@ import {
     StyleSheet,
     TouchableOpacity,
     TouchableWithoutFeedback,
+    FlatList,
     SectionList,
     TextInput,
-    ScrollView,
 } from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
 
@@ -25,6 +25,7 @@ import { useThemedStyles } from "../theme/useThemedStyles";
 import { RootStackParamList } from "../types/navigation";
 
 import type { ThemeColors } from "../theme/theme";
+import type { DeviceGroup, DeviceRow, HistoryRow } from "../types/deviceGroup";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 
 type Props = NativeStackScreenProps<RootStackParamList, "History">;
@@ -106,14 +107,8 @@ const highlightText = (
     return <Text>{parts}</Text>;
 };
 
-type HistoryRow = { deviceName: string; date: string; content: string };
-
-interface DeviceRow {
-    id: string | null;
-    name: string; // Mã thiết bị (PM5-VFD-...)
-    type: string; // Mô tả thiết bị
-    freq: string | number | null;
-}
+const getHistoryRowKey = (item: HistoryRow): string =>
+    `${item.deviceName || "device"}-${item.date || "date"}-${item.content || ""}`;
 
 export default function HistoryScreen({ navigation }: Props) {
     const { colors } = useTheme();
@@ -141,7 +136,7 @@ export default function HistoryScreen({ navigation }: Props) {
 
     // Danh sách tên nhóm thiết bị (table names) từ allData
     const groupNames = useMemo(
-        () => deviceGroups.map((g: any) => g.table as string),
+        () => deviceGroups.map((g: DeviceGroup) => g.table),
         [deviceGroups]
     );
 
@@ -160,7 +155,9 @@ export default function HistoryScreen({ navigation }: Props) {
         setSelectedGroup(groupName);
         setModalVisible(false);
 
-        const foundGroup = deviceGroups.find((g: any) => g.table === groupName);
+        const foundGroup = deviceGroups.find(
+            (g: DeviceGroup) => g.table === groupName
+        );
 
         if (!foundGroup) {
             setGroupHistory([]);
@@ -169,8 +166,8 @@ export default function HistoryScreen({ navigation }: Props) {
             return;
         }
 
-        const rows = (foundGroup.history?.rows || []) as HistoryRow[];
-        const devices = (foundGroup.devices?.rows || []) as DeviceRow[];
+        const rows = foundGroup.history?.rows ?? [];
+        const devices = foundGroup.devices?.rows ?? [];
 
         // Sắp xếp theo ngày
         const sorted = [...rows].sort((a, b) => {
@@ -345,6 +342,77 @@ export default function HistoryScreen({ navigation }: Props) {
             .map(([deviceName, count]) => ({ deviceName, count }));
     }, [filteredHistory]);
 
+    const allDevicesSelected =
+        deviceNamesInGroup.length > 0 &&
+        selectedDevices.length === deviceNamesInGroup.length;
+
+    const renderDeviceFilterOption = ({ item: dev }: { item: string }) => {
+        const active = selectedDevices.includes(dev);
+
+        return (
+            <TouchableOpacity
+                style={[
+                    styles.filterOption,
+                    active && styles.filterOptionActive,
+                ]}
+                onPress={() => {
+                    setSelectedDevices((prev) =>
+                        prev.includes(dev)
+                            ? prev.filter((d) => d !== dev)
+                            : [...prev, dev]
+                    );
+                }}
+            >
+                <View style={styles.filterOptionRow}>
+                    <Text style={styles.filterOptionText}>{dev}</Text>
+
+                    <View
+                        style={[
+                            styles.checkbox,
+                            active && styles.checkboxActive,
+                        ]}
+                    >
+                        {active && (
+                            <Ionicons
+                                name="checkmark"
+                                style={styles.checkboxIcon}
+                            />
+                        )}
+                    </View>
+                </View>
+            </TouchableOpacity>
+        );
+    };
+
+    const renderTopDeviceItem = ({
+        item,
+    }: {
+        item: { deviceName: string; count: number };
+    }) => {
+        const meta = deviceMap[item.deviceName];
+        const parsed = parseDeviceCode(item.deviceName);
+
+        return (
+            <View style={styles.topDeviceItem}>
+                <View style={styles.deviceLine}>
+                    {!!parsed.group && (
+                        <Text style={styles.deviceTag}>{parsed.group}</Text>
+                    )}
+                    {!!parsed.kind && (
+                        <Text style={styles.deviceTag}>{parsed.kind}</Text>
+                    )}
+                    <Text style={styles.deviceCode}>
+                        {parsed.code || item.deviceName}
+                    </Text>
+                </View>
+                {meta?.type ? (
+                    <Text style={styles.deviceDesc}>{meta.type}</Text>
+                ) : null}
+                <Text style={styles.topDeviceCount}>Số lần sửa: {item.count}</Text>
+            </View>
+        );
+    };
+
     const renderHistoryItem = ({ item }: { item: HistoryRow }) => {
         const parsed = parseDeviceCode(item.deviceName);
         const meta = deviceMap[item.deviceName];
@@ -518,129 +586,58 @@ export default function HistoryScreen({ navigation }: Props) {
 
                         {deviceFilterOpen && (
                             <View style={styles.filterDropdown}>
-                                <ScrollView nestedScrollEnabled>
-                                    {/* ALL DEVICES OPTION */}
-                                    {(() => {
-                                        const allActive =
-                                            deviceNamesInGroup.length > 0 &&
-                                            selectedDevices.length ===
-                                                deviceNamesInGroup.length;
-
-                                        return (
-                                            <TouchableOpacity
-                                                style={[
-                                                    styles.filterOption,
-                                                    allActive &&
-                                                        styles.filterOptionActive,
-                                                ]}
-                                                onPress={() => {
-                                                    if (allActive) {
-                                                        // đang chọn tất cả → bỏ hết
-                                                        setSelectedDevices([]);
-                                                    } else {
-                                                        // chọn tất cả
-                                                        setSelectedDevices(
-                                                            deviceNamesInGroup
-                                                        );
-                                                    }
-                                                }}
-                                            >
-                                                <View
+                                <FlatList
+                                    data={deviceNamesInGroup}
+                                    keyExtractor={(item) => item}
+                                    nestedScrollEnabled
+                                    showsVerticalScrollIndicator={false}
+                                    renderItem={renderDeviceFilterOption}
+                                    ListHeaderComponent={
+                                        <TouchableOpacity
+                                            style={[
+                                                styles.filterOption,
+                                                allDevicesSelected &&
+                                                    styles.filterOptionActive,
+                                            ]}
+                                            onPress={() => {
+                                                if (allDevicesSelected) {
+                                                    setSelectedDevices([]);
+                                                } else {
+                                                    setSelectedDevices(
+                                                        deviceNamesInGroup
+                                                    );
+                                                }
+                                            }}
+                                        >
+                                            <View style={styles.filterOptionRow}>
+                                                <Text
                                                     style={
-                                                        styles.filterOptionRow
+                                                        styles.filterOptionText
                                                     }
                                                 >
-                                                    <Text
-                                                        style={
-                                                            styles.filterOptionText
-                                                        }
-                                                    >
-                                                        Tất cả thiết bị
-                                                    </Text>
+                                                    Tất cả thiết bị
+                                                </Text>
 
-                                                    <View
-                                                        style={[
-                                                            styles.checkbox,
-                                                            allActive &&
-                                                                styles.checkboxActive,
-                                                        ]}
-                                                    >
-                                                        {allActive && (
-                                                            <Ionicons
-                                                                name="checkmark"
-                                                                style={
-                                                                    styles.checkboxIcon
-                                                                }
-                                                            />
-                                                        )}
-                                                    </View>
-                                                </View>
-                                            </TouchableOpacity>
-                                        );
-                                    })()}
-
-                                    {/* DEVICE LIST */}
-                                    {deviceNamesInGroup.map((dev) => {
-                                        const active =
-                                            selectedDevices.includes(dev);
-
-                                        return (
-                                            <TouchableOpacity
-                                                key={dev}
-                                                style={[
-                                                    styles.filterOption,
-                                                    active &&
-                                                        styles.filterOptionActive,
-                                                ]}
-                                                onPress={() => {
-                                                    if (active) {
-                                                        setSelectedDevices(
-                                                            selectedDevices.filter(
-                                                                (d) => d !== dev
-                                                            )
-                                                        );
-                                                    } else {
-                                                        setSelectedDevices([
-                                                            ...selectedDevices,
-                                                            dev,
-                                                        ]);
-                                                    }
-                                                }}
-                                            >
                                                 <View
-                                                    style={
-                                                        styles.filterOptionRow
-                                                    }
+                                                    style={[
+                                                        styles.checkbox,
+                                                        allDevicesSelected &&
+                                                            styles.checkboxActive,
+                                                    ]}
                                                 >
-                                                    <Text
-                                                        style={
-                                                            styles.filterOptionText
-                                                        }
-                                                    >
-                                                        {dev}
-                                                    </Text>
-
-                                                    <View
-                                                        style={[
-                                                            styles.checkbox,
-                                                            active &&
-                                                                styles.checkboxActive,
-                                                        ]}
-                                                    >
-                                                        {active && (
-                                                            <Ionicons
-                                                                name="checkmark"
-                                                                style={
-                                                                    styles.checkboxIcon
-                                                                }
-                                                            />
-                                                        )}
-                                                    </View>
+                                                    {allDevicesSelected && (
+                                                        <Ionicons
+                                                            name="checkmark"
+                                                            style={
+                                                                styles.checkboxIcon
+                                                            }
+                                                        />
+                                                    )}
                                                 </View>
-                                            </TouchableOpacity>
-                                        );
-                                    })}
-                                </ScrollView>
+                                            </View>
+                                        </TouchableOpacity>
+                                    }
+                                />
                             </View>
                         )}
                     </View>
@@ -649,9 +646,7 @@ export default function HistoryScreen({ navigation }: Props) {
                 {/* List theo ngày (SectionList) */}
                 <SectionList
                     sections={sections}
-                    keyExtractor={(item, index) =>
-                        `${item.deviceName}-${item.date}-${index}`
-                    }
+                    keyExtractor={getHistoryRowKey}
                     stickySectionHeadersEnabled
                     renderSectionHeader={({ section: { title } }) => (
                         <View style={styles.sectionHeader}>
@@ -751,56 +746,17 @@ export default function HistoryScreen({ navigation }: Props) {
                         </Text>
                     ) : (
                         <View style={styles.topDeviceListWrapper}>
-                            <ScrollView
+                            <FlatList
+                                data={topDevicesDetail}
+                                keyExtractor={(item) => item.deviceName}
+                                renderItem={renderTopDeviceItem}
                                 style={styles.topDeviceList}
                                 contentContainerStyle={
                                     styles.topDeviceListContent
                                 }
                                 showsVerticalScrollIndicator
                                 nestedScrollEnabled
-                            >
-                                {topDevicesDetail.map((item) => {
-                                    const meta = deviceMap[item.deviceName];
-                                    const parsed = parseDeviceCode(
-                                        item.deviceName
-                                    );
-                                    return (
-                                        <View
-                                            key={item.deviceName}
-                                            style={styles.topDeviceItem}
-                                        >
-                                            <View style={styles.deviceLine}>
-                                                {!!parsed.group && (
-                                                    <Text
-                                                        style={styles.deviceTag}
-                                                    >
-                                                        {parsed.group}
-                                                    </Text>
-                                                )}
-                                                {!!parsed.kind && (
-                                                    <Text
-                                                        style={styles.deviceTag}
-                                                    >
-                                                        {parsed.kind}
-                                                    </Text>
-                                                )}
-                                                <Text style={styles.deviceCode}>
-                                                    {parsed.code ||
-                                                        item.deviceName}
-                                                </Text>
-                                            </View>
-                                            {meta?.type ? (
-                                                <Text style={styles.deviceDesc}>
-                                                    {meta.type}
-                                                </Text>
-                                            ) : null}
-                                            <Text style={styles.topDeviceCount}>
-                                                Số lần sửa: {item.count}
-                                            </Text>
-                                        </View>
-                                    );
-                                })}
-                            </ScrollView>
+                            />
                         </View>
                     )}
 

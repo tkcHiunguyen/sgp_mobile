@@ -1,6 +1,5 @@
 import { useFocusEffect } from "@react-navigation/native";
 import React, {
-    useMemo,
     useState,
     useCallback,
     useEffect,
@@ -12,7 +11,6 @@ import {
     StyleSheet,
     FlatList,
     TouchableOpacity,
-    ScrollView,
     TextInput,
     Animated,
 } from "react-native";
@@ -31,24 +29,17 @@ import { MIN_TOUCH_TARGET_SIZE } from "../theme/touchTargets";
 import { textStyle } from "../theme/typography";
 import { useThemedStyles } from "../theme/useThemedStyles";
 
+import {
+    parseDeviceCode,
+    useDevicesData,
+} from "./devices/hooks/useDevicesData";
+
 import type { ThemeColors } from "../theme/theme";
+import type { DeviceRow, HistoryRow } from "../types/deviceGroup";
 import type { RootStackParamList } from "../types/navigation";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 
 type Props = NativeStackScreenProps<RootStackParamList, "Devices">;
-
-interface DeviceRow {
-    id: string | null;
-    name: string; // PM5-VFD-61-27002
-    type: string; // mô tả
-    freq: string | number | null;
-}
-
-interface HistoryRow {
-    deviceName: string;
-    date: string; // dd-MM-yy
-    content: string;
-}
 
 // helper: parse "dd-MM-yy" -> Date
 const parseDate = (value: string): Date => {
@@ -59,17 +50,11 @@ const parseDate = (value: string): Date => {
     return new Date(year, month, day);
 };
 
-const parseDeviceCode = (fullCode: string) => {
-    if (!fullCode) return { group: "", kind: "", code: "" };
+const getHistoryRowKey = (item: HistoryRow): string =>
+    `${item.deviceName || "device"}-${item.date || "date"}-${item.content || ""}`;
 
-    const parts = fullCode.split("-");
-    if (parts.length < 2) return { group: "", kind: "", code: fullCode };
-
-    const group = parts[0] || "";
-    const kind = parts[1] || "";
-    const code = parts.slice(2).join("-") || "";
-    return { group, kind, code };
-};
+const getDeviceRowKey = (item: DeviceRow): string =>
+    String(item.id || item.name || "");
 
 const highlightText = (
     text: string,
@@ -116,7 +101,7 @@ export default function DevicesScreen({ navigation }: Props) {
     const styles = useThemedStyles(createStyles);
     const { deviceGroups, appendHistoryAndSync } = useDeviceGroup();
 
-    const groups = useMemo(() => deviceGroups ?? [], [deviceGroups]);
+    const groups = deviceGroups ?? [];
 
     const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
     const [deviceModalVisible, setDeviceModalVisible] = useState(false);
@@ -165,24 +150,18 @@ export default function DevicesScreen({ navigation }: Props) {
         }, [])
     );
 
-    const selectedGroupData = useMemo(
-        () => groups.find((g: any) => g.table === selectedGroup),
-        [groups, selectedGroup]
-    );
-
-    const devicesInGroup = useMemo(
-        () => ((selectedGroupData?.devices?.rows as DeviceRow[]) ?? []),
-        [selectedGroupData]
-    );
-
-    const availableKinds = useMemo(() => {
-        const set = new Set<string>();
-        devicesInGroup.forEach((dev) => {
-            const parsed = parseDeviceCode(dev.name);
-            if (parsed.kind) set.add(parsed.kind);
-        });
-        return Array.from(set).sort();
-    }, [devicesInGroup]);
+    const {
+        selectedGroupData,
+        devicesInGroup,
+        availableKinds,
+        allKindsActive,
+        filteredDevices,
+    } = useDevicesData({
+        deviceGroups: groups,
+        selectedGroup,
+        searchText,
+        selectedKinds,
+    });
 
     useEffect(() => {
         if (
@@ -194,54 +173,6 @@ export default function DevicesScreen({ navigation }: Props) {
             setKindsInitialized(true);
         }
     }, [deviceModalVisible, kindsInitialized, availableKinds]);
-
-    const allKindsActive =
-        availableKinds.length === 0 ||
-        selectedKinds.length === availableKinds.length;
-
-    const filteredDevices = useMemo(() => {
-        const q = searchText.trim().toLowerCase();
-
-        return devicesInGroup.filter((dev) => {
-            const parsed = parseDeviceCode(dev.name);
-
-            // không chọn gì => không hiển thị gì (khi có kind)
-            if (availableKinds.length > 0 && selectedKinds.length === 0) {
-                return false;
-            }
-
-            // lọc theo kind nếu không phải ALL
-            if (
-                availableKinds.length > 0 &&
-                !allKindsActive &&
-                (!parsed.kind || !selectedKinds.includes(parsed.kind))
-            ) {
-                return false;
-            }
-
-            if (!q) return true;
-
-            const code = (parsed.code || "").toLowerCase();
-            const name = (dev.name || "").toLowerCase();
-            const type = (dev.type || "").toLowerCase();
-            const kind = (parsed.kind || "").toLowerCase();
-            const group = (parsed.group || "").toLowerCase();
-
-            return (
-                name.includes(q) ||
-                code.includes(q) ||
-                type.includes(q) ||
-                kind.includes(q) ||
-                group.includes(q)
-            );
-        });
-    }, [
-        devicesInGroup,
-        searchText,
-        selectedKinds,
-        availableKinds,
-        allKindsActive,
-    ]);
 
     const handleOpenGroup = (groupName: string) => {
         setSelectedGroup(groupName);
@@ -331,14 +262,12 @@ export default function DevicesScreen({ navigation }: Props) {
                 ) : (
                     <FlatList
                         data={groups}
-                        keyExtractor={(item: any, index) =>
-                            `${item.table}-${index}`
-                        }
+                        keyExtractor={(item) => String(item.table || "")}
                         numColumns={2}
                         columnWrapperStyle={styles.row}
                         contentContainerStyle={styles.listContent}
                         showsVerticalScrollIndicator={false}
-                        renderItem={({ item }: { item: any }) => (
+                        renderItem={({ item }) => (
                             <TouchableOpacity
                                 style={styles.cardWrapper}
                                 onPress={() => handleOpenGroup(item.table)}
@@ -368,13 +297,13 @@ export default function DevicesScreen({ navigation }: Props) {
                         </Text>
 
                         {maintenanceHistory.length > 0 ? (
-                            <ScrollView
+                            <FlatList
+                                data={maintenanceHistory}
+                                keyExtractor={getHistoryRowKey}
                                 style={styles.modalScroll}
                                 showsVerticalScrollIndicator={false}
-                            >
-                                {maintenanceHistory.map((item, index) => (
+                                renderItem={({ item }) => (
                                     <View
-                                        key={`${item.date}-${index}`}
                                         style={styles.historyItem}
                                     >
                                         <View style={styles.historyItemLeft}>
@@ -388,8 +317,8 @@ export default function DevicesScreen({ navigation }: Props) {
                                             </Text>
                                         </View>
                                     </View>
-                                ))}
-                            </ScrollView>
+                                )}
+                            />
                         ) : (
                             <Text style={styles.noData}>
                                 Không có lịch sử bảo trì cho thiết bị này.
@@ -585,18 +514,18 @@ export default function DevicesScreen({ navigation }: Props) {
                                     </View>
                                 </View>
 
-                                <ScrollView
+                                <FlatList
+                                    data={filteredDevices}
+                                    keyExtractor={getDeviceRowKey}
                                     style={styles.modalScroll}
                                     showsVerticalScrollIndicator={false}
                                     keyboardShouldPersistTaps="handled"
-                                >
-                                    {filteredDevices.map((dev, index) => {
+                                    renderItem={({ item: dev }) => {
                                         const parsed = parseDeviceCode(dev.name);
                                         const codeText = parsed.code || dev.name;
 
                                         return (
                                             <TouchableOpacity
-                                                key={`${dev.name}-${index}`}
                                                 style={styles.deviceRow}
                                                 activeOpacity={0.85}
                                                 onPress={() =>
@@ -678,7 +607,7 @@ export default function DevicesScreen({ navigation }: Props) {
                                                                             (
                                                                                 prev
                                                                             ) => [
-                                                                                row as any,
+                                                                                row,
                                                                                 ...prev,
                                                                             ]
                                                                         );
@@ -697,8 +626,8 @@ export default function DevicesScreen({ navigation }: Props) {
                                                 </View>
                                             </TouchableOpacity>
                                         );
-                                    })}
-                                </ScrollView>
+                                    }}
+                                />
                             </>
                         ) : (
                             <Text style={styles.noData}>

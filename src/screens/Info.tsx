@@ -67,8 +67,8 @@ export default function InfoScreen({ navigation }: Props) {
                 contentContainerStyle={styles.contentContainer}
                 showsVerticalScrollIndicator={false}
             >
-                {infoData.map((item, idx) => (
-                    <View key={idx} style={styles.card}>
+                {infoData.map((item) => (
+                    <View key={item.title} style={styles.card}>
                         <Text style={styles.title}>{item.title}</Text>
                         <Text style={styles.description}>{item.description}</Text>
                     </View>

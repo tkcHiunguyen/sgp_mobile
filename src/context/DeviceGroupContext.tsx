@@ -8,9 +8,11 @@ import {
 } from "../config/apiConfig";
 import { logger } from "../utils/logger";
 
+import type { DeviceGroup, HistoryRow } from "../types/deviceGroup";
+
 interface DeviceGroupContextType {
-    deviceGroups: any[];
-    setDeviceGroups: (groups: any[]) => void;
+    deviceGroups: DeviceGroup[];
+    setDeviceGroups: (groups: DeviceGroup[]) => void;
 
     isDataFromCache: boolean;
     setIsDataFromCache: (fromCache: boolean) => void;
@@ -19,7 +21,7 @@ interface DeviceGroupContextType {
     refreshAllData: () => Promise<void>;
     appendHistoryAndSync: (args: {
         sheetName: string; // tên group (ví dụ "PM5")
-        row: { deviceName: string; date: string; content: string };
+        row: HistoryRow;
     }) => Promise<void>;
 }
 
@@ -38,7 +40,7 @@ export const useDeviceGroup = () => {
 export const DeviceGroupProvider: React.FC<{ children: React.ReactNode }> = ({
     children,
 }) => {
-    const [deviceGroups, setDeviceGroups] = useState<any[]>([]);
+    const [deviceGroups, setDeviceGroups] = useState<DeviceGroup[]>([]);
     const [isDataFromCache, setIsDataFromCache] = useState<boolean>(false);
     const [isSyncing, setIsSyncing] = useState<boolean>(false);
 
@@ -90,7 +92,7 @@ export const DeviceGroupProvider: React.FC<{ children: React.ReactNode }> = ({
                 const next = prev.map((g) => {
                     if (g.table !== sheetName) return g;
 
-                    const oldHistoryRows = (g.history?.rows ?? []) as any[];
+                    const oldHistoryRows = g.history?.rows ?? [];
 
                     // prepend để thấy ngay dòng mới nhất
                     const newHistoryRows = [row, ...oldHistoryRows];

@@ -21,14 +21,17 @@ import Ionicons from "react-native-vector-icons/Ionicons";
 
 import { AppScreen } from "../components/ui/AppScreen";
 import HeaderBar from "../components/ui/HeaderBar";
-import { AUTH_WEBAPP_URL } from "../config/apiConfig";
 import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../context/ThemeContext";
+import { createUserApi } from "../services/userApi";
 import { textStyle } from "../theme/typography";
 import { useThemedStyles } from "../theme/useThemedStyles";
-import { logger } from "../utils/logger";
+
+import { useMeProfileSummary } from "./me/hooks/useMeProfileSummary";
 
 import type { ThemeColors } from "../theme/theme";
+import type { RootStackParamList } from "../types/navigation";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
 type ConfirmState =
     | {
@@ -198,109 +201,6 @@ function PermissionModal({
     );
 }
 
-// ===== API error for rich debugging =====
-class ApiError extends Error {
-    status?: number;
-    code?: string;
-    details?: any;
-    raw?: string;
-    response?: any;
-
-    constructor(
-        message: string,
-        opts?: {
-            status?: number;
-            code?: string;
-            details?: any;
-            raw?: string;
-            response?: any;
-        }
-    ) {
-        super(message);
-        this.name = "ApiError";
-        this.status = opts?.status;
-        this.code = opts?.code;
-        this.details = opts?.details;
-        this.raw = opts?.raw;
-        this.response = opts?.response;
-    }
-}
-
-async function postAuthAction<T = any>(args: {
-    action: string;
-    token: string;
-    payload?: Record<string, any>;
-}): Promise<T> {
-    const { action, token, payload } = args;
-
-    if (!AUTH_WEBAPP_URL) throw new Error("Bạn chưa cấu hình AUTH_WEBAPP_URL");
-    if (!token) throw new Error("Thiếu token. Bạn hãy đăng nhập lại.");
-
-    let res: Response;
-    let text = "";
-
-    try {
-        res = await fetch(AUTH_WEBAPP_URL, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ action, token, ...(payload || {}) }),
-        });
-    } catch (e: any) {
-        throw new ApiError(e?.message || "Network error", {
-            code: "NETWORK_ERROR",
-            details: e,
-        });
-    }
-
-    try {
-        text = await res.text();
-    } catch {
-        text = "";
-    }
-
-    let data: any = null;
-    try {
-        data = text ? JSON.parse(text) : null;
-    } catch {
-        data = null;
-    }
-
-    logger.debug("[AUTH_API]", {
-        action,
-        status: res.status,
-        okHttp: res.ok,
-        parsed: data,
-        raw: text?.slice?.(0, 5000) || text,
-    });
-
-    if (!res.ok) {
-        const msg =
-            (data && (data.message || data.error)) ||
-            `HTTP ${res.status}: ${text || "(empty)"}`;
-
-        throw new ApiError(msg, {
-            status: res.status,
-            code: data?.error || "HTTP_ERROR",
-            details: data?.details,
-            raw: text,
-            response: data,
-        });
-    }
-
-    if (data && data.ok === false) {
-        const msg = data?.message || "Server error";
-        throw new ApiError(msg, {
-            status: res.status,
-            code: data?.error || "SERVER_ERROR",
-            details: data?.details,
-            raw: text,
-            response: data,
-        });
-    }
-
-    return data as T;
-}
-
 // ===== helpers: naming / cache =====
 const pad2 = (n: number) => (n < 10 ? `0${n}` : `${n}`);
 
@@ -325,37 +225,16 @@ function buildAvatarFilename(mime?: string | null) {
     return `avatar_${yyyy}-${mm}-${dd}_${HH}-${MM}-${SS}.${ext}`;
 }
 
-function withCacheBust(url: string) {
-    if (!url) return url;
-    const t = Date.now();
-    return url.includes("?") ? `${url}&t=${t}` : `${url}?t=${t}`;
-}
-
-function safeFolderName(input: string) {
-    return String(input || "unknown").replace(/[^a-zA-Z0-9_-]/g, "_");
-}
-
 export default function MeScreen() {
     const { colors } = useTheme();
     const styles = useThemedStyles(createStyles);
-    const navigation = useNavigation<any>();
-    const auth = useAuth() as any;
-    const { user, token, logout } = auth;
-
-    const myRole = String(user?.role || "").toLowerCase();
-    const isAdmin = myRole === "admin" || myRole === "administrator";
-
-    const displayName = useMemo(() => {
-        const full = String(user?.fullName || "").trim();
-        const uname = String(user?.username || "").trim();
-        return full || uname || "Tài khoản";
-    }, [user]);
-
-    const badgeRole = useMemo(() => {
-        if (isAdmin) return "ADMIN";
-        const role = String(user?.role || "").trim();
-        return role ? role.toUpperCase() : "EMPLOYEE";
-    }, [isAdmin, user]);
+    const navigation =
+        useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+    const { user, logout, refreshMe, authedFetchJson } = useAuth();
+    const userApi = useMemo(
+        () => createUserApi(authedFetchJson),
+        [authedFetchJson]
+    );
 
     const [confirm, setConfirm] = useState<ConfirmState>({ visible: false });
     const [confirmBusy, setConfirmBusy] = useState(false);
@@ -387,21 +266,11 @@ export default function MeScreen() {
         null
     );
 
-    // folderName theo userId (fallback username)
-    const avatarFolderName = useMemo(() => {
-        const uid = String(user?.userId || "").trim();
-        const uname = String(user?.username || "").trim();
-        return safeFolderName(uid || uname || "unknown");
-    }, [user]);
-
-    // Ưu tiên override -> server avatarUrl -> null
-    const avatarUri = useMemo(() => {
-        const raw =
-            avatarUrlOverride ||
-            String(user?.avatarUrl || user?.avatar || "").trim() ||
-            "";
-        return raw ? raw : null;
-    }, [avatarUrlOverride, user]);
+    const { isAdmin, displayName, badgeRole, avatarFolderName, avatarUri } =
+        useMeProfileSummary({
+            user,
+            avatarUrlOverride,
+        });
 
     // ===== Android permission helper =====
     const ensureAndroidGalleryPermission = async (): Promise<boolean> => {
@@ -526,33 +395,20 @@ export default function MeScreen() {
 
             setAvatarBusy(true);
 
-            const data = await postAuthAction<{
-                ok: true;
-                avatarUrl?: string;
-                url?: string;
-                fileId?: string;
-                name?: string;
-                message?: string;
-                error?: string;
-                details?: any;
-            }>({
-                action: "auth_upload_avatar",
-                token: String(token || ""),
-                payload: {
-                    userId, // ✅ server cần
-                    folderName: avatarFolderName, // ✅ server tạo / lấy folder
-                    filename, // ✅ server đặt tên theo ngày
-                    mime,
-                    base64,
-                    platform: Platform.OS,
-                    clientInfo: {
-                        fileSize: asset.fileSize,
-                        width: asset.width,
-                        height: asset.height,
-                        uri: asset.uri,
-                        name: asset.fileName,
-                        type: asset.type,
-                    },
+            const data = await userApi.uploadAvatar({
+                userId, // ✅ server cần
+                folderName: avatarFolderName, // ✅ server tạo / lấy folder
+                filename, // ✅ server đặt tên theo ngày
+                mime,
+                base64,
+                platform: Platform.OS,
+                clientInfo: {
+                    fileSize: asset.fileSize,
+                    width: asset.width,
+                    height: asset.height,
+                    uri: asset.uri,
+                    name: asset.fileName,
+                    type: asset.type,
                 },
             });
 
@@ -562,36 +418,24 @@ export default function MeScreen() {
                     "Upload xong nhưng server không trả avatarUrl/url."
                 );
 
-            // ✅ chống cache để không hiện ảnh cũ
-            setAvatarUrlOverride(withCacheBust(newUrl));
+            setAvatarUrlOverride(newUrl);
 
-            // sync lại user (nếu context có)
-            if (typeof auth?.refreshMe === "function") {
+            if (typeof refreshMe === "function") {
                 try {
-                    await auth.refreshMe();
+                    await refreshMe();
                 } catch {
                     // ignore
                 }
             }
         } catch (e: any) {
-            const status = e?.status;
-            const code = e?.code;
-            const details = e?.details;
-            const raw = e?.raw;
-
-            const msgLines: string[] = [];
-            msgLines.push(e?.message || "Có lỗi xảy ra. Vui lòng thử lại.");
-
-            if (status) msgLines.push(`HTTP: ${status}`);
-            if (code) msgLines.push(`Code: ${code}`);
-            if (details) msgLines.push(`Details: ${String(details)}`);
-            if (raw && typeof raw === "string")
-                msgLines.push(`Raw: ${raw.slice(0, 2000)}`);
+            const message = String(
+                e?.message || "Có lỗi xảy ra. Vui lòng thử lại."
+            );
 
             setConfirm({
                 visible: true,
                 title: "Không thể đổi ảnh đại diện",
-                message: msgLines.join("\n"),
+                message,
                 confirmText: "OK",
                 cancelText: "Đóng",
                 onConfirm: () => setConfirm({ visible: false }),
@@ -651,11 +495,7 @@ export default function MeScreen() {
             setPwdBusy(true);
             setPwdErr(null);
 
-            await postAuthAction({
-                action: "auth_change_password",
-                token: String(token || ""),
-                payload: { oldPassword: o, newPassword: n },
-            });
+            await userApi.changePassword({ oldPassword: o, newPassword: n });
 
             setPwdOpen(false);
 
