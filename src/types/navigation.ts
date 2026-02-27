@@ -7,16 +7,11 @@ export type RootStackParamList = {
     Scanner: undefined;
     Devices: undefined;
 
-    History: {
-        deviceId: string;
-        deviceName: string;
-    };
+    History: undefined;
 
     Tools: undefined;
 
-    Info: {
-        url: string;
-    };
+    Info: undefined;
 
     WebViewer: {
         url: string;
@@ -27,4 +22,5 @@ export type RootStackParamList = {
     Login: { prefillUsername?: string } | undefined;
     Register: undefined;
     AdminUsers: undefined;
+    KpiDashboard: undefined;
 };

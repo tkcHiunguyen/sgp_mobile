@@ -1,0 +1,70 @@
+name: CI
+
+on:
+    push:
+        branches: ["main", "master"]
+    pull_request:
+
+jobs:
+    quality-and-android-build:
+        runs-on: ubuntu-latest
+        timeout-minutes: 45
+
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+
+            - name: Setup PNPM
+              uses: pnpm/action-setup@v4
+              with:
+                  version: 10.29.2
+
+            - name: Setup Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: 20
+                  cache: pnpm
+
+            - name: Setup Java
+              uses: actions/setup-java@v4
+              with:
+                  distribution: temurin
+                  java-version: "17"
+
+            - name: Setup Android SDK
+              uses: android-actions/setup-android@v3
+
+            - name: Install dependencies
+              run: pnpm install --frozen-lockfile
+
+            - name: Typecheck
+              run: pnpm typecheck
+
+            - name: Lint
+              run: pnpm lint
+
+            - name: Unit tests
+              run: pnpm test --runInBand
+
+            - name: Ensure debug keystore
+              run: |
+                  mkdir -p "$HOME/.android"
+                  if [ ! -f "$HOME/.android/debug.keystore" ]; then
+                    keytool -genkeypair \
+                      -storetype PKCS12 \
+                      -keystore "$HOME/.android/debug.keystore" \
+                      -storepass android \
+                      -keypass android \
+                      -alias androiddebugkey \
+                      -keyalg RSA \
+                      -keysize 2048 \
+                      -validity 10000 \
+                      -dname "CN=Android Debug,O=Android,C=US"
+                  fi
+
+            - name: Build Android debug APK
+              run: |
+                  chmod +x android/gradlew
+                  echo "sdk.dir=$ANDROID_SDK_ROOT" > android/local.properties
+                  cd android
+                  ./gradlew assembleDebug --no-daemon

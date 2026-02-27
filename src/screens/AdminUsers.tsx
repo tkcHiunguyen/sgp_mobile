@@ -1,4 +1,5 @@
 // src/screens/AdminUsers.tsx
+import { useNavigation } from "@react-navigation/native";
 import React, { useEffect, useMemo, useState } from "react";
 import {
     ActivityIndicator,
@@ -12,16 +13,15 @@ import {
     View,
 } from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
-import { useNavigation } from "@react-navigation/native";
 
 import { AppScreen } from "../components/ui/AppScreen";
-import HeaderBar from "../components/ui/HeaderBar";
 import { EmptyState } from "../components/ui/EmptyState";
-import { colors } from "../theme/theme";
-import { textStyle } from "../theme/typography";
+import HeaderBar from "../components/ui/HeaderBar";
 import { useAuth } from "../context/AuthContext";
-import { AUTH_WEBAPP_URL } from "../config/apiConfig";
-
+import { useTheme } from "../context/ThemeContext";
+import { createUserApi } from "../services/userApi";
+import { textStyle } from "../theme/typography";
+import { useThemedStyles } from "../theme/useThemedStyles";
 import {
     ROLE_OPTIONS,
     ROLE_LABEL,
@@ -29,18 +29,18 @@ import {
     type RoleId,
 } from "../types/roles";
 
-type UserRow = {
-    userId: string;
-    username: string;
-    fullName?: string;
-    code?: string;
-    role?: string;
-    active?: string | number;
-    createdAt?: string;
-    updatedAt?: string;
-};
+import {
+    getUserRowKey,
+    useAdminUsersFilters,
+    type TabKey,
+} from "./adminUsers/hooks/useAdminUsersFilters";
 
-type TabKey = "active" | "pending";
+import type { AdminUserRow } from "../services/userApi";
+import type { ThemeColors } from "../theme/theme";
+import type { RootStackParamList } from "../types/navigation";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
+
+type UserRow = AdminUserRow;
 
 const pad2 = (n: number) => (n < 10 ? `0${n}` : `${n}`);
 
@@ -55,48 +55,6 @@ function formatIsoToVn(value?: string) {
     const mi = pad2(d.getMinutes());
     return `${dd}/${mm}/${yy} ${hh}:${mi}`;
 }
-
-/** ============ Session-expired detection ============ */
-function isSessionExpiredMessage(msg?: string) {
-    const s = String(msg || "")
-        .toLowerCase()
-        .trim();
-    if (!s) return false;
-
-    // Các message phía Apps Script của bạn đang trả về
-    const keys = [
-        "token đã hết hạn",
-        "token không hợp lệ",
-        "token đã bị logout",
-        "thiếu token",
-        "user đã bị khóa",
-        "unauthorized",
-        "forbidden",
-    ];
-
-    return keys.some((k) => s.includes(k));
-}
-
-class SessionExpiredError extends Error {
-    code = "SESSION_EXPIRED";
-    constructor(message: string) {
-        super(message);
-        this.name = "SessionExpiredError";
-    }
-}
-
-async function parseResponseJson(res: Response) {
-    const text = await res.text();
-    let data: any = null;
-    try {
-        data = JSON.parse(text);
-    } catch {
-        data = null;
-    }
-    return { text, data };
-}
-
-/** =================================================== */
 
 type ConfirmState =
     | {
@@ -119,6 +77,8 @@ function ConfirmModal({
     busy: boolean;
     onClose: () => void;
 }) {
+    const { colors } = useTheme();
+    const styles = useThemedStyles(createStyles);
     if (!state.visible) return null;
 
     return (
@@ -196,6 +156,8 @@ function SessionExpiredModal({
     onClose: () => void;
     onGoLogin: () => void;
 }) {
+    const { colors } = useTheme();
+    const styles = useThemedStyles(createStyles);
     if (!state.visible) return null;
 
     return (
@@ -243,8 +205,15 @@ function SessionExpiredModal({
 }
 
 export default function AdminUsersScreen() {
-    const navigation = useNavigation<any>();
-    const { token, user, logout } = useAuth() as any;
+    const { colors } = useTheme();
+    const styles = useThemedStyles(createStyles);
+    const navigation =
+        useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+    const { user, logout, authedFetchJson } = useAuth();
+    const userApi = useMemo(
+        () => createUserApi(authedFetchJson),
+        [authedFetchJson]
+    );
 
     const myRole = String(user?.role || "").toLowerCase();
     const isAdmin = myRole === "administrator" || myRole === "admin";
@@ -298,79 +267,16 @@ export default function AdminUsersScreen() {
         });
     };
 
-    /** ============ Requests wrappers (AdminUsers only) ============ */
-    const postAdminAction = async <T = any,>(args: {
-        action: string;
-        token: string;
-        payload?: Record<string, any>;
-    }): Promise<T> => {
-        const { action, token: t, payload } = args;
-
-        if (!AUTH_WEBAPP_URL)
-            throw new Error("Bạn chưa cấu hình AUTH_WEBAPP_URL");
-        if (!t)
-            throw new SessionExpiredError(
-                "Thiếu token. Bạn hãy đăng nhập lại."
-            );
-
-        const res = await fetch(AUTH_WEBAPP_URL, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ action, token: t, ...(payload || {}) }),
-        });
-
-        const { text, data } = await parseResponseJson(res);
-
-        // Apps Script của bạn thường trả 200 nhưng ok:false
-        const msg =
-            (data && (data.message || data.error)) ||
-            (!res.ok ? `HTTP ${res.status}: ${text}` : "");
-
-        if (!res.ok) {
-            if (isSessionExpiredMessage(msg))
-                throw new SessionExpiredError(msg || "Unauthorized");
-            throw new Error(msg || `HTTP ${res.status}`);
-        }
-
-        if (!data?.ok) {
-            if (isSessionExpiredMessage(data?.message || msg)) {
-                throw new SessionExpiredError(
-                    String(data?.message || msg || "Token expired")
-                );
-            }
-            throw new Error(data?.message || "Server error");
-        }
-
-        return data as T;
-    };
-
     const fetchUsers = async () => {
         setLoading(true);
         setErr(null);
 
         try {
-            const t = String(token || "");
-            if (!t)
-                throw new SessionExpiredError(
-                    "Thiếu token. Bạn hãy đăng nhập lại."
-                );
-
-            const data: any = await postAdminAction({
-                action: "admin_list_users",
-                token: t,
-            });
-
-            const list: UserRow[] = Array.isArray(data.users) ? data.users : [];
-            setRows(list);
+            const users = await userApi.listUsers();
+            setRows(users);
         } catch (e: any) {
             const msg = String(e?.message || "Network error");
-
-            if (
-                e?.name === "SessionExpiredError" ||
-                e?.code === "SESSION_EXPIRED"
-            ) {
-                await handleSessionExpired(msg);
-            } else if (isSessionExpiredMessage(msg)) {
+            if (msg === "SESSION_EXPIRED") {
                 await handleSessionExpired(msg);
             } else {
                 setErr(msg);
@@ -387,38 +293,11 @@ export default function AdminUsersScreen() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isAdmin]);
 
-    const { activeRows, pendingRows } = useMemo(() => {
-        const act: UserRow[] = [];
-        const pen: UserRow[] = [];
-        for (const r of rows) {
-            const isActive = String(r.active ?? "0") === "1";
-            if (isActive) act.push(r);
-            else pen.push(r);
-        }
-        return { activeRows: act, pendingRows: pen };
-    }, [rows]);
-
-    const filtered = useMemo(() => {
-        const base = tab === "active" ? activeRows : pendingRows;
-
-        const s = q.trim().toLowerCase();
-        if (!s) return base;
-
-        return base.filter((r) => {
-            const hay = [
-                r.userId,
-                r.username,
-                r.fullName,
-                r.code,
-                r.role,
-                String(r.active ?? ""),
-            ]
-                .filter(Boolean)
-                .join(" ")
-                .toLowerCase();
-            return hay.includes(s);
-        });
-    }, [tab, activeRows, pendingRows, q]);
+    const { activeRows, pendingRows, filteredRows } = useAdminUsersFilters({
+        rows,
+        tab,
+        query: q,
+    });
 
     const openRolePicker = (target: UserRow) => {
         setRoleTarget(target);
@@ -440,10 +319,9 @@ export default function AdminUsersScreen() {
                     setConfirmBusy(true);
                     setErr(null);
 
-                    await postAdminAction({
-                        action: "admin_set_user_role",
-                        token: String(token || ""),
-                        payload: { userId: target.userId, role: nextRole },
+                    await userApi.setUserRole({
+                        userId: target.userId,
+                        role: nextRole,
                     });
 
                     setRows((prev) =>
@@ -463,13 +341,7 @@ export default function AdminUsersScreen() {
                     setConfirm({ visible: false });
                 } catch (e: any) {
                     const msg = String(e?.message || "Không thể đổi role");
-                    if (
-                        e?.name === "SessionExpiredError" ||
-                        e?.code === "SESSION_EXPIRED"
-                    ) {
-                        setConfirm({ visible: false });
-                        await handleSessionExpired(msg);
-                    } else if (isSessionExpiredMessage(msg)) {
+                    if (msg === "SESSION_EXPIRED") {
                         setConfirm({ visible: false });
                         await handleSessionExpired(msg);
                     } else {
@@ -501,13 +373,9 @@ export default function AdminUsersScreen() {
                     setConfirmBusy(true);
                     setErr(null);
 
-                    await postAdminAction({
-                        action: "admin_set_user_active",
-                        token: String(token || ""),
-                        payload: {
-                            userId: target.userId,
-                            active: String(nextActive),
-                        },
+                    await userApi.setUserActive({
+                        userId: target.userId,
+                        active: String(nextActive),
                     });
 
                     setRows((prev) =>
@@ -528,13 +396,7 @@ export default function AdminUsersScreen() {
                         e?.message || "Không thể đổi trạng thái active"
                     );
 
-                    if (
-                        e?.name === "SessionExpiredError" ||
-                        e?.code === "SESSION_EXPIRED"
-                    ) {
-                        setConfirm({ visible: false });
-                        await handleSessionExpired(msg);
-                    } else if (isSessionExpiredMessage(msg)) {
+                    if (msg === "SESSION_EXPIRED") {
                         setConfirm({ visible: false });
                         await handleSessionExpired(msg);
                     } else {
@@ -740,8 +602,8 @@ export default function AdminUsersScreen() {
             </View>
 
             <FlatList
-                data={filtered}
-                keyExtractor={(it, idx) => `${it.userId || it.username || idx}`}
+                data={filteredRows}
+                keyExtractor={getUserRowKey}
                 renderItem={renderItem}
                 contentContainerStyle={{ paddingBottom: 24, paddingTop: 8 }}
                 ListEmptyComponent={
@@ -878,7 +740,8 @@ export default function AdminUsersScreen() {
     );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+    StyleSheet.create({
     topArea: {
         paddingHorizontal: 12,
         paddingTop: 10,
@@ -900,7 +763,7 @@ const styles = StyleSheet.create({
         borderRadius: 14,
         backgroundColor: colors.surfaceAlt,
         borderWidth: 1,
-        borderColor: "rgba(255,255,255,0.08)",
+        borderColor: colors.primarySoftBorder,
     },
     searchInput: {
         flex: 1,
@@ -914,7 +777,7 @@ const styles = StyleSheet.create({
         borderRadius: 14,
         borderWidth: 1,
         borderColor: colors.primarySoftBorder,
-        backgroundColor: "rgba(59,130,246,0.12)",
+        backgroundColor: colors.backgroundAlt,
         alignItems: "center",
         justifyContent: "center",
     },
@@ -929,14 +792,14 @@ const styles = StyleSheet.create({
         height: 38,
         borderRadius: 12,
         borderWidth: 1,
-        borderColor: "rgba(255,255,255,0.08)",
-        backgroundColor: "rgba(255,255,255,0.04)",
+        borderColor: colors.primarySoftBorder,
+        backgroundColor: colors.backgroundAlt,
         alignItems: "center",
         justifyContent: "center",
     },
     tabBtnActive: {
-        backgroundColor: "rgba(59,130,246,0.18)",
-        borderColor: "rgba(59,130,246,0.45)",
+        backgroundColor: colors.background,
+        borderColor: colors.primaryBorderStrong,
     },
     tabText: {
         color: colors.textMuted,
@@ -959,7 +822,7 @@ const styles = StyleSheet.create({
         borderRadius: 16,
         backgroundColor: colors.surface,
         borderWidth: 1,
-        borderColor: "rgba(255,255,255,0.08)",
+        borderColor: colors.primarySoftBorder,
     },
 
     rowTop: {
@@ -990,8 +853,8 @@ const styles = StyleSheet.create({
         height: 28,
         borderRadius: 999,
         borderWidth: 1,
-        borderColor: "rgba(255,255,255,0.10)",
-        backgroundColor: "rgba(255,255,255,0.04)",
+        borderColor: colors.primarySoftBorder,
+        backgroundColor: colors.backgroundAlt,
         maxWidth: "45%",
     },
     roleChipInlineText: {
@@ -1057,7 +920,7 @@ const styles = StyleSheet.create({
         borderRadius: 16,
         backgroundColor: colors.background,
         borderWidth: 1,
-        borderColor: "rgba(59,130,246,0.45)",
+        borderColor: colors.primaryBorderStrong,
         padding: 12,
         maxHeight: "70%",
     },
@@ -1094,7 +957,7 @@ const styles = StyleSheet.create({
         borderRadius: 12,
         backgroundColor: colors.surfaceAlt,
         borderWidth: 1,
-        borderColor: "rgba(255,255,255,0.08)",
+        borderColor: colors.primarySoftBorder,
         marginBottom: 8,
     },
     roleItemText: {
@@ -1112,7 +975,7 @@ const styles = StyleSheet.create({
         borderRadius: 16,
         backgroundColor: colors.background,
         borderWidth: 1,
-        borderColor: "rgba(255,255,255,0.10)",
+        borderColor: colors.primarySoftBorder,
         padding: 12,
     },
     confirmHeader: {
@@ -1149,15 +1012,15 @@ const styles = StyleSheet.create({
     },
     btnGhost: {
         backgroundColor: "transparent",
-        borderColor: "rgba(255,255,255,0.12)",
+        borderColor: colors.primarySoftBorder,
     },
     btnGhostText: {
         color: colors.text,
         ...textStyle(14, { weight: "900", lineHeightPreset: "tight" }),
     },
     btnPrimary: {
-        backgroundColor: "rgba(59,130,246,0.22)",
-        borderColor: "rgba(59,130,246,0.45)",
+        backgroundColor: colors.backgroundAlt,
+        borderColor: colors.primaryBorderStrong,
     },
     btnDanger: {
         backgroundColor: "rgba(220,38,38,0.18)",
@@ -1177,7 +1040,7 @@ const styles = StyleSheet.create({
         borderRadius: 16,
         backgroundColor: colors.background,
         borderWidth: 1,
-        borderColor: "rgba(59,130,246,0.45)",
+        borderColor: colors.primaryBorderStrong,
         padding: 12,
     },
-});
+    });

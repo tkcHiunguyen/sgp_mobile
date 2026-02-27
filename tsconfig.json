@@ -4,15 +4,14 @@
         "module": "ESNext",
         "lib": ["ES2020", "DOM"],
         "jsx": "react-native",
-        "moduleResolution": "node",
+        "moduleResolution": "bundler",
         "allowJs": true,
         "noEmit": true,
         "strict": true,
         "esModuleInterop": true,
         "skipLibCheck": true,
         "forceConsistentCasingInFileNames": true,
-        "typeRoots": ["./node_modules/@types", "./src/types"],
-        "ignoreDeprecations": "6.0"
+        "typeRoots": ["./node_modules/@types", "./src/types"]
     },
     "include": ["src/**/*.ts", "src/**/*.tsx", "src/declarations.d.ts"],
     "exclude": ["**/node_modules", "**/Pods"]

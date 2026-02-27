@@ -1,3 +1,6 @@
+import DateTimePicker, {
+    DateTimePickerEvent,
+} from "@react-native-community/datetimepicker";
 import React, { useMemo, useRef, useState } from "react";
 import {
     Dimensions,
@@ -9,13 +12,16 @@ import {
     TouchableOpacity,
     View,
 } from "react-native";
-import DateTimePicker, {
-    DateTimePickerEvent,
-} from "@react-native-community/datetimepicker";
 import Ionicons from "react-native-vector-icons/Ionicons";
-import { colors } from "../theme/theme";
+
+import { useTheme } from "../context/ThemeContext";
 import { textStyle } from "../theme/typography";
-import { BaseModal } from "./ui/BaseModal";
+import { useThemedStyles } from "../theme/useThemedStyles";
+
+import { clampDate, dateToDmy, dmyToDate } from "./datePicker/dateUtils";
+import { IOSSpinnerPickerModal } from "./datePicker/IOSSpinnerPickerModal";
+
+import type { ThemeColors } from "../theme/theme";
 
 type Props = {
     /** dd-MM-yy */
@@ -25,31 +31,14 @@ type Props = {
     minDate?: Date;
     maxDate?: Date;
     iconSize?: number;
-};
-
-const pad2 = (n: number) => (n < 10 ? `0${n}` : `${n}`);
-
-const dmyToDate = (dmy: string) => {
-    if (!dmy) return null;
-    const m = dmy.match(/^\d{2}-\d{2}-\d{2}$/);
-    if (!m) return null;
-    const [dd, mm, yy] = dmy.split("-").map((x) => parseInt(x, 10));
-    if (!dd || !mm) return null;
-    return new Date(2000 + yy, mm - 1, dd);
-};
-
-const dateToDmy = (d: Date) => {
-    const dd = pad2(d.getDate());
-    const mm = pad2(d.getMonth() + 1);
-    const yy = String(d.getFullYear()).slice(2);
-    return `${dd}-${mm}-${yy}`;
-};
-
-const clamp = (d: Date, min: Date, max: Date) => {
-    const t = d.getTime();
-    if (t < min.getTime()) return new Date(min);
-    if (t > max.getTime()) return new Date(max);
-    return d;
+    interaction?: "popover" | "direct";
+    title?: string;
+    fieldLabel?: string;
+    todayLabel?: string;
+    clearLabel?: string;
+    closeLabel?: string;
+    cancelLabel?: string;
+    confirmLabel?: string;
 };
 
 type Anchor = { x: number; y: number; w: number; h: number };
@@ -60,7 +49,17 @@ export function SingleDatePickerIOSDark({
     minDate,
     maxDate,
     iconSize = 20,
+    interaction = "popover",
+    title = "Chọn ngày",
+    fieldLabel = "Ngày",
+    todayLabel = "Hôm nay",
+    clearLabel = "Xóa",
+    closeLabel = "Đóng",
+    cancelLabel = "Hủy",
+    confirmLabel = "OK",
 }: Props) {
+    const { colors } = useTheme();
+    const styles = useThemedStyles(createStyles);
     const minD = useMemo(() => minDate ?? new Date(2022, 0, 1), [minDate]);
     const maxD = useMemo(() => maxDate ?? new Date(), [maxDate]);
 
@@ -77,9 +76,10 @@ export function SingleDatePickerIOSDark({
     // iOS spinner modal (nếu bạn muốn vẫn dùng BaseModal)
     const [iosPickerOpen, setIosPickerOpen] = useState(false);
     const [iosDraft, setIosDraft] = useState<Date>(currentValue);
+    const isDirect = interaction === "direct";
 
     const applyPicked = (pickedRaw: Date) => {
-        const picked = clamp(new Date(pickedRaw), minD, maxD);
+        const picked = clampDate(new Date(pickedRaw), minD, maxD);
         onChange(dateToDmy(picked));
     };
 
@@ -112,6 +112,14 @@ export function SingleDatePickerIOSDark({
         } else {
             setShowAndroidPicker(true);
         }
+    };
+
+    const handleIconPress = () => {
+        if (isDirect) {
+            openPick();
+            return;
+        }
+        openPopover();
     };
 
     const onAndroidPick = (e: DateTimePickerEvent, selected?: Date) => {
@@ -147,9 +155,13 @@ export function SingleDatePickerIOSDark({
                 <TouchableOpacity
                     style={[
                         styles.iconBtn,
-                        (open || !!value) && styles.iconBtnActive,
+                        ((isDirect
+                            ? iosPickerOpen || showAndroidPicker
+                            : open) ||
+                            !!value) &&
+                            styles.iconBtnActive,
                     ]}
-                    onPress={openPopover}
+                    onPress={handleIconPress}
                     activeOpacity={0.75}
                 >
                     <Ionicons
@@ -161,147 +173,142 @@ export function SingleDatePickerIOSDark({
             </View>
 
             {/* ✅ POPOVER MODAL: chặn xuyên touch xuống TextInput phía sau */}
-            <Modal
-                visible={open}
-                transparent
-                animationType="fade"
-                onRequestClose={closePopover}
-            >
-                {/* backdrop bắt mọi tap ngoài */}
-                <Pressable style={styles.backdrop} onPress={closePopover} />
+            {!isDirect && (
+                <Modal
+                    visible={open}
+                    transparent
+                    animationType="fade"
+                    onRequestClose={closePopover}
+                >
+                    {/* backdrop bắt mọi tap ngoài */}
+                    <Pressable style={styles.backdrop} onPress={closePopover} />
 
-                {/* dropdown nằm đúng dưới icon */}
-                {anchor && (
-                    <View
-                        style={[
-                            styles.dropdown,
-                            { top: dropdownPos.top, left: dropdownPos.left },
-                        ]}
-                    >
-                        <View style={styles.dropdownHeader}>
-                            <Text style={styles.dropdownTitle}>Chọn ngày</Text>
+                    {/* dropdown nằm đúng dưới icon */}
+                    {anchor && (
+                        <View
+                            style={[
+                                styles.dropdown,
+                                { top: dropdownPos.top, left: dropdownPos.left },
+                            ]}
+                        >
+                            <View style={styles.dropdownHeader}>
+                                <Text style={styles.dropdownTitle}>{title}</Text>
+
+                                <TouchableOpacity
+                                    onPress={closePopover}
+                                    activeOpacity={0.8}
+                                    style={styles.headerCloseBtn}
+                                >
+                                    <Ionicons
+                                        name="close"
+                                        size={16}
+                                        color={colors.textMuted}
+                                    />
+                                </TouchableOpacity>
+                            </View>
 
                             <TouchableOpacity
-                                onPress={closePopover}
-                                activeOpacity={0.8}
-                                style={styles.headerCloseBtn}
+                                style={styles.box}
+                                onPress={openPick}
+                                activeOpacity={0.85}
                             >
-                                <Ionicons
-                                    name="close"
-                                    size={16}
-                                    color={colors.textMuted}
+                                <Text style={styles.label}>{fieldLabel}</Text>
+                                <Text style={styles.value}>{value || "--"}</Text>
+                            </TouchableOpacity>
+
+                            <View style={styles.actionsRow}>
+                                <TouchableOpacity
+                                    onPress={setToday}
+                                    activeOpacity={0.85}
+                                >
+                                    <Text style={styles.linkPrimary}>
+                                        {todayLabel}
+                                    </Text>
+                                </TouchableOpacity>
+
+                                <TouchableOpacity
+                                    onPress={clear}
+                                    activeOpacity={0.85}
+                                >
+                                    <Text style={styles.linkMuted}>
+                                        {clearLabel}
+                                    </Text>
+                                </TouchableOpacity>
+
+                                <View style={{ flex: 1 }} />
+
+                                <TouchableOpacity
+                                    onPress={closePopover}
+                                    activeOpacity={0.85}
+                                >
+                                    <Text style={styles.linkMuted}>
+                                        {closeLabel}
+                                    </Text>
+                                </TouchableOpacity>
+                            </View>
+
+                            {/* ANDROID native dialog (dialog nổi lên từ dropdown) */}
+                            {showAndroidPicker && Platform.OS === "android" && (
+                                <DateTimePicker
+                                    value={currentValue}
+                                    mode="date"
+                                    display="calendar"
+                                    minimumDate={minD}
+                                    maximumDate={maxD}
+                                    onChange={onAndroidPick}
                                 />
-                            </TouchableOpacity>
+                            )}
                         </View>
+                    )}
+                </Modal>
+            )}
 
-                        <TouchableOpacity
-                            style={styles.box}
-                            onPress={openPick}
-                            activeOpacity={0.85}
-                        >
-                            <Text style={styles.label}>Ngày</Text>
-                            <Text style={styles.value}>{value || "--"}</Text>
-                        </TouchableOpacity>
+            {isDirect && showAndroidPicker && Platform.OS === "android" && (
+                <DateTimePicker
+                    value={currentValue}
+                    mode="date"
+                    display="calendar"
+                    minimumDate={minD}
+                    maximumDate={maxD}
+                    onChange={onAndroidPick}
+                />
+            )}
 
-                        <View style={styles.actionsRow}>
-                            <TouchableOpacity
-                                onPress={setToday}
-                                activeOpacity={0.85}
-                            >
-                                <Text style={styles.linkPrimary}>Hôm nay</Text>
-                            </TouchableOpacity>
-
-                            <TouchableOpacity
-                                onPress={clear}
-                                activeOpacity={0.85}
-                            >
-                                <Text style={styles.linkMuted}>Xóa</Text>
-                            </TouchableOpacity>
-
-                            <View style={{ flex: 1 }} />
-
-                            <TouchableOpacity
-                                onPress={closePopover}
-                                activeOpacity={0.85}
-                            >
-                                <Text style={styles.linkMuted}>Đóng</Text>
-                            </TouchableOpacity>
-                        </View>
-
-                        {/* ANDROID native dialog (dialog nổi lên từ dropdown) */}
-                        {showAndroidPicker && Platform.OS === "android" && (
-                            <DateTimePicker
-                                value={currentValue}
-                                mode="date"
-                                display="calendar"
-                                minimumDate={minD}
-                                maximumDate={maxD}
-                                onChange={onAndroidPick}
-                            />
-                        )}
-                    </View>
-                )}
-            </Modal>
-
-            {/* iOS spinner modal */}
-            <BaseModal
+            <IOSSpinnerPickerModal
                 visible={iosPickerOpen}
-                onRequestClose={() => setIosPickerOpen(false)}
-                width="92%"
-            >
-                <View style={styles.iosModalCard}>
-                    <Text style={styles.iosModalTitle}>Chọn ngày</Text>
-
-                    <DateTimePicker
-                        value={iosDraft}
-                        mode="date"
-                        display="spinner"
-                        minimumDate={minD}
-                        maximumDate={maxD}
-                        onChange={(_, d) => {
-                            if (d) setIosDraft(d);
-                        }}
-                    />
-
-                    <View style={styles.iosModalActions}>
-                        <TouchableOpacity
-                            onPress={() => setIosPickerOpen(false)}
-                            activeOpacity={0.85}
-                        >
-                            <Text style={styles.linkMuted}>Hủy</Text>
-                        </TouchableOpacity>
-
-                        <TouchableOpacity
-                            onPress={() => {
-                                applyPicked(iosDraft);
-                                setIosPickerOpen(false);
-                                closePopover();
-                            }}
-                            activeOpacity={0.85}
-                        >
-                            <Text style={styles.linkPrimary}>OK</Text>
-                        </TouchableOpacity>
-                    </View>
-                </View>
-            </BaseModal>
+                title={title}
+                value={iosDraft}
+                minDate={minD}
+                maxDate={maxD}
+                cancelLabel={cancelLabel}
+                confirmLabel={confirmLabel}
+                onChange={setIosDraft}
+                onCancel={() => setIosPickerOpen(false)}
+                onConfirm={() => {
+                    applyPicked(iosDraft);
+                    setIosPickerOpen(false);
+                    closePopover();
+                }}
+            />
         </View>
     );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+    StyleSheet.create({
     iconBtn: {
         width: 42,
         height: 40,
         borderRadius: 14,
         borderWidth: 1,
-        borderColor: "rgba(96,165,250,0.55)",
-        backgroundColor: "rgba(15,23,42,0.75)",
+        borderColor: colors.primarySoftBorder,
+        backgroundColor: colors.surface,
         justifyContent: "center",
         alignItems: "center",
     },
     iconBtnActive: {
-        borderColor: "rgba(96,165,250,0.9)",
-        backgroundColor: "rgba(37,99,235,0.18)",
+        borderColor: colors.primaryBorderStrong,
+        backgroundColor: colors.backgroundAlt,
     },
 
     backdrop: {
@@ -313,15 +320,15 @@ const styles = StyleSheet.create({
         position: "absolute",
         width: 240,
         borderRadius: 16,
-        backgroundColor: "rgba(15,23,42,0.96)",
+        backgroundColor: colors.surface,
         borderWidth: 1,
-        borderColor: "rgba(96,165,250,0.35)",
+        borderColor: colors.primarySoftBorder,
         zIndex: 999,
         elevation: 20,
         padding: 12,
         gap: 10,
 
-        shadowColor: "#000",
+        shadowColor: colors.accent,
         shadowOpacity: 0.35,
         shadowRadius: 18,
         shadowOffset: { width: 0, height: 10 },
@@ -347,21 +354,21 @@ const styles = StyleSheet.create({
         borderRadius: 12,
         alignItems: "center",
         justifyContent: "center",
-        backgroundColor: "rgba(2,6,23,0.55)",
+        backgroundColor: colors.background,
         borderWidth: 1,
-        borderColor: "rgba(148,163,184,0.16)",
+        borderColor: colors.primarySoftBorder,
     },
 
     box: {
         borderWidth: 1,
-        borderColor: "rgba(148,163,184,0.18)",
-        backgroundColor: "rgba(2,6,23,0.55)",
+        borderColor: colors.primarySoftBorder,
+        backgroundColor: colors.background,
         borderRadius: 14,
         paddingVertical: 10,
         paddingHorizontal: 12,
     },
     label: {
-        color: "rgba(229,242,255,0.62)",
+        color: colors.textMuted,
         ...textStyle(11, {
             weight: "800",
             lineHeightPreset: "tight",
@@ -386,27 +393,8 @@ const styles = StyleSheet.create({
         ...textStyle(12, { weight: "900", lineHeightPreset: "tight" }),
     },
     linkMuted: {
-        color: "rgba(229,242,255,0.55)",
+        color: colors.textMuted,
         ...textStyle(12, { weight: "900", lineHeightPreset: "tight" }),
     },
 
-    iosModalCard: {
-        backgroundColor: colors.surface,
-        borderRadius: 16,
-        borderWidth: 1,
-        borderColor: "rgba(96,165,250,0.25)",
-        padding: 12,
-    },
-    iosModalTitle: {
-        color: colors.text,
-        ...textStyle(15, { weight: "900", lineHeightPreset: "tight" }),
-        textAlign: "center",
-        marginBottom: 8,
-    },
-    iosModalActions: {
-        marginTop: 10,
-        flexDirection: "row",
-        justifyContent: "space-between",
-        paddingHorizontal: 6,
-    },
-});
+    });

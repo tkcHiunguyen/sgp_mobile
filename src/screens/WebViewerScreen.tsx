@@ -1,15 +1,19 @@
 import React from "react";
 import { StyleSheet, View } from "react-native";
 import { WebView } from "react-native-webview";
-import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 
-import { RootStackParamList } from "../types/navigation";
+
 import BackButton from "../components/backButton";
-import { colors } from "../theme/theme";
+import { useThemedStyles } from "../theme/useThemedStyles";
+import { RootStackParamList } from "../types/navigation";
+
+import type { ThemeColors } from "../theme/theme";
+import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 
 type Props = NativeStackScreenProps<RootStackParamList, "WebViewer">;
 
 export default function WebViewerScreen({ navigation, route }: Props) {
+    const styles = useThemedStyles(createStyles);
     const { url } = route.params;
 
     return (
@@ -21,7 +25,8 @@ export default function WebViewerScreen({ navigation, route }: Props) {
     );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+    StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: colors.background,
@@ -29,4 +34,4 @@ const styles = StyleSheet.create({
     webview: {
         flex: 1,
     },
-});
+    });

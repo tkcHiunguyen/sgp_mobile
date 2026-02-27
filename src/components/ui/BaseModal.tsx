@@ -10,7 +10,12 @@ import {
     DimensionValue,
     Animated,
 } from "react-native";
-import { colors, radius, spacing } from "../../theme/theme";
+
+import { useTheme } from "../../context/ThemeContext";
+import { radius, spacing } from "../../theme/theme";
+import { useThemedStyles } from "../../theme/useThemedStyles";
+
+import type { ThemeColors } from "../../theme/theme";
 
 type Props = {
     visible: boolean;
@@ -39,6 +44,8 @@ export function BaseModal({
     width = "100%",
     style,
 }: Props) {
+    const { mode } = useTheme();
+    const styles = useThemedStyles(createStyles);
     const [mounted, setMounted] = useState(visible);
     const anim = useRef(new Animated.Value(0)).current;
 
@@ -96,7 +103,16 @@ export function BaseModal({
             onRequestClose={handleClose} // ✅ Android back
         >
             <Animated.View
-                style={[styles.overlay, { opacity: overlayOpacity }]}
+                style={[
+                    styles.overlay,
+                    {
+                        opacity: overlayOpacity,
+                        backgroundColor:
+                            mode === "dark"
+                                ? "rgba(15,23,42,0.85)"
+                                : "rgba(15,23,42,0.35)",
+                    },
+                ]}
             >
                 {/* Backdrop bắt tap để đóng */}
                 <TouchableWithoutFeedback onPress={handleClose}>
@@ -125,10 +141,10 @@ export function BaseModal({
     );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+    StyleSheet.create({
     overlay: {
         flex: 1,
-        backgroundColor: "rgba(15,23,42,0.85)",
         justifyContent: "center",
         alignItems: "center",
         paddingHorizontal: 24,
@@ -137,12 +153,12 @@ const styles = StyleSheet.create({
         ...StyleSheet.absoluteFillObject,
     },
     container: {
-        backgroundColor: colors.background,
+        backgroundColor: colors.surface,
         borderRadius: radius.lg,
         paddingVertical: spacing.lg,
         paddingHorizontal: spacing.md,
         borderWidth: 1,
-        borderColor: "rgba(59,130,246,0.5)",
+        borderColor: colors.primarySoftBorder,
         maxHeight: "80%",
     },
-});
+    });

@@ -1,4 +1,5 @@
 // src/screens/Me.tsx
+import { useNavigation } from "@react-navigation/native";
 import React, { useMemo, useState } from "react";
 import {
     ActivityIndicator,
@@ -14,17 +15,23 @@ import {
     PermissionsAndroid,
     Linking,
 } from "react-native";
-import Ionicons from "react-native-vector-icons/Ionicons";
-import LinearGradient from "react-native-linear-gradient";
-import { useNavigation } from "@react-navigation/native";
 import { launchImageLibrary } from "react-native-image-picker";
+import LinearGradient from "react-native-linear-gradient";
+import Ionicons from "react-native-vector-icons/Ionicons";
 
 import { AppScreen } from "../components/ui/AppScreen";
 import HeaderBar from "../components/ui/HeaderBar";
-import { colors } from "../theme/theme";
-import { textStyle } from "../theme/typography";
 import { useAuth } from "../context/AuthContext";
-import { AUTH_WEBAPP_URL } from "../config/apiConfig";
+import { useTheme } from "../context/ThemeContext";
+import { createUserApi } from "../services/userApi";
+import { textStyle } from "../theme/typography";
+import { useThemedStyles } from "../theme/useThemedStyles";
+
+import { useMeProfileSummary } from "./me/hooks/useMeProfileSummary";
+
+import type { ThemeColors } from "../theme/theme";
+import type { RootStackParamList } from "../types/navigation";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
 type ConfirmState =
     | {
@@ -47,6 +54,8 @@ function ConfirmModal({
     busy: boolean;
     onClose: () => void;
 }) {
+    const { colors } = useTheme();
+    const styles = useThemedStyles(createStyles);
     if (!state.visible) return null;
 
     return (
@@ -140,6 +149,8 @@ function PermissionModal({
     onClose: () => void;
     onOpenSettings: () => void;
 }) {
+    const { colors } = useTheme();
+    const styles = useThemedStyles(createStyles);
     if (!state.visible) return null;
 
     return (
@@ -190,109 +201,6 @@ function PermissionModal({
     );
 }
 
-// ===== API error for rich debugging =====
-class ApiError extends Error {
-    status?: number;
-    code?: string;
-    details?: any;
-    raw?: string;
-    response?: any;
-
-    constructor(
-        message: string,
-        opts?: {
-            status?: number;
-            code?: string;
-            details?: any;
-            raw?: string;
-            response?: any;
-        }
-    ) {
-        super(message);
-        this.name = "ApiError";
-        this.status = opts?.status;
-        this.code = opts?.code;
-        this.details = opts?.details;
-        this.raw = opts?.raw;
-        this.response = opts?.response;
-    }
-}
-
-async function postAuthAction<T = any>(args: {
-    action: string;
-    token: string;
-    payload?: Record<string, any>;
-}): Promise<T> {
-    const { action, token, payload } = args;
-
-    if (!AUTH_WEBAPP_URL) throw new Error("Bạn chưa cấu hình AUTH_WEBAPP_URL");
-    if (!token) throw new Error("Thiếu token. Bạn hãy đăng nhập lại.");
-
-    let res: Response;
-    let text = "";
-
-    try {
-        res = await fetch(AUTH_WEBAPP_URL, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ action, token, ...(payload || {}) }),
-        });
-    } catch (e: any) {
-        throw new ApiError(e?.message || "Network error", {
-            code: "NETWORK_ERROR",
-            details: e,
-        });
-    }
-
-    try {
-        text = await res.text();
-    } catch {
-        text = "";
-    }
-
-    let data: any = null;
-    try {
-        data = text ? JSON.parse(text) : null;
-    } catch {
-        data = null;
-    }
-
-    console.log("[AUTH_API]", {
-        action,
-        status: res.status,
-        okHttp: res.ok,
-        parsed: data,
-        raw: text?.slice?.(0, 5000) || text,
-    });
-
-    if (!res.ok) {
-        const msg =
-            (data && (data.message || data.error)) ||
-            `HTTP ${res.status}: ${text || "(empty)"}`;
-
-        throw new ApiError(msg, {
-            status: res.status,
-            code: data?.error || "HTTP_ERROR",
-            details: data?.details,
-            raw: text,
-            response: data,
-        });
-    }
-
-    if (data && data.ok === false) {
-        const msg = data?.message || "Server error";
-        throw new ApiError(msg, {
-            status: res.status,
-            code: data?.error || "SERVER_ERROR",
-            details: data?.details,
-            raw: text,
-            response: data,
-        });
-    }
-
-    return data as T;
-}
-
 // ===== helpers: naming / cache =====
 const pad2 = (n: number) => (n < 10 ? `0${n}` : `${n}`);
 
@@ -317,35 +225,16 @@ function buildAvatarFilename(mime?: string | null) {
     return `avatar_${yyyy}-${mm}-${dd}_${HH}-${MM}-${SS}.${ext}`;
 }
 
-function withCacheBust(url: string) {
-    if (!url) return url;
-    const t = Date.now();
-    return url.includes("?") ? `${url}&t=${t}` : `${url}?t=${t}`;
-}
-
-function safeFolderName(input: string) {
-    return String(input || "unknown").replace(/[^a-zA-Z0-9_-]/g, "_");
-}
-
 export default function MeScreen() {
-    const navigation = useNavigation<any>();
-    const auth = useAuth() as any;
-    const { user, token, logout } = auth;
-
-    const myRole = String(user?.role || "").toLowerCase();
-    const isAdmin = myRole === "admin" || myRole === "administrator";
-
-    const displayName = useMemo(() => {
-        const full = String(user?.fullName || "").trim();
-        const uname = String(user?.username || "").trim();
-        return full || uname || "Tài khoản";
-    }, [user]);
-
-    const badgeRole = useMemo(() => {
-        if (isAdmin) return "ADMIN";
-        const role = String(user?.role || "").trim();
-        return role ? role.toUpperCase() : "EMPLOYEE";
-    }, [isAdmin, user]);
+    const { colors } = useTheme();
+    const styles = useThemedStyles(createStyles);
+    const navigation =
+        useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+    const { user, logout, refreshMe, authedFetchJson } = useAuth();
+    const userApi = useMemo(
+        () => createUserApi(authedFetchJson),
+        [authedFetchJson]
+    );
 
     const [confirm, setConfirm] = useState<ConfirmState>({ visible: false });
     const [confirmBusy, setConfirmBusy] = useState(false);
@@ -377,21 +266,11 @@ export default function MeScreen() {
         null
     );
 
-    // folderName theo userId (fallback username)
-    const avatarFolderName = useMemo(() => {
-        const uid = String(user?.userId || "").trim();
-        const uname = String(user?.username || "").trim();
-        return safeFolderName(uid || uname || "unknown");
-    }, [user]);
-
-    // Ưu tiên override -> server avatarUrl -> null
-    const avatarUri = useMemo(() => {
-        const raw =
-            avatarUrlOverride ||
-            String(user?.avatarUrl || user?.avatar || "").trim() ||
-            "";
-        return raw ? raw : null;
-    }, [avatarUrlOverride, user]);
+    const { isAdmin, displayName, badgeRole, avatarFolderName, avatarUri } =
+        useMeProfileSummary({
+            user,
+            avatarUrlOverride,
+        });
 
     // ===== Android permission helper =====
     const ensureAndroidGalleryPermission = async (): Promise<boolean> => {
@@ -516,33 +395,20 @@ export default function MeScreen() {
 
             setAvatarBusy(true);
 
-            const data = await postAuthAction<{
-                ok: true;
-                avatarUrl?: string;
-                url?: string;
-                fileId?: string;
-                name?: string;
-                message?: string;
-                error?: string;
-                details?: any;
-            }>({
-                action: "auth_upload_avatar",
-                token: String(token || ""),
-                payload: {
-                    userId, // ✅ server cần
-                    folderName: avatarFolderName, // ✅ server tạo / lấy folder
-                    filename, // ✅ server đặt tên theo ngày
-                    mime,
-                    base64,
-                    platform: Platform.OS,
-                    clientInfo: {
-                        fileSize: asset.fileSize,
-                        width: asset.width,
-                        height: asset.height,
-                        uri: asset.uri,
-                        name: asset.fileName,
-                        type: asset.type,
-                    },
+            const data = await userApi.uploadAvatar({
+                userId, // ✅ server cần
+                folderName: avatarFolderName, // ✅ server tạo / lấy folder
+                filename, // ✅ server đặt tên theo ngày
+                mime,
+                base64,
+                platform: Platform.OS,
+                clientInfo: {
+                    fileSize: asset.fileSize,
+                    width: asset.width,
+                    height: asset.height,
+                    uri: asset.uri,
+                    name: asset.fileName,
+                    type: asset.type,
                 },
             });
 
@@ -552,36 +418,24 @@ export default function MeScreen() {
                     "Upload xong nhưng server không trả avatarUrl/url."
                 );
 
-            // ✅ chống cache để không hiện ảnh cũ
-            setAvatarUrlOverride(withCacheBust(newUrl));
+            setAvatarUrlOverride(newUrl);
 
-            // sync lại user (nếu context có)
-            if (typeof auth?.refreshMe === "function") {
+            if (typeof refreshMe === "function") {
                 try {
-                    await auth.refreshMe();
+                    await refreshMe();
                 } catch {
                     // ignore
                 }
             }
         } catch (e: any) {
-            const status = e?.status;
-            const code = e?.code;
-            const details = e?.details;
-            const raw = e?.raw;
-
-            const msgLines: string[] = [];
-            msgLines.push(e?.message || "Có lỗi xảy ra. Vui lòng thử lại.");
-
-            if (status) msgLines.push(`HTTP: ${status}`);
-            if (code) msgLines.push(`Code: ${code}`);
-            if (details) msgLines.push(`Details: ${String(details)}`);
-            if (raw && typeof raw === "string")
-                msgLines.push(`Raw: ${raw.slice(0, 2000)}`);
+            const message = String(
+                e?.message || "Có lỗi xảy ra. Vui lòng thử lại."
+            );
 
             setConfirm({
                 visible: true,
                 title: "Không thể đổi ảnh đại diện",
-                message: msgLines.join("\n"),
+                message,
                 confirmText: "OK",
                 cancelText: "Đóng",
                 onConfirm: () => setConfirm({ visible: false }),
@@ -641,11 +495,7 @@ export default function MeScreen() {
             setPwdBusy(true);
             setPwdErr(null);
 
-            await postAuthAction({
-                action: "auth_change_password",
-                token: String(token || ""),
-                payload: { oldPassword: o, newPassword: n },
-            });
+            await userApi.changePassword({ oldPassword: o, newPassword: n });
 
             setPwdOpen(false);
 
@@ -702,103 +552,105 @@ export default function MeScreen() {
                 contentContainerStyle={{ padding: 12, paddingBottom: 28 }}
                 showsVerticalScrollIndicator={false}
             >
-                <LinearGradient
-                    colors={[colors.surface, colors.background]}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 1 }}
-                    style={styles.profileCard}
-                >
-                    <View style={styles.profileTop}>
-                        <Pressable
-                            onPress={pickAndUploadAvatar}
-                            style={({ pressed }) => [
-                                styles.avatarWrap,
-                                pressed && styles.pressedSm,
-                            ]}
-                            disabled={avatarBusy}
-                        >
-                            {avatarUri ? (
-                                <Image
-                                    source={{ uri: avatarUri }}
-                                    style={styles.avatarImg}
-                                />
-                            ) : (
-                                <View style={styles.avatarFallback}>
-                                    <Ionicons
-                                        name="person"
-                                        size={26}
-                                        color={colors.text}
+                <View style={styles.profileCardShadow}>
+                    <LinearGradient
+                        colors={[colors.surface, colors.background]}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 1 }}
+                        style={styles.profileCard}
+                    >
+                        <View style={styles.profileTop}>
+                            <Pressable
+                                onPress={pickAndUploadAvatar}
+                                style={({ pressed }) => [
+                                    styles.avatarWrap,
+                                    pressed && styles.pressedSm,
+                                ]}
+                                disabled={avatarBusy}
+                            >
+                                {avatarUri ? (
+                                    <Image
+                                        source={{ uri: avatarUri }}
+                                        style={styles.avatarImg}
                                     />
-                                </View>
-                            )}
-
-                            <View style={styles.avatarBadge}>
-                                {avatarBusy ? (
-                                    <ActivityIndicator />
                                 ) : (
-                                    <Ionicons
-                                        name="camera-outline"
-                                        size={16}
-                                        color={colors.text}
-                                    />
+                                    <View style={styles.avatarFallback}>
+                                        <Ionicons
+                                            name="person"
+                                            size={26}
+                                            color={colors.text}
+                                        />
+                                    </View>
                                 )}
-                            </View>
-                        </Pressable>
 
-                        <View style={{ flex: 1, minWidth: 0 }}>
-                            <Text style={styles.fullName} numberOfLines={1}>
-                                {displayName}
-                            </Text>
-
-                            {!!user?.username && (
-                                <Text style={styles.username} numberOfLines={1}>
-                                    @{String(user.username)}
-                                </Text>
-                            )}
-
-                            <View style={styles.chipRow}>
-                                <View style={styles.chip}>
-                                    <Text style={styles.chipText}>
-                                        {badgeRole}
-                                    </Text>
+                                <View style={styles.avatarBadge}>
+                                    {avatarBusy ? (
+                                        <ActivityIndicator />
+                                    ) : (
+                                        <Ionicons
+                                            name="camera-outline"
+                                            size={16}
+                                            color={colors.text}
+                                        />
+                                    )}
                                 </View>
+                            </Pressable>
 
-                                <View style={[styles.chip, styles.chipOk]}>
-                                    <Text style={styles.chipText}>
-                                        ĐÃ KÍCH HOẠT
+                            <View style={{ flex: 1, minWidth: 0 }}>
+                                <Text style={styles.fullName} numberOfLines={1}>
+                                    {displayName}
+                                </Text>
+
+                                {!!user?.username && (
+                                    <Text style={styles.username} numberOfLines={1}>
+                                        @{String(user.username)}
                                     </Text>
+                                )}
+
+                                <View style={styles.chipRow}>
+                                    <View style={styles.chip}>
+                                        <Text style={styles.chipText}>
+                                            {badgeRole}
+                                        </Text>
+                                    </View>
+
+                                    <View style={[styles.chip, styles.chipOk]}>
+                                        <Text style={styles.chipText}>
+                                            ĐÃ KÍCH HOẠT
+                                        </Text>
+                                    </View>
                                 </View>
                             </View>
                         </View>
-                    </View>
 
-                    <View style={styles.metaBlock}>
-                        <Text style={styles.metaText}>
-                            User ID:{" "}
-                            <Text style={styles.metaTextStrong}>
-                                {String(user?.userId || "-")}
+                        <View style={styles.metaBlock}>
+                            <Text style={styles.metaText}>
+                                User ID:{" "}
+                                <Text style={styles.metaTextStrong}>
+                                    {String(user?.userId || "-")}
+                                </Text>
                             </Text>
-                        </Text>
 
-                        <Text style={styles.metaText}>
-                            Mã nhân viên:{" "}
-                            <Text style={styles.metaTextStrong}>
-                                {String(user?.code || "-")}
+                            <Text style={styles.metaText}>
+                                Mã nhân viên:{" "}
+                                <Text style={styles.metaTextStrong}>
+                                    {String(user?.code || "-")}
+                                </Text>
                             </Text>
-                        </Text>
 
-                        <Text style={styles.metaText}>
-                            Thư mục avatar:{" "}
-                            <Text style={styles.metaTextStrong}>
-                                {avatarFolderName || "-"}
+                            <Text style={styles.metaText}>
+                                Thư mục avatar:{" "}
+                                <Text style={styles.metaTextStrong}>
+                                    {avatarFolderName || "-"}
+                                </Text>
                             </Text>
-                        </Text>
-                    </View>
+                        </View>
 
-                    <Text style={styles.avatarHint}>
-                        Nhấn vào ảnh để đổi ảnh đại diện
-                    </Text>
-                </LinearGradient>
+                        <Text style={styles.avatarHint}>
+                            Nhấn vào ảnh để đổi ảnh đại diện
+                        </Text>
+                    </LinearGradient>
+                </View>
 
                 <View style={styles.sectionTitleRow}>
                     <Text style={styles.sectionTitle}>Tác vụ nhanh</Text>
@@ -1066,7 +918,8 @@ export default function MeScreen() {
     );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+    StyleSheet.create({
     pressedSm: {
         opacity: 0.9,
         transform: [{ scale: 0.99 }],
@@ -1075,9 +928,12 @@ const styles = StyleSheet.create({
     profileCard: {
         borderRadius: 18,
         borderWidth: 1,
-        borderColor: "rgba(59,130,246,0.35)",
+        borderColor: colors.primarySoftBorder,
         padding: 12,
-        shadowColor: "#1D4ED8",
+    },
+    profileCardShadow: {
+        borderRadius: 18,
+        shadowColor: colors.accent,
         shadowOpacity: 0.18,
         shadowRadius: 10,
         elevation: 3,
@@ -1100,15 +956,15 @@ const styles = StyleSheet.create({
         borderRadius: 18,
         backgroundColor: colors.surface,
         borderWidth: 1,
-        borderColor: "rgba(255,255,255,0.10)",
+        borderColor: colors.primarySoftBorder,
     },
     avatarFallback: {
         width: 62,
         height: 62,
         borderRadius: 18,
-        backgroundColor: "rgba(255,255,255,0.04)",
+        backgroundColor: colors.backgroundAlt,
         borderWidth: 1,
-        borderColor: "rgba(255,255,255,0.10)",
+        borderColor: colors.primarySoftBorder,
         alignItems: "center",
         justifyContent: "center",
     },
@@ -1121,7 +977,7 @@ const styles = StyleSheet.create({
         borderRadius: 14,
         backgroundColor: colors.background,
         borderWidth: 1,
-        borderColor: "rgba(59,130,246,0.35)",
+        borderColor: colors.primarySoftBorder,
         alignItems: "center",
         justifyContent: "center",
     },
@@ -1152,8 +1008,8 @@ const styles = StyleSheet.create({
         height: 26,
         borderRadius: 999,
         borderWidth: 1,
-        borderColor: "rgba(255,255,255,0.10)",
-        backgroundColor: "rgba(255,255,255,0.04)",
+        borderColor: colors.primarySoftBorder,
+        backgroundColor: colors.backgroundAlt,
         alignItems: "center",
         justifyContent: "center",
     },
@@ -1170,7 +1026,7 @@ const styles = StyleSheet.create({
         marginTop: 12,
         paddingTop: 10,
         borderTopWidth: 1,
-        borderTopColor: "rgba(255,255,255,0.08)",
+        borderTopColor: colors.primarySoftBorder,
         gap: 6,
     },
     metaText: {
@@ -1202,7 +1058,7 @@ const styles = StyleSheet.create({
         height: 52,
         borderRadius: 14,
         borderWidth: 1,
-        borderColor: "rgba(255,255,255,0.08)",
+        borderColor: colors.primarySoftBorder,
         backgroundColor: colors.surface,
         paddingHorizontal: 12,
     },
@@ -1210,9 +1066,9 @@ const styles = StyleSheet.create({
         width: 34,
         height: 34,
         borderRadius: 12,
-        backgroundColor: "rgba(37,99,235,0.12)",
+        backgroundColor: colors.backgroundAlt,
         borderWidth: 1,
-        borderColor: "rgba(59,130,246,0.35)",
+        borderColor: colors.primarySoftBorder,
         alignItems: "center",
         justifyContent: "center",
     },
@@ -1273,7 +1129,7 @@ const styles = StyleSheet.create({
         borderRadius: 16,
         backgroundColor: colors.background,
         borderWidth: 1,
-        borderColor: "rgba(59,130,246,0.35)",
+        borderColor: colors.primarySoftBorder,
         padding: 12,
     },
     pwdHeader: {
@@ -1295,7 +1151,7 @@ const styles = StyleSheet.create({
         borderRadius: 14,
         backgroundColor: colors.surfaceAlt,
         borderWidth: 1,
-        borderColor: "rgba(255,255,255,0.08)",
+        borderColor: colors.primarySoftBorder,
     },
     input: {
         flex: 1,
@@ -1318,7 +1174,7 @@ const styles = StyleSheet.create({
         borderRadius: 16,
         backgroundColor: colors.background,
         borderWidth: 1,
-        borderColor: "rgba(255,255,255,0.10)",
+        borderColor: colors.primarySoftBorder,
         padding: 12,
         maxHeight: "70%",
     },
@@ -1332,7 +1188,7 @@ const styles = StyleSheet.create({
         borderRadius: 16,
         backgroundColor: colors.background,
         borderWidth: 1,
-        borderColor: "rgba(59,130,246,0.35)",
+        borderColor: colors.primarySoftBorder,
         padding: 12,
     },
 
@@ -1360,8 +1216,8 @@ const styles = StyleSheet.create({
         marginTop: 6,
         borderRadius: 12,
         borderWidth: 1,
-        borderColor: "rgba(255,255,255,0.10)",
-        backgroundColor: "rgba(255,255,255,0.03)",
+        borderColor: colors.primarySoftBorder,
+        backgroundColor: colors.backgroundAlt,
         overflow: "hidden",
     },
     confirmMessageScroll: {
@@ -1394,15 +1250,15 @@ const styles = StyleSheet.create({
     },
     btnGhost: {
         backgroundColor: "transparent",
-        borderColor: "rgba(255,255,255,0.12)",
+        borderColor: colors.primarySoftBorder,
     },
     btnGhostText: {
         color: colors.text,
         ...textStyle(14, { weight: "900", lineHeightPreset: "tight" }),
     },
     btnPrimary: {
-        backgroundColor: "rgba(59,130,246,0.22)",
-        borderColor: "rgba(59,130,246,0.45)",
+        backgroundColor: colors.backgroundAlt,
+        borderColor: colors.primaryBorderStrong,
     },
     btnDanger: {
         backgroundColor: "rgba(220,38,38,0.18)",
@@ -1412,4 +1268,4 @@ const styles = StyleSheet.create({
         color: colors.text,
         ...textStyle(14, { weight: "900", lineHeightPreset: "tight" }),
     },
-});
+    });

@@ -1,14 +1,18 @@
 import React, { createContext, useState, useContext, useCallback } from "react";
+
 import {
     storage,
     getApiBase,
     getSheetId,
     KEY_ALL_DATA,
 } from "../config/apiConfig";
+import { logger } from "../utils/logger";
+
+import type { DeviceGroup, HistoryRow } from "../types/deviceGroup";
 
 interface DeviceGroupContextType {
-    deviceGroups: any[];
-    setDeviceGroups: (groups: any[]) => void;
+    deviceGroups: DeviceGroup[];
+    setDeviceGroups: (groups: DeviceGroup[]) => void;
 
     isDataFromCache: boolean;
     setIsDataFromCache: (fromCache: boolean) => void;
@@ -17,7 +21,7 @@ interface DeviceGroupContextType {
     refreshAllData: () => Promise<void>;
     appendHistoryAndSync: (args: {
         sheetName: string; // tên group (ví dụ "PM5")
-        row: { deviceName: string; date: string; content: string };
+        row: HistoryRow;
     }) => Promise<void>;
 }
 
@@ -36,14 +40,14 @@ export const useDeviceGroup = () => {
 export const DeviceGroupProvider: React.FC<{ children: React.ReactNode }> = ({
     children,
 }) => {
-    const [deviceGroups, setDeviceGroups] = useState<any[]>([]);
+    const [deviceGroups, setDeviceGroups] = useState<DeviceGroup[]>([]);
     const [isDataFromCache, setIsDataFromCache] = useState<boolean>(false);
     const [isSyncing, setIsSyncing] = useState<boolean>(false);
 
     const refreshAllData = useCallback(async () => {
         if (isSyncing) return;
 
-        console.log("🔄 [SYNC] BẮT ĐẦU tải dữ liệu mới...");
+        logger.debug("🔄 [SYNC] BẮT ĐẦU tải dữ liệu mới...");
         const start = Date.now();
 
         try {
@@ -60,7 +64,7 @@ export const DeviceGroupProvider: React.FC<{ children: React.ReactNode }> = ({
             );
 
             const result = await res.json();
-            console.log("📌 [SYNC] Raw result:", result);
+            logger.debug("📌 [SYNC] Raw result:", result);
 
             const allData = result.data ?? [];
 
@@ -68,9 +72,9 @@ export const DeviceGroupProvider: React.FC<{ children: React.ReactNode }> = ({
             setDeviceGroups(allData);
             setIsDataFromCache(false);
 
-            console.log(`✅ [SYNC] HOÀN TẤT (mất ${Date.now() - start}ms)`);
+            logger.debug(`✅ [SYNC] HOÀN TẤT (mất ${Date.now() - start}ms)`);
         } catch (err) {
-            console.error("❌ [SYNC] Lỗi khi đồng bộ:", err);
+            logger.error("❌ [SYNC] Lỗi khi đồng bộ:", err);
         } finally {
             setIsSyncing(false);
         }
@@ -88,7 +92,7 @@ export const DeviceGroupProvider: React.FC<{ children: React.ReactNode }> = ({
                 const next = prev.map((g) => {
                     if (g.table !== sheetName) return g;
 
-                    const oldHistoryRows = (g.history?.rows ?? []) as any[];
+                    const oldHistoryRows = g.history?.rows ?? [];
 
                     // prepend để thấy ngay dòng mới nhất
                     const newHistoryRows = [row, ...oldHistoryRows];
@@ -132,4 +136,3 @@ export const DeviceGroupProvider: React.FC<{ children: React.ReactNode }> = ({
         </DeviceGroupContext.Provider>
     );
 };
-

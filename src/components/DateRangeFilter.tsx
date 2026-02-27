@@ -1,314 +1,508 @@
-import React, { useMemo, useState } from "react";
-import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import DateTimePicker, {
+    DateTimePickerEvent,
+} from "@react-native-community/datetimepicker";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import {
+    Platform,
+    Text,
+    TouchableOpacity,
+    View,
+    StyleSheet,
+    Animated,
+} from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
-import { CalendarList, DateData } from "react-native-calendars";
 
-import { BaseModal } from "./ui/BaseModal";
-import { colors } from "../theme/theme";
+import { useTheme } from "../context/ThemeContext";
+import { MIN_TOUCH_TARGET_SIZE } from "../theme/touchTargets";
 import { textStyle } from "../theme/typography";
+import { useThemedStyles } from "../theme/useThemedStyles";
+
+import {
+    addDays,
+    clampDate,
+    dateToDmy,
+    dmyToDate,
+    startOfMonth,
+} from "./datePicker/dateUtils";
+import { IOSSpinnerPickerModal } from "./datePicker/IOSSpinnerPickerModal";
+
+import type { ThemeColors } from "../theme/theme";
 
 type Props = {
     fromDate: string; // dd-MM-yy
     toDate: string; // dd-MM-yy
     onChange: (next: { fromDate: string; toDate: string }) => void;
-    onCloseOthers?: () => void; // để bạn đóng device filter khi mở date filter
+
+    open: boolean;
+    onToggleOpen: () => void;
+    onClose: () => void;
+    title?: string;
+    fromLabel?: string;
+    toLabel?: string;
+    resetLabel?: string;
+    closeLabel?: string;
+    cancelLabel?: string;
+    confirmLabel?: string;
 };
 
-const pad2 = (n: number) => (n < 10 ? `0${n}` : `${n}`);
-
-// yyyy-MM-dd (calendar) -> dd-MM-yy (app)
-const ymdToDdMmYy = (ymd: string) => {
-    const [y, m, d] = ymd.split("-");
-    return `${d}-${m}-${y.slice(2)}`;
-};
-
-// dd-MM-yy (app) -> yyyy-MM-dd (calendar)
-const ddMmYyToYmd = (dmy: string) => {
-    const [dd, mm, yy] = dmy.split("-");
-    const yyyy = `20${yy}`;
-    return `${yyyy}-${pad2(parseInt(mm, 10))}-${pad2(parseInt(dd, 10))}`;
-};
-
-const todayYmd = () => {
-    const t = new Date();
-    return `${t.getFullYear()}-${pad2(t.getMonth() + 1)}-${pad2(t.getDate())}`;
-};
-
-export function DateRangeFilter({
+export function DateRangeNativePicker({
     fromDate,
     toDate,
     onChange,
-    onCloseOthers,
+    open,
+    onToggleOpen,
+    onClose,
+    title = "Bộ lọc ngày",
+    fromLabel = "Từ",
+    toLabel = "Đến",
+    resetLabel = "Reset",
+    closeLabel = "Đóng",
+    cancelLabel = "Hủy",
+    confirmLabel = "OK",
 }: Props) {
-    const [open, setOpen] = useState(false);
+    const { colors } = useTheme();
+    const styles = useThemedStyles(createStyles);
+    const minDate = useMemo(() => new Date(2022, 0, 1), []);
+    const maxDate = useMemo(() => new Date(), []);
 
-    // state tạm trong modal (chỉ áp dụng khi bấm "Áp dụng")
-    const [tempFrom, setTempFrom] = useState(fromDate);
-    const [tempTo, setTempTo] = useState(toDate);
+    const [target, setTarget] = useState<"from" | "to">("from");
 
-    const hasValue = !!fromDate || !!toDate || open;
+    const [showAndroidPicker, setShowAndroidPicker] = useState(false);
 
-    const markedDates = useMemo(() => {
-        const marks: any = {};
+    const [iosPickerOpen, setIosPickerOpen] = useState(false);
+    const [iosDraft, setIosDraft] = useState<Date>(new Date());
 
-        if (!tempFrom && !tempTo) return marks;
+    const currentTargetValue = useMemo(() => {
+        const d = target === "from" ? dmyToDate(fromDate) : dmyToDate(toDate);
+        return d ?? new Date();
+    }, [fromDate, toDate, target]);
 
-        const start = tempFrom ? ddMmYyToYmd(tempFrom) : "";
-        const end = tempTo ? ddMmYyToYmd(tempTo) : "";
+    const applyPicked = (pickedRaw: Date) => {
+        const picked = clampDate(new Date(pickedRaw), minDate, maxDate);
+        const pickedDmy = dateToDmy(picked);
 
-        // chỉ chọn 1 ngày
-        if (start && !end) {
-            marks[start] = {
-                startingDay: true,
-                endingDay: true,
-                color: "rgba(59,130,246,0.35)",
-                textColor: colors.text,
-            };
-            return marks;
-        }
+        const next = { fromDate, toDate };
+        if (target === "from") next.fromDate = pickedDmy;
+        else next.toDate = pickedDmy;
 
-        // start + end
-        if (start && end) {
-            const s = new Date(start);
-            const e = new Date(end);
-
-            // swap nếu user chọn ngược
-            const startDate = s <= e ? s : e;
-            const endDate = s <= e ? e : s;
-
-            const cur = new Date(startDate);
-            while (cur <= endDate) {
-                const y = cur.getFullYear();
-                const m = pad2(cur.getMonth() + 1);
-                const d = pad2(cur.getDate());
-                const key = `${y}-${m}-${d}`;
-
-                const isStart =
-                    key ===
-                    `${startDate.getFullYear()}-${pad2(
-                        startDate.getMonth() + 1
-                    )}-${pad2(startDate.getDate())}`;
-                const isEnd =
-                    key ===
-                    `${endDate.getFullYear()}-${pad2(
-                        endDate.getMonth() + 1
-                    )}-${pad2(endDate.getDate())}`;
-
-                marks[key] = {
-                    startingDay: isStart,
-                    endingDay: isEnd,
-                    color: "rgba(59,130,246,0.35)",
-                    textColor: colors.text,
-                };
-
-                cur.setDate(cur.getDate() + 1);
-            }
-        }
-
-        return marks;
-    }, [tempFrom, tempTo]);
-
-    const openModal = () => {
-        // sync lại temp mỗi lần mở
-        setTempFrom(fromDate);
-        setTempTo(toDate);
-        setOpen(true);
-        onCloseOthers?.();
-    };
-
-    const closeModal = () => setOpen(false);
-
-    const onDayPress = (day: DateData) => {
-        const picked = ymdToDdMmYy(day.dateString);
-
-        // chưa có from -> set from
-        if (!tempFrom) {
-            setTempFrom(picked);
-            setTempTo("");
+        // auto-swap nếu from > to
+        const a = dmyToDate(next.fromDate);
+        const b = dmyToDate(next.toDate);
+        if (a && b && a > b) {
+            onChange({ fromDate: next.toDate, toDate: next.fromDate });
             return;
         }
-
-        // có from nhưng chưa có to -> set to
-        if (tempFrom && !tempTo) {
-            setTempTo(picked);
-            return;
-        }
-
-        // đã có cả 2 -> chọn lại từ đầu
-        setTempFrom(picked);
-        setTempTo("");
+        onChange(next);
     };
 
-    const apply = () => {
-        // nếu chọn ngược thì swap trước khi apply
-        if (tempFrom && tempTo) {
-            const a = ddMmYyToYmd(tempFrom);
-            const b = ddMmYyToYmd(tempTo);
-            if (a > b) {
-                onChange({ fromDate: tempTo, toDate: tempFrom });
-                setOpen(false);
-                return;
-            }
-        }
+    const openPicker = (t: "from" | "to") => {
+        setTarget(t);
 
-        onChange({ fromDate: tempFrom, toDate: tempTo });
-        setOpen(false);
+        if (Platform.OS === "ios") {
+            setIosDraft(currentTargetValue);
+            setIosPickerOpen(true);
+        } else {
+            setShowAndroidPicker(true);
+        }
     };
 
-    const reset = () => {
-        setTempFrom("");
-        setTempTo("");
+    const onAndroidPick = (e: DateTimePickerEvent, selected?: Date) => {
+        setShowAndroidPicker(false);
+        if (e.type !== "set" || !selected) return;
+        applyPicked(selected);
+    };
+
+    const onClearOne = (t: "from" | "to") => {
+        onChange({
+            fromDate: t === "from" ? "" : fromDate,
+            toDate: t === "to" ? "" : toDate,
+        });
+    };
+
+    const onReset = () => {
         onChange({ fromDate: "", toDate: "" });
-        setOpen(false);
+        onClose();
+    };
+
+    const setToday = () => {
+        const today = clampDate(new Date(), minDate, maxDate);
+        onChange({ fromDate: dateToDmy(today), toDate: dateToDmy(today) });
+    };
+
+    const setLastNDays = (n: number) => {
+        const today = clampDate(new Date(), minDate, maxDate);
+        const from = clampDate(addDays(today, -(n - 1)), minDate, maxDate);
+        onChange({ fromDate: dateToDmy(from), toDate: dateToDmy(today) });
+    };
+
+    const setThisMonth = () => {
+        const today = clampDate(new Date(), minDate, maxDate);
+        const from = clampDate(startOfMonth(today), minDate, maxDate);
+        onChange({ fromDate: dateToDmy(from), toDate: dateToDmy(today) });
+    };
+
+    const hasValue = !!fromDate || !!toDate;
+
+    const [mounted, setMounted] = useState(open);
+    const anim = useRef(new Animated.Value(open ? 1 : 0)).current;
+
+    useEffect(() => {
+        if (open) {
+            setMounted(true);
+            Animated.spring(anim, {
+                toValue: 1,
+                damping: 18,
+                stiffness: 220,
+                mass: 0.9,
+                useNativeDriver: true,
+            }).start();
+        } else {
+            Animated.timing(anim, {
+                toValue: 0,
+                duration: 120,
+                useNativeDriver: true,
+            }).start(({ finished }) => {
+                if (finished) setMounted(false);
+            });
+        }
+    }, [open, anim]);
+
+    const dropdownAnimStyle = {
+        opacity: anim,
+        transform: [
+            {
+                translateY: anim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [-6, 0],
+                }),
+            },
+            {
+                scale: anim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [0.985, 1],
+                }),
+            },
+        ],
     };
 
     return (
-        <View style={styles.wrapper}>
+        <View style={styles.host}>
+            {/* ICON */}
             <TouchableOpacity
-                style={[styles.filterBox, hasValue && styles.filterBoxActive]}
-                onPress={openModal}
+                style={[
+                    styles.iconBtn,
+                    (open || hasValue) && styles.iconBtnActive,
+                ]}
+                onPress={onToggleOpen}
                 activeOpacity={0.7}
             >
-                <Ionicons name="calendar-outline" style={styles.filterIcon} />
+                <Ionicons
+                    name="calendar-outline"
+                    size={20}
+                    color={colors.textAccent}
+                />
             </TouchableOpacity>
 
-            <BaseModal visible={open} onRequestClose={closeModal} width="92%">
-                <Text style={styles.title}>Chọn khoảng thời gian</Text>
+            {/* DROPDOWN (animated mount/unmount) */}
+            {mounted && (
+                <Animated.View style={[styles.dropdown, dropdownAnimStyle]}>
+                    <View style={styles.dropdownHeader}>
+                        <Text style={styles.dropdownTitle}>{title}</Text>
 
-                <View style={styles.pillsRow}>
-                    <View style={styles.pill}>
-                        <Text style={styles.pillLabel}>Từ</Text>
-                        <Text style={styles.pillValue}>{tempFrom || "--"}</Text>
-                    </View>
-                    <View style={styles.pill}>
-                        <Text style={styles.pillLabel}>Đến</Text>
-                        <Text style={styles.pillValue}>{tempTo || "--"}</Text>
-                    </View>
-                </View>
-
-                {/* CalendarList: scroll tháng/năm (có thể lướt nhiều năm) */}
-                <View style={styles.calendarWrap}>
-                    <CalendarList
-                        current={tempFrom ? ddMmYyToYmd(tempFrom) : todayYmd()}
-                        pastScrollRange={24} // lùi 24 tháng (2 năm)
-                        futureScrollRange={24} // tiến 24 tháng (2 năm)
-                        scrollEnabled
-                        showScrollIndicator
-                        onDayPress={onDayPress}
-                        markingType="period"
-                        markedDates={markedDates}
-                        theme={{
-                            backgroundColor: colors.background,
-                            calendarBackground: colors.background,
-                            monthTextColor: colors.text,
-                            dayTextColor: colors.text,
-                            textDisabledColor: colors.textMuted,
-                            arrowColor: colors.textAccent,
-                            todayTextColor: colors.textAccent,
-                        }}
-                    />
-                </View>
-
-                <View style={styles.actionsRow}>
-                    <TouchableOpacity onPress={reset}>
-                        <Text style={styles.actionText}>Đặt lại</Text>
-                    </TouchableOpacity>
-
-                    <View style={{ flex: 1 }} />
-
-                    <TouchableOpacity onPress={closeModal}>
-                        <Text
-                            style={[
-                                styles.actionText,
-                                { color: colors.textMuted },
-                            ]}
+                        <TouchableOpacity
+                            onPress={onClose}
+                            activeOpacity={0.8}
+                            style={styles.headerCloseBtn}
                         >
-                            Hủy
-                        </Text>
+                            <Ionicons
+                                name="close"
+                                size={16}
+                                color={colors.textMuted}
+                            />
+                        </TouchableOpacity>
+                    </View>
+
+                    <TouchableOpacity
+                        style={styles.box}
+                        onPress={() => openPicker("from")}
+                        activeOpacity={0.85}
+                    >
+                        <View style={styles.boxTopRow}>
+                            <Text style={styles.label}>{fromLabel}</Text>
+                            {!!fromDate && (
+                                <TouchableOpacity
+                                    onPress={() => onClearOne("from")}
+                                    hitSlop={{
+                                        top: 10,
+                                        bottom: 10,
+                                        left: 10,
+                                        right: 10,
+                                    }}
+                                >
+                                    <Ionicons
+                                        name="close-circle"
+                                        size={18}
+                                        color={colors.textMuted}
+                                    />
+                                </TouchableOpacity>
+                            )}
+                        </View>
+                        <Text style={styles.value}>{fromDate || "--"}</Text>
                     </TouchableOpacity>
 
-                    <TouchableOpacity onPress={apply}>
-                        <Text style={styles.actionText}>Áp dụng</Text>
+                    <TouchableOpacity
+                        style={styles.box}
+                        onPress={() => openPicker("to")}
+                        activeOpacity={0.85}
+                    >
+                        <View style={styles.boxTopRow}>
+                            <Text style={styles.label}>{toLabel}</Text>
+                            {!!toDate && (
+                                <TouchableOpacity
+                                    onPress={() => onClearOne("to")}
+                                    hitSlop={{
+                                        top: 10,
+                                        bottom: 10,
+                                        left: 10,
+                                        right: 10,
+                                    }}
+                                >
+                                    <Ionicons
+                                        name="close-circle"
+                                        size={18}
+                                        color={colors.textMuted}
+                                    />
+                                </TouchableOpacity>
+                            )}
+                        </View>
+                        <Text style={styles.value}>{toDate || "--"}</Text>
                     </TouchableOpacity>
-                </View>
-            </BaseModal>
+
+                    {/* PRESETS */}
+                    <View style={styles.presetsRow}>
+                        <PresetChip label="Hôm nay" onPress={setToday} />
+                        <PresetChip
+                            label="7 ngày"
+                            onPress={() => setLastNDays(7)}
+                        />
+                        <PresetChip
+                            label="30 ngày"
+                            onPress={() => setLastNDays(30)}
+                        />
+                        <PresetChip label="Tháng này" onPress={setThisMonth} />
+                    </View>
+
+                    <View style={styles.actionsRow}>
+                        <TouchableOpacity
+                            onPress={onReset}
+                            activeOpacity={0.85}
+                            style={styles.actionTouchTarget}
+                        >
+                            <Text style={styles.linkPrimary}>{resetLabel}</Text>
+                        </TouchableOpacity>
+
+                        <View style={{ flex: 1 }} />
+
+                        <TouchableOpacity
+                            onPress={onClose}
+                            activeOpacity={0.85}
+                            style={styles.actionTouchTarget}
+                        >
+                            <Text style={styles.linkMuted}>{closeLabel}</Text>
+                        </TouchableOpacity>
+                    </View>
+
+                    {/* ANDROID native dialog */}
+                    {showAndroidPicker && Platform.OS === "android" && (
+                        <DateTimePicker
+                            value={currentTargetValue}
+                            mode="date"
+                            display="calendar"
+                            minimumDate={minDate}
+                            maximumDate={maxDate}
+                            onChange={onAndroidPick}
+                        />
+                    )}
+                </Animated.View>
+            )}
+
+            <IOSSpinnerPickerModal
+                visible={iosPickerOpen}
+                title={`Chọn ${target === "from" ? fromLabel : toLabel}`}
+                value={iosDraft}
+                minDate={minDate}
+                maxDate={maxDate}
+                cancelLabel={cancelLabel}
+                confirmLabel={confirmLabel}
+                onChange={setIosDraft}
+                onCancel={() => setIosPickerOpen(false)}
+                onConfirm={() => {
+                    applyPicked(iosDraft);
+                    setIosPickerOpen(false);
+                }}
+            />
         </View>
     );
 }
 
-const styles = StyleSheet.create({
-    wrapper: {
+function PresetChip({
+    label,
+    onPress,
+}: {
+    label: string;
+    onPress: () => void;
+}) {
+    const styles = useThemedStyles(createStyles);
+    return (
+        <TouchableOpacity
+            style={styles.chip}
+            onPress={onPress}
+            activeOpacity={0.85}
+        >
+            <Text style={styles.chipText}>{label}</Text>
+        </TouchableOpacity>
+    );
+}
+
+const createStyles = (colors: ThemeColors) =>
+    StyleSheet.create({
+    host: {
         width: 50,
         justifyContent: "center",
         alignItems: "center",
         position: "relative",
+        zIndex: 20,
     },
-    filterBox: {
-        width: 42,
-        height: 40,
-        borderRadius: 12,
+
+    iconBtn: {
+        width: MIN_TOUCH_TARGET_SIZE,
+        height: MIN_TOUCH_TARGET_SIZE,
+        borderRadius: 14,
         borderWidth: 1,
-        borderColor: "rgba(96,165,250,0.8)",
+        borderColor: colors.primarySoftBorder,
         backgroundColor: colors.surface,
         justifyContent: "center",
         alignItems: "center",
     },
-    filterBoxActive: {
-        backgroundColor: "rgba(37,99,235,0.2)",
-    },
-    filterIcon: {
-        fontSize: 20,
-        color: colors.textAccent,
+    iconBtnActive: {
+        borderColor: colors.primaryBorderStrong,
+        backgroundColor: colors.backgroundAlt,
     },
 
-    title: {
-        ...textStyle(16, { weight: "700", lineHeightPreset: "tight" }),
-        color: colors.text,
-        textAlign: "center",
-        marginBottom: 10,
-    },
-
-    pillsRow: {
-        flexDirection: "row",
-        gap: 8,
-        marginBottom: 10,
-    },
-    pill: {
-        flex: 1,
-        borderWidth: 1,
-        borderColor: "rgba(75,85,99,0.9)",
+    dropdown: {
+        position: "absolute",
+        top: 48,
+        right: 0,
+        width: 252,
+        borderRadius: 16,
         backgroundColor: colors.surface,
+        borderWidth: 1,
+        borderColor: colors.primarySoftBorder,
+        zIndex: 999,
+        elevation: 12,
+        padding: 12,
+        gap: 10,
+
+        // iOS shadow
+        shadowColor: colors.accent,
+        shadowOpacity: 0.35,
+        shadowRadius: 18,
+        shadowOffset: { width: 0, height: 10 },
+    },
+
+    dropdownHeader: {
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "space-between",
+        marginBottom: 2,
+    },
+    dropdownTitle: {
+        color: colors.text,
+        ...textStyle(13, {
+            weight: "900",
+            lineHeightPreset: "tight",
+            letterSpacing: 0.2,
+        }),
+    },
+    headerCloseBtn: {
+        width: MIN_TOUCH_TARGET_SIZE,
+        height: MIN_TOUCH_TARGET_SIZE,
         borderRadius: 12,
+        alignItems: "center",
+        justifyContent: "center",
+        backgroundColor: colors.background,
+        borderWidth: 1,
+        borderColor: colors.primarySoftBorder,
+    },
+
+    box: {
+        borderWidth: 1,
+        borderColor: colors.primarySoftBorder,
+        backgroundColor: colors.background,
+        borderRadius: 14,
         paddingVertical: 10,
         paddingHorizontal: 12,
     },
-    pillLabel: {
+    boxTopRow: {
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "space-between",
+    },
+    label: {
         color: colors.textMuted,
-        ...textStyle(11, { lineHeightPreset: "tight" }),
+        ...textStyle(11, {
+            weight: "800",
+            lineHeightPreset: "tight",
+            letterSpacing: 0.2,
+        }),
         marginBottom: 4,
     },
-    pillValue: {
+    value: {
         color: colors.text,
-        ...textStyle(13, { weight: "600", lineHeightPreset: "tight" }),
+        ...textStyle(13, { weight: "900", lineHeightPreset: "tight" }),
     },
 
-    calendarWrap: {
+    presetsRow: {
+        flexDirection: "row",
+        flexWrap: "wrap",
+        gap: 8,
+        marginTop: 2,
+    },
+    chip: {
         borderWidth: 1,
-        borderColor: "rgba(75,85,99,0.6)",
-        borderRadius: 12,
-        overflow: "hidden",
-        maxHeight: 360,
-        marginBottom: 10,
+        borderColor: colors.primarySoftBorder,
+        backgroundColor: colors.backgroundAlt,
+        minHeight: MIN_TOUCH_TARGET_SIZE,
+        paddingVertical: 7,
+        paddingHorizontal: 10,
+        borderRadius: 999,
+        alignItems: "center",
+        justifyContent: "center",
+    },
+    chipText: {
+        color: colors.text,
+        ...textStyle(12, { weight: "800", lineHeightPreset: "tight" }),
     },
 
     actionsRow: {
+        marginTop: 2,
         flexDirection: "row",
         alignItems: "center",
-        gap: 16,
-        marginTop: 6,
     },
-    actionText: {
+    linkPrimary: {
         color: colors.textAccent,
-        ...textStyle(13, { weight: "700", lineHeightPreset: "tight" }),
+        ...textStyle(12, { weight: "900", lineHeightPreset: "tight" }),
     },
-});
+    linkMuted: {
+        color: colors.textMuted,
+        ...textStyle(12, { weight: "900", lineHeightPreset: "tight" }),
+    },
+    actionTouchTarget: {
+        minHeight: MIN_TOUCH_TARGET_SIZE,
+        minWidth: MIN_TOUCH_TARGET_SIZE,
+        alignItems: "center",
+        justifyContent: "center",
+        paddingHorizontal: 8,
+    },
+
+    });

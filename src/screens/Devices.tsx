@@ -1,5 +1,5 @@
+import { useFocusEffect } from "@react-navigation/native";
 import React, {
-    useMemo,
     useState,
     useCallback,
     useEffect,
@@ -11,42 +11,35 @@ import {
     StyleSheet,
     FlatList,
     TouchableOpacity,
-    ScrollView,
     TextInput,
     Animated,
 } from "react-native";
-import { useFocusEffect } from "@react-navigation/native";
-import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import Ionicons from "react-native-vector-icons/Ionicons";
 
-import { RootStackParamList } from "../types/navigation";
-import { useDeviceGroup } from "../context/DeviceGroupContext";
-
+import { AddHistoryAction } from "../components/maintenance/AddHistoryButton";
+import { AppButton } from "../components/ui/AppButton";
 import { AppScreen } from "../components/ui/AppScreen";
-import HeaderBar from "../components/ui/HeaderBar";
 import { BaseModal } from "../components/ui/BaseModal";
 import { EmptyState } from "../components/ui/EmptyState";
-import { AppButton } from "../components/ui/AppButton";
-import { colors } from "../theme/theme";
-import { textStyle } from "../theme/typography";
-
+import HeaderBar from "../components/ui/HeaderBar";
 import { getSheetId, getApiBase } from "../config/apiConfig";
-import { AddHistoryAction } from "../components/maintenance/AddHistoryButton";
+import { useDeviceGroup } from "../context/DeviceGroupContext";
+import { useTheme } from "../context/ThemeContext";
+import { MIN_TOUCH_TARGET_SIZE } from "../theme/touchTargets";
+import { textStyle } from "../theme/typography";
+import { useThemedStyles } from "../theme/useThemedStyles";
+
+import {
+    parseDeviceCode,
+    useDevicesData,
+} from "./devices/hooks/useDevicesData";
+
+import type { ThemeColors } from "../theme/theme";
+import type { DeviceRow, HistoryRow } from "../types/deviceGroup";
+import type { RootStackParamList } from "../types/navigation";
+import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 
 type Props = NativeStackScreenProps<RootStackParamList, "Devices">;
-
-interface DeviceRow {
-    id: string | null;
-    name: string; // PM5-VFD-61-27002
-    type: string; // mô tả
-    freq: string | number | null;
-}
-
-interface HistoryRow {
-    deviceName: string;
-    date: string; // dd-MM-yy
-    content: string;
-}
 
 // helper: parse "dd-MM-yy" -> Date
 const parseDate = (value: string): Date => {
@@ -57,17 +50,11 @@ const parseDate = (value: string): Date => {
     return new Date(year, month, day);
 };
 
-const parseDeviceCode = (fullCode: string) => {
-    if (!fullCode) return { group: "", kind: "", code: "" };
+const getHistoryRowKey = (item: HistoryRow): string =>
+    `${item.deviceName || "device"}-${item.date || "date"}-${item.content || ""}`;
 
-    const parts = fullCode.split("-");
-    if (parts.length < 2) return { group: "", kind: "", code: fullCode };
-
-    const group = parts[0] || "";
-    const kind = parts[1] || "";
-    const code = parts.slice(2).join("-") || "";
-    return { group, kind, code };
-};
+const getDeviceRowKey = (item: DeviceRow): string =>
+    String(item.id || item.name || "");
 
 const highlightText = (
     text: string,
@@ -89,15 +76,11 @@ const highlightText = (
 
     while (matchIndex !== -1) {
         if (matchIndex > currentIndex) {
-            parts.push(
-                <Text key={currentIndex} style={baseStyle}>
-                    {text.slice(currentIndex, matchIndex)}
-                </Text>
-            );
+            parts.push(text.slice(currentIndex, matchIndex));
         }
 
         parts.push(
-            <Text key={matchIndex} style={[baseStyle, highlightStyle]}>
+            <Text key={`${matchIndex}-${currentIndex}`} style={highlightStyle}>
                 {text.slice(matchIndex, matchIndex + q.length)}
             </Text>
         );
@@ -107,20 +90,18 @@ const highlightText = (
     }
 
     if (currentIndex < text.length) {
-        parts.push(
-            <Text key={`${currentIndex}-end`} style={baseStyle}>
-                {text.slice(currentIndex)}
-            </Text>
-        );
+        parts.push(text.slice(currentIndex));
     }
 
-    return <Text>{parts}</Text>;
+    return <Text style={baseStyle}>{parts}</Text>;
 };
 
 export default function DevicesScreen({ navigation }: Props) {
+    const { colors } = useTheme();
+    const styles = useThemedStyles(createStyles);
     const { deviceGroups, appendHistoryAndSync } = useDeviceGroup();
 
-    const groups = deviceGroups || [];
+    const groups = deviceGroups ?? [];
 
     const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
     const [deviceModalVisible, setDeviceModalVisible] = useState(false);
@@ -169,22 +150,18 @@ export default function DevicesScreen({ navigation }: Props) {
         }, [])
     );
 
-    const selectedGroupData = useMemo(
-        () => groups.find((g: any) => g.table === selectedGroup),
-        [groups, selectedGroup]
-    );
-
-    const devicesInGroup: DeviceRow[] =
-        (selectedGroupData?.devices?.rows as DeviceRow[]) || [];
-
-    const availableKinds = useMemo(() => {
-        const set = new Set<string>();
-        devicesInGroup.forEach((dev) => {
-            const parsed = parseDeviceCode(dev.name);
-            if (parsed.kind) set.add(parsed.kind);
-        });
-        return Array.from(set).sort();
-    }, [devicesInGroup]);
+    const {
+        selectedGroupData,
+        devicesInGroup,
+        availableKinds,
+        allKindsActive,
+        filteredDevices,
+    } = useDevicesData({
+        deviceGroups: groups,
+        selectedGroup,
+        searchText,
+        selectedKinds,
+    });
 
     useEffect(() => {
         if (
@@ -196,54 +173,6 @@ export default function DevicesScreen({ navigation }: Props) {
             setKindsInitialized(true);
         }
     }, [deviceModalVisible, kindsInitialized, availableKinds]);
-
-    const allKindsActive =
-        availableKinds.length === 0 ||
-        selectedKinds.length === availableKinds.length;
-
-    const filteredDevices = useMemo(() => {
-        const q = searchText.trim().toLowerCase();
-
-        return devicesInGroup.filter((dev) => {
-            const parsed = parseDeviceCode(dev.name);
-
-            // không chọn gì => không hiển thị gì (khi có kind)
-            if (availableKinds.length > 0 && selectedKinds.length === 0) {
-                return false;
-            }
-
-            // lọc theo kind nếu không phải ALL
-            if (
-                availableKinds.length > 0 &&
-                !allKindsActive &&
-                (!parsed.kind || !selectedKinds.includes(parsed.kind))
-            ) {
-                return false;
-            }
-
-            if (!q) return true;
-
-            const code = (parsed.code || "").toLowerCase();
-            const name = (dev.name || "").toLowerCase();
-            const type = (dev.type || "").toLowerCase();
-            const kind = (parsed.kind || "").toLowerCase();
-            const group = (parsed.group || "").toLowerCase();
-
-            return (
-                name.includes(q) ||
-                code.includes(q) ||
-                type.includes(q) ||
-                kind.includes(q) ||
-                group.includes(q)
-            );
-        });
-    }, [
-        devicesInGroup,
-        searchText,
-        selectedKinds,
-        availableKinds,
-        allKindsActive,
-    ]);
 
     const handleOpenGroup = (groupName: string) => {
         setSelectedGroup(groupName);
@@ -333,14 +262,12 @@ export default function DevicesScreen({ navigation }: Props) {
                 ) : (
                     <FlatList
                         data={groups}
-                        keyExtractor={(item: any, index) =>
-                            `${item.table}-${index}`
-                        }
+                        keyExtractor={(item) => String(item.table || "")}
                         numColumns={2}
                         columnWrapperStyle={styles.row}
                         contentContainerStyle={styles.listContent}
                         showsVerticalScrollIndicator={false}
-                        renderItem={({ item }: { item: any }) => (
+                        renderItem={({ item }) => (
                             <TouchableOpacity
                                 style={styles.cardWrapper}
                                 onPress={() => handleOpenGroup(item.table)}
@@ -370,13 +297,13 @@ export default function DevicesScreen({ navigation }: Props) {
                         </Text>
 
                         {maintenanceHistory.length > 0 ? (
-                            <ScrollView
+                            <FlatList
+                                data={maintenanceHistory}
+                                keyExtractor={getHistoryRowKey}
                                 style={styles.modalScroll}
                                 showsVerticalScrollIndicator={false}
-                            >
-                                {maintenanceHistory.map((item, index) => (
+                                renderItem={({ item }) => (
                                     <View
-                                        key={`${item.date}-${index}`}
                                         style={styles.historyItem}
                                     >
                                         <View style={styles.historyItemLeft}>
@@ -390,8 +317,8 @@ export default function DevicesScreen({ navigation }: Props) {
                                             </Text>
                                         </View>
                                     </View>
-                                ))}
-                            </ScrollView>
+                                )}
+                            />
                         ) : (
                             <Text style={styles.noData}>
                                 Không có lịch sử bảo trì cho thiết bị này.
@@ -555,18 +482,12 @@ export default function DevicesScreen({ navigation }: Props) {
                                                                     styles.filterOptionRow
                                                                 }
                                                             >
-                                                                <Text
-                                                                    style={
-                                                                        styles.filterOptionText
-                                                                    }
-                                                                >
-                                                                    {highlightText(
-                                                                        kind,
-                                                                        searchText,
-                                                                        styles.filterOptionText,
-                                                                        styles.highlight
-                                                                    )}
-                                                                </Text>
+                                                                {highlightText(
+                                                                    kind,
+                                                                    searchText,
+                                                                    styles.filterOptionText,
+                                                                    styles.highlight
+                                                                )}
 
                                                                 <View
                                                                     style={[
@@ -593,18 +514,18 @@ export default function DevicesScreen({ navigation }: Props) {
                                     </View>
                                 </View>
 
-                                <ScrollView
+                                <FlatList
+                                    data={filteredDevices}
+                                    keyExtractor={getDeviceRowKey}
                                     style={styles.modalScroll}
                                     showsVerticalScrollIndicator={false}
                                     keyboardShouldPersistTaps="handled"
-                                >
-                                    {filteredDevices.map((dev, index) => {
+                                    renderItem={({ item: dev }) => {
                                         const parsed = parseDeviceCode(dev.name);
                                         const codeText = parsed.code || dev.name;
 
                                         return (
                                             <TouchableOpacity
-                                                key={`${dev.name}-${index}`}
                                                 style={styles.deviceRow}
                                                 activeOpacity={0.85}
                                                 onPress={() =>
@@ -612,62 +533,42 @@ export default function DevicesScreen({ navigation }: Props) {
                                                         dev.name
                                                     )
                                                 }
-                                            >
+                                                >
                                                 <View style={styles.deviceBlock}>
                                                     <View
                                                         style={styles.deviceTopRow}
                                                     >
-                                                        {/* LEFT */}
                                                         <View
                                                             style={
-                                                                styles.deviceLeft
+                                                                styles.deviceTagGroup
                                                             }
                                                         >
-                                                            <View
-                                                                style={
-                                                                    styles.deviceTagGroup
-                                                                }
-                                                            >
-                                                                {!!parsed.group && (
-                                                                    <Text
-                                                                        style={
-                                                                            styles.deviceTag
-                                                                        }
-                                                                    >
-                                                                        {highlightText(
-                                                                            parsed.group,
-                                                                            searchText,
-                                                                            styles.deviceTag,
-                                                                            styles.highlight
-                                                                        )}
-                                                                    </Text>
-                                                                )}
-
-                                                                {!!parsed.kind && (
-                                                                    <Text
-                                                                        style={
-                                                                            styles.deviceTag
-                                                                        }
-                                                                    >
-                                                                        {highlightText(
-                                                                            parsed.kind,
-                                                                            searchText,
-                                                                            styles.deviceTag,
-                                                                            styles.highlight
-                                                                        )}
-                                                                    </Text>
-                                                                )}
-
-                                                                {highlightText(
-                                                                    codeText,
+                                                            {!!parsed.group &&
+                                                                highlightText(
+                                                                    parsed.group,
                                                                     searchText,
-                                                                    styles.deviceCode,
+                                                                    styles.deviceTag,
                                                                     styles.highlight
                                                                 )}
-                                                            </View>
+
+                                                            {!!parsed.kind &&
+                                                                highlightText(
+                                                                    parsed.kind,
+                                                                    searchText,
+                                                                    styles.deviceTag,
+                                                                    styles.highlight
+                                                                )}
+
+                                                            {highlightText(
+                                                                codeText,
+                                                                searchText,
+                                                                styles.deviceCode,
+                                                                styles.highlight
+                                                            )}
                                                         </View>
 
                                                         <View
+                                                            style={styles.addActionWrap}
                                                             onStartShouldSetResponder={() =>
                                                                 true
                                                             }
@@ -706,7 +607,7 @@ export default function DevicesScreen({ navigation }: Props) {
                                                                             (
                                                                                 prev
                                                                             ) => [
-                                                                                row as any,
+                                                                                row,
                                                                                 ...prev,
                                                                             ]
                                                                         );
@@ -725,8 +626,8 @@ export default function DevicesScreen({ navigation }: Props) {
                                                 </View>
                                             </TouchableOpacity>
                                         );
-                                    })}
-                                </ScrollView>
+                                    }}
+                                />
                             </>
                         ) : (
                             <Text style={styles.noData}>
@@ -747,7 +648,8 @@ export default function DevicesScreen({ navigation }: Props) {
     );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+    StyleSheet.create({
     content: {
         flex: 1,
         paddingHorizontal: 20,
@@ -773,7 +675,7 @@ const styles = StyleSheet.create({
         borderColor: colors.primarySoftBorder,
         justifyContent: "center",
         alignItems: "center",
-        shadowColor: "#1D4ED8",
+        shadowColor: colors.accent,
         shadowOpacity: 0.18,
         shadowRadius: 8,
         elevation: 4,
@@ -793,7 +695,7 @@ const styles = StyleSheet.create({
     },
     modalScroll: {
         marginBottom: 16,
-        paddingHorizontal: 8,
+        paddingHorizontal: 0,
     },
     noData: {
         paddingBottom: 20,
@@ -808,7 +710,7 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         alignItems: "center",
         marginBottom: 10,
-        paddingHorizontal: 8,
+        paddingHorizontal: 0,
     },
     searchWrapper: {
         flex: 1,
@@ -819,7 +721,7 @@ const styles = StyleSheet.create({
         alignItems: "center",
         borderRadius: 12,
         borderWidth: 1,
-        borderColor: "rgba(75,85,99,0.9)",
+        borderColor: colors.primarySoftBorder,
         backgroundColor: colors.surface,
         paddingHorizontal: 10,
         height: 40,
@@ -848,18 +750,18 @@ const styles = StyleSheet.create({
         position: "relative",
     },
     filterBox: {
-        width: 42,
-        height: 40,
+        width: MIN_TOUCH_TARGET_SIZE,
+        height: MIN_TOUCH_TARGET_SIZE,
         borderRadius: 12,
         borderWidth: 1,
-        borderColor: "rgba(96,165,250,0.8)",
+        borderColor: colors.primarySoftBorder,
         backgroundColor: colors.surface,
         justifyContent: "center",
         alignItems: "center",
     },
     filterBoxActive: {
-        borderColor: "#60A5FA",
-        backgroundColor: "rgba(37,99,235,0.18)",
+        borderColor: colors.primaryBorderStrong,
+        backgroundColor: colors.backgroundAlt,
     },
     filterIcon: {
         fontSize: 20,
@@ -872,7 +774,7 @@ const styles = StyleSheet.create({
         width: 6,
         height: 6,
         borderRadius: 999,
-        backgroundColor: "#22C55E",
+        backgroundColor: colors.success,
     },
 
     filterDropdown: {
@@ -883,17 +785,19 @@ const styles = StyleSheet.create({
         borderRadius: 10,
         backgroundColor: colors.surface,
         borderWidth: 1,
-        borderColor: "rgba(96,165,250,0.8)",
+        borderColor: colors.primarySoftBorder,
         zIndex: 999,
         elevation: 10,
         paddingVertical: 4,
     },
     filterOption: {
+        minHeight: MIN_TOUCH_TARGET_SIZE,
         paddingVertical: 6,
         paddingHorizontal: 10,
+        justifyContent: "center",
     },
     filterOptionActive: {
-        backgroundColor: "rgba(37,99,235,0.25)",
+        backgroundColor: colors.backgroundAlt,
     },
     filterOptionRow: {
         flexDirection: "row",
@@ -903,6 +807,8 @@ const styles = StyleSheet.create({
     filterOptionText: {
         ...textStyle(13, { lineHeightPreset: "tight" }),
         color: colors.text,
+        flexShrink: 1,
+        paddingRight: 8,
     },
 
     checkbox: {
@@ -910,54 +816,54 @@ const styles = StyleSheet.create({
         height: 18,
         borderRadius: 4,
         borderWidth: 1.5,
-        borderColor: "rgba(156,163,175,0.9)",
+        borderColor: colors.primarySoftBorder,
         alignItems: "center",
         justifyContent: "center",
         backgroundColor: "transparent",
     },
     checkboxActive: {
-        borderColor: "#22C55E",
+        borderColor: colors.success,
         backgroundColor: "rgba(34,197,94,0.12)",
     },
     checkboxIcon: {
         fontSize: 14,
-        color: "#22C55E",
+        color: colors.success,
     },
 
     // devices
     deviceRow: {
         marginBottom: 10,
+        width: "100%",
     },
     deviceBlock: {
+        width: "100%",
         borderWidth: 1,
-        borderColor: "rgba(75,85,99,0.9)",
+        borderColor: colors.primarySoftBorder,
         borderRadius: 10,
         paddingVertical: 10,
         paddingHorizontal: 12,
         backgroundColor: colors.surface,
     },
     deviceTopRow: {
-        flexDirection: "row",
-        alignItems: "flex-start",
-        justifyContent: "space-between",
+        position: "relative",
+        minHeight: 34,
         marginBottom: 6,
-    },
-    deviceLeft: {
-        flex: 1,
-        paddingRight: 10,
     },
     deviceTagGroup: {
         flexDirection: "row",
-        alignItems: "center",
+        alignItems: "flex-start",
+        flex: 1,
+        minWidth: 0,
         flexShrink: 1,
         flexWrap: "wrap",
+        paddingRight: 44,
     },
     deviceTag: {
         paddingHorizontal: 8,
         paddingVertical: 3,
         borderRadius: 999,
         borderWidth: 1,
-        borderColor: "rgba(96,165,250,0.7)",
+        borderColor: colors.primarySoftBorder,
         color: colors.textAccent,
         ...textStyle(12, { weight: "600", lineHeightPreset: "tight" }),
         marginRight: 6,
@@ -966,17 +872,23 @@ const styles = StyleSheet.create({
     deviceCode: {
         color: colors.text,
         ...textStyle(15, { weight: "700", lineHeightPreset: "tight" }),
-        marginLeft: 4,
+        marginLeft: 0,
+        flexShrink: 1,
     },
     deviceDesc: {
         color: colors.textSoft,
         ...textStyle(14, { lineHeightPreset: "loose" }),
         textAlign: "left",
     },
+    addActionWrap: {
+        position: "absolute",
+        right: 0,
+        top: 0,
+    },
 
     highlight: {
-        backgroundColor: "#FACC15",
-        color: "#111827",
+        backgroundColor: colors.warning,
+        color: colors.background,
         borderRadius: 3,
         overflow: "hidden",
     },
@@ -989,7 +901,7 @@ const styles = StyleSheet.create({
         borderRadius: 12,
         marginBottom: 8,
         borderWidth: 1,
-        borderColor: "rgba(55,65,81,0.9)",
+        borderColor: colors.primarySoftBorder,
     },
     historyItemLeft: {
         width: 90,
@@ -999,8 +911,8 @@ const styles = StyleSheet.create({
         borderRadius: 10,
         backgroundColor: colors.surfaceAlt,
         borderWidth: 1,
-        borderColor: "rgba(96,165,250,0.6)",
-        shadowColor: "#1E3A8A",
+        borderColor: colors.primarySoftBorder,
+        shadowColor: colors.accent,
         shadowOpacity: 0.25,
         shadowRadius: 6,
         elevation: 3,
@@ -1015,4 +927,4 @@ const styles = StyleSheet.create({
         color: colors.textSoft,
         ...textStyle(13, { lineHeightPreset: "normal" }),
     },
-});
+    });

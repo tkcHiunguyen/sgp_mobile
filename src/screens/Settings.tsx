@@ -1,20 +1,22 @@
 // src/screens/Settings.tsx
-
 import React, { useEffect, useState } from "react";
 import {
-    View,
-    Text,
+    KeyboardAvoidingView,
+    ScrollView,
     StyleSheet,
+    Text,
     TextInput,
     TouchableOpacity,
-    KeyboardAvoidingView,
+    View,
     Platform,
-    ScrollView,
 } from "react-native";
-import type { NativeStackScreenProps } from "@react-navigation/native-stack";
+import { Switch } from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
 
-import { RootStackParamList } from "../types/navigation";
+import { AppButton } from "../components/ui/AppButton";
+import { AppScreen } from "../components/ui/AppScreen";
+import { BaseModal } from "../components/ui/BaseModal";
+import HeaderBar from "../components/ui/HeaderBar";
 import {
     storage,
     getApiBase,
@@ -27,22 +29,21 @@ import {
     KEY_ALL_DATA,
 } from "../config/apiConfig";
 import { useOta } from "../context/OtaContext";
+import { useTheme } from "../context/ThemeContext";
 import {
     fetchLatestOta,
+    OtaError,
     isNewerVersion,
     type OtaInfo,
-    OtaError,
 } from "../services/otaService";
-
-// UI chung
-import { AppScreen } from "../components/ui/AppScreen";
-import HeaderBar from "../components/ui/HeaderBar";
-import { BaseModal } from "../components/ui/BaseModal";
-import { AppButton } from "../components/ui/AppButton";
-import { colors } from "../theme/theme";
+import { MIN_TOUCH_TARGET_SIZE } from "../theme/touchTargets";
 import { inputMetrics, textStyle } from "../theme/typography";
-import { useTheme } from "../context/ThemeContext";
-import { Switch } from "react-native";
+import { useThemedStyles } from "../theme/useThemedStyles";
+import { logger } from "../utils/logger";
+
+import type { ThemeColors } from "../theme/theme";
+import type { RootStackParamList } from "../types/navigation";
+import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 type Props = NativeStackScreenProps<RootStackParamList, "Settings">;
 
 export default function SettingsScreen({ navigation }: Props) {
@@ -79,7 +80,8 @@ export default function SettingsScreen({ navigation }: Props) {
         downloadProgress,
         startDownload,
     } = useOta();
-    const { mode, toggleTheme, colors } = useTheme();
+    const { mode, setMode, colors } = useTheme();
+    const styles = useThemedStyles(createStyles);
     useEffect(() => {
         try {
             const currentApiBase = getApiBase();
@@ -89,7 +91,7 @@ export default function SettingsScreen({ navigation }: Props) {
             setSheetIdInput(currentSheetId);
             setInitialSheetId(currentSheetId);
         } catch (e) {
-            console.warn("Không đọc được config:", e);
+            logger.warn("Không đọc được config:", e);
         }
     }, []);
 
@@ -107,18 +109,18 @@ export default function SettingsScreen({ navigation }: Props) {
             if (isSheetChanged) {
                 try {
                     storage.remove(KEY_ALL_DATA);
-                    console.log(
+                    logger.debug(
                         "🧹 Đã xoá cache KEY_ALL_DATA do thay đổi sheetId"
                     );
                 } catch (e) {
-                    console.warn("Không xoá được KEY_ALL_DATA:", e);
+                    logger.warn("Không xoá được KEY_ALL_DATA:", e);
                 }
             }
 
             setShouldGoToLoadingAfterSave(isSheetChanged);
             setShowSaveSuccessModal(true);
         } catch (e) {
-            console.error("Lỗi lưu config:", e);
+            logger.error("Lỗi lưu config:", e);
             setShowSaveErrorModal(true);
         }
     };
@@ -130,7 +132,7 @@ export default function SettingsScreen({ navigation }: Props) {
     const handleConfirmReset = () => {
         const ok = resetConfig();
         if (!ok) {
-            console.warn("resetConfig trả về false");
+            logger.warn("resetConfig trả về false");
         }
 
         setApiBaseInput(DEFAULT_API_BASE);
@@ -268,18 +270,24 @@ export default function SettingsScreen({ navigation }: Props) {
         }
     };
 
+    const handleThemeSwitch = (useDarkMode: boolean) => {
+        const nextMode = useDarkMode ? "dark" : "light";
+        if (nextMode === mode) return;
+        setMode(nextMode);
+    };
+
     const handleConfirmDownloadUpdate = async () => {
         if (!pendingOta) {
-            console.log("[OTA] Không có pendingOta, đóng modal.");
+            logger.debug("[OTA] Không có pendingOta, đóng modal.");
             setOtaModalVisible(false);
             return;
         }
-        console.log("[OTA] Bắt đầu tải:", pendingOta.version);
+        logger.debug("[OTA] Bắt đầu tải:", pendingOta.version);
         setOtaModalVisible(false);
 
         try {
             await startDownload(pendingOta);
-            console.log("[OTA] Tải xong, mở modal thông báo.");
+            logger.debug("[OTA] Tải xong, mở modal thông báo.");
             openOtaModal(
                 "info",
                 "Đã tải bản cập nhật",
@@ -287,7 +295,7 @@ export default function SettingsScreen({ navigation }: Props) {
             );
             setPendingOta(null);
         } catch (e: any) {
-            console.error("Lỗi tải/cài đặt OTA:", e);
+            logger.error("Lỗi tải/cài đặt OTA:", e);
 
             if (e instanceof OtaError) {
                 if (e.kind === "NETWORK") {
@@ -395,7 +403,9 @@ export default function SettingsScreen({ navigation }: Props) {
                                             : "lock-open-outline"
                                     }
                                     size={20}
-                                    color={apiLocked ? "#FACC15" : "#22C55E"}
+                                    color={
+                                        apiLocked ? colors.warning : colors.success
+                                    }
                                 />
                             </TouchableOpacity>
                         </View>
@@ -439,7 +449,9 @@ export default function SettingsScreen({ navigation }: Props) {
                                             : "lock-open-outline"
                                     }
                                     size={20}
-                                    color={sheetLocked ? "#FACC15" : "#22C55E"}
+                                    color={
+                                        sheetLocked ? colors.warning : colors.success
+                                    }
                                 />
                             </TouchableOpacity>
                         </View>
@@ -509,12 +521,74 @@ export default function SettingsScreen({ navigation }: Props) {
                             </View>
                         )}
                     </View>
-                    {/* Card: Giao diện (Dark / Light)
+                    {/* Card: Giao diện (Dark / Light) */}
                     <View style={styles.card}>
                         <Text style={styles.cardTitle}>Giao diện</Text>
                         <Text style={styles.cardDescription}>
                             Chọn chế độ hiển thị sáng hoặc tối cho ứng dụng.
                         </Text>
+
+                        <View style={styles.themeModeIconsRow}>
+                            <TouchableOpacity
+                                style={[
+                                    styles.themeModeBadge,
+                                    mode === "light" &&
+                                        styles.themeModeBadgeActive,
+                                ]}
+                                onPress={() => handleThemeSwitch(false)}
+                                activeOpacity={0.85}
+                                disabled={mode === "light"}
+                            >
+                                <Ionicons
+                                    name="sunny-outline"
+                                    size={16}
+                                    style={[
+                                        styles.themeModeIcon,
+                                        mode === "light" &&
+                                            styles.themeModeIconActive,
+                                    ]}
+                                />
+                                <Text
+                                    style={[
+                                        styles.themeModeBadgeText,
+                                        mode === "light" &&
+                                            styles.themeModeBadgeTextActive,
+                                    ]}
+                                >
+                                    Sáng
+                                </Text>
+                            </TouchableOpacity>
+
+                            <TouchableOpacity
+                                style={[
+                                    styles.themeModeBadge,
+                                    mode === "dark" &&
+                                        styles.themeModeBadgeActive,
+                                ]}
+                                onPress={() => handleThemeSwitch(true)}
+                                activeOpacity={0.85}
+                                disabled={mode === "dark"}
+                            >
+                                <Ionicons
+                                    name="moon-outline"
+                                    size={16}
+                                    style={[
+                                        styles.themeModeIcon,
+                                        mode === "dark" &&
+                                            styles.themeModeIconActive,
+                                    ]}
+                                />
+                                <Text
+                                    style={[
+                                        styles.themeModeBadgeText,
+                                        mode === "dark" &&
+                                            styles.themeModeBadgeTextActive,
+                                    ]}
+                                >
+                                    Tối
+                                </Text>
+                            </TouchableOpacity>
+                        </View>
 
                         <View style={styles.themeRow}>
                             <View>
@@ -529,17 +603,20 @@ export default function SettingsScreen({ navigation }: Props) {
                             </View>
                             <Switch
                                 value={mode === "dark"}
-                                onValueChange={toggleTheme}
+                                onValueChange={handleThemeSwitch}
                                 thumbColor={
-                                    mode === "dark" ? "#facc15" : "#e5e7eb"
+                                    mode === "dark"
+                                        ? colors.surface
+                                        : colors.warning
                                 }
                                 trackColor={{
-                                    false: "#9CA3AF",
-                                    true: "#4B5563",
+                                    false: "rgba(251,191,36,0.55)",
+                                    true: "rgba(37,99,235,0.65)",
                                 }}
+                                ios_backgroundColor="rgba(148,163,184,0.35)"
                             />
                         </View>
-                    </View> */}
+                    </View>
                     {/* Nút hành động */}
                     <View style={styles.buttonRow}>
                         <TouchableOpacity
@@ -715,7 +792,8 @@ export default function SettingsScreen({ navigation }: Props) {
     );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+    StyleSheet.create({
     container: {
         flex: 1,
         paddingHorizontal: 20,
@@ -731,7 +809,7 @@ const styles = StyleSheet.create({
         marginBottom: 18,
         borderWidth: 1,
         borderColor: colors.primarySoftBorder,
-        shadowColor: "#1D4ED8",
+        shadowColor: colors.accent,
         shadowOpacity: 0.18,
         shadowRadius: 8,
         elevation: 4,
@@ -755,7 +833,7 @@ const styles = StyleSheet.create({
         flex: 1,
         borderRadius: 10,
         borderWidth: 1,
-        borderColor: "rgba(51,65,85,0.9)",
+        borderColor: colors.primarySoftBorder,
         paddingHorizontal: 12,
         paddingVertical: inputMetrics.paddingVertical,
         height: inputMetrics.height,
@@ -765,19 +843,19 @@ const styles = StyleSheet.create({
     },
     inputDisabled: {
         backgroundColor: colors.background,
-        borderColor: "rgba(75,85,99,0.9)",
+        borderColor: colors.primarySoftBorder,
         opacity: 0.6,
     },
     lockIconButton: {
         marginLeft: 8,
-        width: 32,
-        height: 32,
-        borderRadius: 16,
+        width: MIN_TOUCH_TARGET_SIZE,
+        height: MIN_TOUCH_TARGET_SIZE,
+        borderRadius: MIN_TOUCH_TARGET_SIZE / 2,
         alignItems: "center",
         justifyContent: "center",
-        backgroundColor: "rgba(15,23,42,0.9)",
+        backgroundColor: colors.background,
         borderWidth: 1,
-        borderColor: "rgba(148,163,184,0.6)",
+        borderColor: colors.primarySoftBorder,
     },
 
     buttonRow: {
@@ -788,15 +866,16 @@ const styles = StyleSheet.create({
     button: {
         flex: 1,
         paddingVertical: 12,
+        minHeight: MIN_TOUCH_TARGET_SIZE,
         borderRadius: 10,
         alignItems: "center",
         marginHorizontal: 4,
     },
     saveButton: {
-        backgroundColor: "#16A34A",
+        backgroundColor: colors.success,
     },
     resetButton: {
-        backgroundColor: "#DC2626",
+        backgroundColor: colors.danger,
     },
     buttonText: {
         color: "#FFFFFF",
@@ -821,8 +900,9 @@ const styles = StyleSheet.create({
     otaButton: {
         paddingVertical: 10,
         paddingHorizontal: 14,
+        minHeight: MIN_TOUCH_TARGET_SIZE,
         borderRadius: 999,
-        backgroundColor: "#2563EB",
+        backgroundColor: colors.primary,
         marginLeft: 8,
         minWidth: 140,
         alignItems: "center",
@@ -843,13 +923,13 @@ const styles = StyleSheet.create({
     progressBarBackground: {
         height: 6,
         borderRadius: 999,
-        backgroundColor: "#1F2937",
+        backgroundColor: colors.backgroundAlt,
         overflow: "hidden",
     },
     progressBarFill: {
         height: "100%",
         borderRadius: 999,
-        backgroundColor: "#3B82F6",
+        backgroundColor: colors.primary,
     },
     progressText: {
         marginTop: 4,
@@ -886,13 +966,48 @@ const styles = StyleSheet.create({
         justifyContent: "space-between",
         marginTop: 8,
     },
+    themeModeIconsRow: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 10,
+        marginBottom: 6,
+    },
+    themeModeBadge: {
+        flexDirection: "row",
+        alignItems: "center",
+        minHeight: MIN_TOUCH_TARGET_SIZE,
+        paddingVertical: 6,
+        paddingHorizontal: 10,
+        borderRadius: 999,
+        borderWidth: 1,
+        borderColor: colors.primarySoftBorder,
+        backgroundColor: colors.backgroundAlt,
+    },
+    themeModeBadgeActive: {
+        borderColor: colors.primaryBorderStrong,
+        backgroundColor: colors.background,
+    },
+    themeModeIcon: {
+        color: colors.textMuted,
+        marginRight: 6,
+    },
+    themeModeIconActive: {
+        color: colors.textAccent,
+    },
+    themeModeBadgeText: {
+        ...textStyle(12, { weight: "700", lineHeightPreset: "tight" }),
+        color: colors.textMuted,
+    },
+    themeModeBadgeTextActive: {
+        color: colors.text,
+    },
     themeLabel: {
         ...textStyle(14, { weight: "600", lineHeightPreset: "tight" }),
-        color: "#E5F2FF",
+        color: colors.text,
     },
     themeHint: {
         ...textStyle(12, { lineHeightPreset: "tight" }),
-        color: "#9CA3AF",
+        color: colors.textMuted,
         marginTop: 2,
     },
-});
+    });

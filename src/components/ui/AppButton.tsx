@@ -8,8 +8,13 @@ import {
     StyleProp,
     ViewStyle,
 } from "react-native";
-import { colors, radius, spacing } from "../../theme/theme";
+
+import { radius } from "../../theme/theme";
+import { MIN_TOUCH_TARGET_SIZE } from "../../theme/touchTargets";
 import { textStyle } from "../../theme/typography";
+import { useThemedStyles } from "../../theme/useThemedStyles";
+
+import type { ThemeColors } from "../../theme/theme";
 
 type Variant = "primary" | "danger" | "secondary";
 
@@ -28,6 +33,9 @@ export function AppButton({
     style,
     disabled,
 }: Props) {
+    const styles = useThemedStyles(createStyles);
+    const solid = variant !== "secondary";
+
     return (
         <TouchableOpacity
             activeOpacity={0.8}
@@ -40,33 +48,51 @@ export function AppButton({
                 style,
             ]}
         >
-            <Text style={styles.text}>{title}</Text>
+            <Text
+                style={[
+                    styles.textBase,
+                    solid ? styles.textOnSolid : styles.textSecondary,
+                ]}
+            >
+                {title}
+            </Text>
         </TouchableOpacity>
     );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+    StyleSheet.create({
     base: {
         paddingVertical: 12,
         paddingHorizontal: 14,
+        minHeight: MIN_TOUCH_TARGET_SIZE,
         borderRadius: radius.md,
+        borderWidth: 1,
         alignItems: "center",
         justifyContent: "center",
     },
     primary: {
         backgroundColor: colors.primary,
+        borderColor: colors.primary,
     },
     danger: {
         backgroundColor: colors.danger,
+        borderColor: colors.danger,
     },
     secondary: {
-        backgroundColor: "#1F2937",
+        backgroundColor: colors.surface,
+        borderColor: colors.primarySoftBorder,
     },
     disabled: {
         opacity: 0.6,
     },
-    text: {
-        color: "#F9FAFB",
+    textBase: {
         ...textStyle(14, { weight: "700", lineHeightPreset: "tight" }),
     },
-});
+    textOnSolid: {
+        color: "#F8FAFC",
+    },
+    textSecondary: {
+        color: colors.text,
+    },
+    });

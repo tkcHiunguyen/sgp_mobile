@@ -16,19 +16,27 @@ import {
     TextStyle,
 } from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
-import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 
-import { RootStackParamList } from "../types/navigation";
-import { AppScreen } from "../components/ui/AppScreen";
+
 import BackButton from "../components/backButton";
+import { AppScreen } from "../components/ui/AppScreen";
 import { BaseModal } from "../components/ui/BaseModal";
-import { colors, spacing, radius } from "../theme/theme";
-import { inputMetrics, textStyle } from "../theme/typography";
 import { useAuth } from "../context/AuthContext";
+import { useTheme } from "../context/ThemeContext";
+import { spacing, radius } from "../theme/theme";
+import { MIN_TOUCH_TARGET_SIZE } from "../theme/touchTargets";
+import { inputMetrics, textStyle } from "../theme/typography";
+import { useThemedStyles } from "../theme/useThemedStyles";
+import { RootStackParamList } from "../types/navigation";
+
+import type { ThemeColors } from "../theme/theme";
+import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 
 type Props = NativeStackScreenProps<RootStackParamList, "Register">;
 
 export default function RegisterScreen({ navigation }: Props) {
+    const { colors } = useTheme();
+    const styles = useThemedStyles(createStyles);
     const { register } = useAuth();
 
     const [username, setUsername] = useState("");
@@ -496,6 +504,8 @@ function Field(props: {
         refInput,
         inputStyle,
     } = props;
+    const { colors } = useTheme();
+    const styles = useThemedStyles(createStyles);
 
     return (
         <>
@@ -530,7 +540,8 @@ function Field(props: {
     );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+    StyleSheet.create({
     page: {
         flexGrow: 1,
         paddingHorizontal: spacing.xl,
@@ -568,9 +579,9 @@ const styles = StyleSheet.create({
         paddingHorizontal: 12,
         paddingVertical: 8,
         borderRadius: 999,
-        backgroundColor: "rgba(255,255,255,0.03)",
+        backgroundColor: colors.backgroundAlt,
         borderWidth: 1,
-        borderColor: "rgba(255,255,255,0.06)",
+        borderColor: colors.primarySoftBorder,
     },
     chipText: {
         color: colors.textSoft,
@@ -593,7 +604,7 @@ const styles = StyleSheet.create({
     },
     divider: {
         height: 1,
-        backgroundColor: "rgba(255,255,255,0.06)",
+        backgroundColor: colors.primarySoftBorder,
         marginVertical: spacing.lg,
     },
 
@@ -667,6 +678,7 @@ const styles = StyleSheet.create({
         marginTop: spacing.lg,
         backgroundColor: colors.primary,
         paddingVertical: 14,
+        minHeight: MIN_TOUCH_TARGET_SIZE,
         borderRadius: radius.md,
         alignItems: "center",
         justifyContent: "center",
@@ -683,6 +695,7 @@ const styles = StyleSheet.create({
 
     secondaryRow: {
         marginTop: spacing.lg,
+        minHeight: MIN_TOUCH_TARGET_SIZE,
         alignItems: "center",
         flexDirection: "row",
         justifyContent: "center",
@@ -713,7 +726,7 @@ const styles = StyleSheet.create({
         borderRadius: 16,
         backgroundColor: "rgba(22,163,74,0.2)",
         borderWidth: 1,
-        borderColor: "rgba(22,163,74,0.35)",
+        borderColor: colors.success,
         alignItems: "center",
         justifyContent: "center",
         marginBottom: spacing.md,
@@ -736,9 +749,9 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         alignItems: "center",
         gap: 8,
-        backgroundColor: "rgba(255,255,255,0.03)",
+        backgroundColor: colors.backgroundAlt,
         borderWidth: 1,
-        borderColor: "rgba(255,255,255,0.06)",
+        borderColor: colors.primarySoftBorder,
         paddingVertical: 10,
         paddingHorizontal: 12,
         borderRadius: radius.md,
@@ -760,9 +773,9 @@ const styles = StyleSheet.create({
     },
     modalBtnPrimary: { backgroundColor: colors.primary },
     modalBtnGhost: {
-        backgroundColor: "rgba(255,255,255,0.04)",
+        backgroundColor: colors.backgroundAlt,
         borderWidth: 1,
-        borderColor: "rgba(255,255,255,0.08)",
+        borderColor: colors.primarySoftBorder,
     },
     modalBtnText: {
         color: colors.text,
@@ -773,4 +786,4 @@ const styles = StyleSheet.create({
         ...textStyle(14, { weight: "800", lineHeightPreset: "tight" }),
         opacity: 0.95,
     },
-});
+    });

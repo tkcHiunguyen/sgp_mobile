@@ -1,4 +1,5 @@
-import React, { useRef, useMemo } from "react";
+import { useNavigation } from "@react-navigation/native";
+import React, { useEffect, useRef, useMemo } from "react";
 import {
     Animated,
     FlatList,
@@ -11,16 +12,45 @@ import {
 } from "react-native";
 import LinearGradient from "react-native-linear-gradient";
 import Ionicons from "react-native-vector-icons/Ionicons";
-import { useNavigation } from "@react-navigation/native";
-import notifee, { AndroidImportance } from "@notifee/react-native";
-import { useAuth } from "../context/AuthContext";
+
 import DataSyncIndicator from "../components/DataSyncIndicator";
 import { AppScreen } from "../components/ui/AppScreen";
 import { ScreenTitle } from "../components/ui/ScreenTitle";
-import { colors } from "../theme/theme";
+import { useAuth } from "../context/AuthContext";
+import { useTheme } from "../context/ThemeContext";
+import { trackTimeToHomeIfPending } from "../services/analytics";
 import { textStyle } from "../theme/typography";
-type FeaturesArray = ReturnType<typeof getFeatures>;
-type FeatureItem = FeaturesArray[number];
+import { useThemedStyles } from "../theme/useThemedStyles";
+
+import type { ThemeColors } from "../theme/theme";
+import type { RootStackParamList } from "../types/navigation";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
+
+type AppNavigation = NativeStackNavigationProp<RootStackParamList, "Home">;
+type FeatureRoute = Extract<
+    {
+        [K in keyof RootStackParamList]: RootStackParamList[K] extends undefined
+            ? K
+            : never;
+    }[keyof RootStackParamList],
+    | "Scanner"
+    | "Devices"
+    | "History"
+    | "Tools"
+    | "Info"
+    | "AdminUsers"
+    | "KpiDashboard"
+    | "Settings"
+    | "Me"
+>;
+type FeatureItem = {
+    id: string;
+    title: string;
+    icon: string;
+    route?: FeatureRoute;
+    isReady: boolean;
+};
+
 const IOS_MENU_CENTER_OFFSET = Platform.OS === "ios" ? -11 : 0;
 
 const getResponsiveLayout = (width: number) => {
@@ -36,69 +66,48 @@ const getResponsiveLayout = (width: number) => {
 
     return { horizontalPadding, columnGap, numColumns, tileWidth, gridWidth };
 };
-// ====== HÀM TEST THÔNG BÁO ======
-async function triggerTestNotification() {
-    await notifee.requestPermission();
-
-    const channelId = await notifee.createChannel({
-        id: "test-channel",
-        name: "Test Channel",
-        importance: AndroidImportance.HIGH,
-    });
-
-    await notifee.displayNotification({
-        title: "🔔 Test thông báo",
-        body: "Nếu bạn thấy cái này thì Notifee đã hoạt động!",
-        android: {
-            channelId,
-            smallIcon: "ic_launcher",
-        },
-    });
-}
-
 // ====== DANH SÁCH CHỨC NĂNG ======
-const getFeatures = (isAdmin: boolean) =>
+const getFeatures = (isAdmin: boolean): FeatureItem[] =>
     [
         {
             id: "scan",
             title: "Quét mã QR",
             icon: "qr-code-outline",
-            route: "Scanner",
+            route: "Scanner" as FeatureRoute,
             isReady: true,
         },
         {
             id: "device",
             title: "Quản lý thiết bị",
             icon: "server-outline",
-            route: "Devices",
+            route: "Devices" as FeatureRoute,
             isReady: true,
         },
         {
             id: "history",
             title: "Lịch sử",
             icon: "time-outline",
-            route: "History",
+            route: "History" as FeatureRoute,
             isReady: true,
         },
         {
             id: "tools",
             title: "Công cụ",
             icon: "construct-outline",
-            route: "Tools",
+            route: "Tools" as FeatureRoute,
             isReady: false,
         },
         {
             id: "info",
             title: "Thông tin",
             icon: "information-circle-outline",
-            route: "Info",
+            route: "Info" as FeatureRoute,
             isReady: true,
         },
         {
             id: "database",
             title: "Cơ sở dữ liệu",
             icon: "analytics-outline",
-            route: "Database",
             isReady: false,
         },
 
@@ -108,7 +117,14 @@ const getFeatures = (isAdmin: boolean) =>
                       id: "admin-users",
                       title: "Quản trị Users",
                       icon: "people-outline",
-                      route: "AdminUsers",
+                      route: "AdminUsers" as FeatureRoute,
+                      isReady: true,
+                  },
+                  {
+                      id: "kpi-dashboard",
+                      title: "KPI Usage",
+                      icon: "stats-chart-outline",
+                      route: "KpiDashboard" as FeatureRoute,
                       isReady: true,
                   },
               ]
@@ -118,17 +134,17 @@ const getFeatures = (isAdmin: boolean) =>
             id: "settings",
             title: "Cài đặt",
             icon: "settings-outline",
-            route: "Settings",
+            route: "Settings" as FeatureRoute,
             isReady: true,
         },
         {
             id: "me",
             title: "Tài khoản",
             icon: "person-circle-outline",
-            route: "Me",
+            route: "Me" as FeatureRoute,
             isReady: true,
         },
-    ] as const;
+    ];
 
 function FeatureTile({
     item,
@@ -137,7 +153,9 @@ function FeatureTile({
     item: FeatureItem;
     tileWidth: number;
 }) {
-    const navigation = useNavigation<any>();
+    const { colors } = useTheme();
+    const styles = useThemedStyles(createStyles);
+    const navigation = useNavigation<AppNavigation>();
     const scale = useRef(new Animated.Value(1)).current;
 
     const handlePressIn = () => {
@@ -172,9 +190,9 @@ function FeatureTile({
     };
 
     const borderColor = item.isReady
-        ? "rgba(59,130,246,0.4)"
-        : "rgba(75,85,99,0.8)";
-    const iconColor = item.isReady ? "#60A5FA" : "#6B7280";
+        ? colors.primarySoftBorder
+        : colors.primaryBorderStrong;
+    const iconColor = item.isReady ? colors.textAccent : colors.textMuted;
     const textColor = item.isReady ? colors.text : colors.textMuted;
 
     return (
@@ -186,58 +204,65 @@ function FeatureTile({
             disabled={!item.isReady}
         >
             <Animated.View style={{ transform: [{ scale }] }}>
-                <LinearGradient
-                    colors={[colors.surface, colors.background]}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 1 }}
-                    style={[
-                        styles.tile,
-                        {
-                            borderColor,
-                            opacity: item.isReady ? 1 : 0.5,
-                        },
-                    ]}
-                >
-                    <View style={styles.tileContent}>
-                        <View style={styles.iconContainer}>
-                            <Ionicons
-                                name={item.icon}
-                                size={26}
-                                color={iconColor}
-                                style={styles.tileIcon}
-                            />
-                        </View>
+                <View style={styles.tileShadow}>
+                    <LinearGradient
+                        colors={[colors.surface, colors.background]}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 1 }}
+                        style={[
+                            styles.tile,
+                            {
+                                borderColor,
+                                opacity: item.isReady ? 1 : 0.5,
+                            },
+                        ]}
+                    >
+                        <View style={styles.tileContent}>
+                            <View style={styles.iconContainer}>
+                                <Ionicons
+                                    name={item.icon}
+                                    size={26}
+                                    color={iconColor}
+                                    style={styles.tileIcon}
+                                />
+                            </View>
 
-                        <View style={styles.tileLabelBox}>
-                            <Text
-                                numberOfLines={2}
-                                style={[styles.tileText, { color: textColor }]}
-                            >
-                                {item.title}
-                            </Text>
-                        </View>
-
-                        <View style={styles.tileBadgeBox}>
-                            {!item.isReady && (
+                            <View style={styles.tileLabelBox}>
                                 <Text
-                                    numberOfLines={1}
-                                    style={styles.badgeText}
+                                    numberOfLines={2}
+                                    style={[styles.tileText, { color: textColor }]}
                                 >
-                                    Sắp ra mắt
+                                    {item.title}
                                 </Text>
-                            )}
+                            </View>
+
+                            <View style={styles.tileBadgeBox}>
+                                {!item.isReady && (
+                                    <Text
+                                        numberOfLines={1}
+                                        style={styles.badgeText}
+                                    >
+                                        Sắp ra mắt
+                                    </Text>
+                                )}
+                            </View>
                         </View>
-                    </View>
-                </LinearGradient>
+                    </LinearGradient>
+                </View>
             </Animated.View>
         </Pressable>
     );
 }
 
 export default function IndexScreen() {
-    const { user } = useAuth() as any; // bạn chỉnh type nếu AuthContext đã có type
+    const styles = useThemedStyles(createStyles);
+    const { user } = useAuth();
     const isAdmin = String(user?.role || "").toLowerCase() === "administrator";
     const { width } = useWindowDimensions();
+
+    useEffect(() => {
+        trackTimeToHomeIfPending();
+    }, []);
 
     const features = useMemo(() => getFeatures(isAdmin), [isAdmin]);
     const { horizontalPadding, columnGap, numColumns, tileWidth, gridWidth } =
@@ -285,7 +310,8 @@ export default function IndexScreen() {
     );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) =>
+    StyleSheet.create({
     header: {
         paddingTop: 8,
         marginBottom: 8,
@@ -308,15 +334,18 @@ const styles = StyleSheet.create({
     tileWrapper: {
         minWidth: 0,
     },
+    tileShadow: {
+        borderRadius: 18,
+        shadowColor: colors.accent,
+        shadowOpacity: 0.22,
+        shadowRadius: 10,
+        elevation: 5,
+    },
     tile: {
         minHeight: 136,
         borderRadius: 18,
         justifyContent: "center",
         alignItems: "stretch",
-        shadowColor: "#1D4ED8",
-        shadowOpacity: 0.22,
-        shadowRadius: 10,
-        elevation: 5,
         borderWidth: 1,
         paddingVertical: 12,
         paddingHorizontal: 10,
@@ -329,7 +358,7 @@ const styles = StyleSheet.create({
     },
     iconContainer: {
         position: "relative",
-        backgroundColor: "rgba(37,99,235,0.12)",
+        backgroundColor: colors.backgroundAlt,
         width: 48,
         height: 48,
         borderRadius: 14,
@@ -337,7 +366,7 @@ const styles = StyleSheet.create({
         justifyContent: "center",
         marginBottom: 8,
         borderWidth: 1,
-        borderColor: "rgba(59,130,246,0.4)",
+        borderColor: colors.primarySoftBorder,
         transform: [{ translateX: IOS_MENU_CENTER_OFFSET }],
     },
     tileIcon: {
@@ -373,6 +402,6 @@ const styles = StyleSheet.create({
     },
     badgeText: {
         ...textStyle(11, { lineHeightPreset: "tight" }),
-        color: "#FBBF24",
+        color: colors.warning,
     },
-});
+    });
