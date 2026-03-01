@@ -1,0 +1,8 @@
+appId: hieunguyen130701iuh.com.ruby.sgpmobile
+---
+- runFlow: "common-open-history-acelli.yaml"
+- tapOn:
+    point: "90%,36%"
+- extendedWaitUntil:
+    visible: "Tất cả thiết bị.*"
+    timeout: 30000

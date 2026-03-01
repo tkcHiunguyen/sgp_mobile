@@ -1,0 +1,8 @@
+appId: hieunguyen130701iuh.com.ruby.sgpmobile
+---
+- runFlow: common-login-home.yaml
+- tapOn:
+    point: "74%,88%"
+- extendedWaitUntil:
+    visible: "KPI Usage"
+    timeout: 30000

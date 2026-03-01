@@ -1,0 +1,67 @@
+appId: hieunguyen130701iuh.com.ruby.sgpmobile
+---
+- runFlow: "common-ensure-login-screen.yaml"
+- takeScreenshot: "docs/screenshots/output/latest/01-login-main"
+
+- tapOn: "Quên mật khẩu?"
+- extendedWaitUntil:
+    visible: "Quên mật khẩu"
+    timeout: 30000
+- takeScreenshot: "docs/screenshots/output/latest/02-login-forgot-step1"
+
+- tapOn:
+    point: "8%,8%"
+- extendedWaitUntil:
+    visible: "Quên mật khẩu?"
+    timeout: 30000
+- tapOn:
+    point: "74%,90%"
+- extendedWaitUntil:
+    visible: "Tạo tài khoản"
+    timeout: 30000
+- takeScreenshot: "docs/screenshots/output/latest/03-register-top"
+
+- swipe:
+    direction: UP
+- takeScreenshot: "docs/screenshots/output/latest/04-register-mid"
+
+- tapOn: "Đã có tài khoản.*Đăng nhập"
+- extendedWaitUntil:
+    visible: "Email hoặc ID nhân viên"
+    timeout: 30000
+- tapOn: "Email hoặc ID nhân viên"
+- inputText: "admin"
+- pressKey: Enter
+- inputText: "000000"
+- pressKey: Enter
+- runFlow: "common-open-settings.yaml"
+- swipe:
+    direction: UP
+- swipe:
+    direction: UP
+- extendedWaitUntil:
+    visible: "Đặt lại mặc định"
+    timeout: 30000
+- tapOn: "Đặt lại mặc định"
+- extendedWaitUntil:
+    visible: "Xác nhận"
+    timeout: 30000
+- tapOn: "Xác nhận"
+- extendedWaitUntil:
+    visible: "Đã đặt lại thành công"
+    timeout: 30000
+- tapOn: "Tải lại dữ liệu"
+- extendedWaitUntil:
+    visible: "Đang kiểm tra dữ liệu"
+    timeout: 30000
+- takeScreenshot: "docs/screenshots/output/latest/05-loading-main"
+- extendedWaitUntil:
+    visible: "Industrial Manager"
+    timeout: 50000
+- runFlow:
+    when:
+      visible: "Open debugger to view warnings."
+    commands:
+      - tapOn:
+          point: "94%,93%"
+- takeScreenshot: "docs/screenshots/output/latest/06-index-main"

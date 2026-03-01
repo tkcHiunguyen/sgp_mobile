@@ -1,0 +1,11 @@
+appId: hieunguyen130701iuh.com.ruby.sgpmobile
+---
+- runFlow: common-open-settings.yaml
+- tapOn: "Đặt lại mặc định"
+- extendedWaitUntil:
+    visible: "Bạn có chắc chắn muốn tiếp tục?"
+    timeout: 30000
+- tapOn: "Xác nhận"
+- extendedWaitUntil:
+    visible: "Đã đặt lại thành công"
+    timeout: 30000

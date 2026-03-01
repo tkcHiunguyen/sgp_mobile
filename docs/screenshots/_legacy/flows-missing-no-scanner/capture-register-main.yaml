@@ -1,0 +1,21 @@
+appId: hieunguyen130701iuh.com.ruby.sgpmobile
+---
+- launchApp:
+    clearState: true
+- extendedWaitUntil:
+    visible: "Quên mật khẩu?"
+    timeout: 60000
+- runFlow:
+    when:
+      visible: "Đăng ký ngay"
+    commands:
+      - tapOn: "Đăng ký ngay"
+- runFlow:
+    when:
+      notVisible: "Đăng ký ngay"
+      visible: "Đăng ký"
+    commands:
+      - tapOn: "Đăng ký"
+- extendedWaitUntil:
+    visible: "Tạo tài khoản"
+    timeout: 30000

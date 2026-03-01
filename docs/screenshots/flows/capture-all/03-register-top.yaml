@@ -1,0 +1,13 @@
+appId: hieunguyen130701iuh.com.ruby.sgpmobile
+---
+- runFlow: "02-login-forgot-step1.yaml"
+- tapOn:
+    point: "8%,8%"
+- extendedWaitUntil:
+    visible: "Quên mật khẩu?"
+    timeout: 30000
+- tapOn:
+    point: "74%,90%"
+- extendedWaitUntil:
+    visible: "Tạo tài khoản"
+    timeout: 30000

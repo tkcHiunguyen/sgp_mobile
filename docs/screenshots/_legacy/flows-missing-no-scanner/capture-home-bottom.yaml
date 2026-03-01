@@ -1,0 +1,5 @@
+appId: hieunguyen130701iuh.com.ruby.sgpmobile
+---
+- runFlow: common-login-home.yaml
+- swipe:
+    direction: UP

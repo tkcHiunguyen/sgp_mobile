@@ -1,0 +1,13 @@
+appId: hieunguyen130701iuh.com.ruby.sgpmobile
+---
+- launchApp:
+    clearState: true
+- extendedWaitUntil:
+    visible: "Quên mật khẩu?"
+    timeout: 45000
+- runFlow:
+    when:
+      visible: "Open debugger to view warnings."
+    commands:
+      - tapOn:
+          point: "94%,93%"

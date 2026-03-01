@@ -1,0 +1,24 @@
+appId: hieunguyen130701iuh.com.ruby.sgpmobile
+---
+- launchApp:
+    clearState: true
+- extendedWaitUntil:
+    visible: "Email hoặc ID nhân viên"
+    timeout: 60000
+- tapOn: "Email hoặc ID nhân viên"
+- inputText: "admin"
+- pressKey: Enter
+- inputText: "000000"
+- pressKey: Enter
+- extendedWaitUntil:
+    visible: "Industrial Manager"
+    timeout: 60000
+- tapOn:
+    point: "74%,31%"
+- extendedWaitUntil:
+    visible: "Danh sách nhóm thiết bị"
+    timeout: 30000
+- tapOn:
+    point: "96%,93%"
+- tapOn:
+    point: "96%,93%"

@@ -1,0 +1,7 @@
+appId: hieunguyen130701iuh.com.ruby.sgpmobile
+---
+- runFlow: common-open-me.yaml
+- tapOn: "Đăng xuất"
+- extendedWaitUntil:
+    visible: "Đăng xuất?"
+    timeout: 30000

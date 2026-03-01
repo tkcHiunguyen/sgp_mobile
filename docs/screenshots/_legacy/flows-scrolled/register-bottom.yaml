@@ -1,0 +1,24 @@
+appId: hieunguyen130701iuh.com.ruby.sgpmobile
+---
+- launchApp:
+    clearState: true
+- extendedWaitUntil:
+    visible: "Email hoặc ID nhân viên"
+    timeout: 60000
+- tapOn:
+    point: "96%,93%"
+- tapOn:
+    point: "96%,93%"
+- tapOn:
+    point: "74%,90%"
+- extendedWaitUntil:
+    visible: "Tạo tài khoản"
+    timeout: 30000
+- swipe:
+    direction: UP
+- swipe:
+    direction: UP
+- tapOn:
+    point: "96%,93%"
+- tapOn:
+    point: "96%,93%"

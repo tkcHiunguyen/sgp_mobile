@@ -1,0 +1,7 @@
+appId: hieunguyen130701iuh.com.ruby.sgpmobile
+---
+- runFlow: "common-open-kpi.yaml"
+- tapOn: "Xoá dữ liệu KPI"
+- extendedWaitUntil:
+    visible: "Xoá dữ liệu KPI?"
+    timeout: 30000

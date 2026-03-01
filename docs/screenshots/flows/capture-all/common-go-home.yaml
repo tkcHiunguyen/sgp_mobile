@@ -1,0 +1,37 @@
+appId: hieunguyen130701iuh.com.ruby.sgpmobile
+---
+- launchApp
+
+# Fast generic recovery: close modal then step back to root.
+- tapOn:
+    point: "90%,10%"
+    optional: true
+- tapOn:
+    point: "8%,8%"
+    optional: true
+- tapOn:
+    point: "8%,8%"
+    optional: true
+
+# Login only if currently at auth screen.
+- runFlow:
+    when:
+      visible: "Email hoặc ID nhân viên"
+    commands:
+      - tapOn: "Email hoặc ID nhân viên"
+      - inputText: "admin"
+      - pressKey: Enter
+      - inputText: "000000"
+      - pressKey: Enter
+
+- extendedWaitUntil:
+    visible: "Industrial Manager"
+    timeout: 50000
+
+# Dismiss debug warning if it appears on home.
+- runFlow:
+    when:
+      visible: "Open debugger to view warnings."
+    commands:
+      - tapOn:
+          point: "94%,93%"

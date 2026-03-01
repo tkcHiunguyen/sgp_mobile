@@ -1,0 +1,10 @@
+appId: hieunguyen130701iuh.com.ruby.sgpmobile
+---
+- runFlow: common-login-home.yaml
+- swipe:
+    direction: UP
+- tapOn:
+    point: "74%,83%"
+- extendedWaitUntil:
+    visible: "Tài khoản"
+    timeout: 30000

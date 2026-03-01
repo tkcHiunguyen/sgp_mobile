@@ -1,0 +1,7 @@
+appId: hieunguyen130701iuh.com.ruby.sgpmobile
+---
+- runFlow: "common-ensure-login-screen.yaml"
+- tapOn: "Quên mật khẩu?"
+- extendedWaitUntil:
+    visible: "Quên mật khẩu"
+    timeout: 30000

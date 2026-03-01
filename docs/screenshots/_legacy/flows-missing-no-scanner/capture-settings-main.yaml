@@ -1,0 +1,3 @@
+appId: hieunguyen130701iuh.com.ruby.sgpmobile
+---
+- runFlow: common-open-settings.yaml

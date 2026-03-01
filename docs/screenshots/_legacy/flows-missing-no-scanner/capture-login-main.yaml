@@ -1,0 +1,7 @@
+appId: hieunguyen130701iuh.com.ruby.sgpmobile
+---
+- launchApp:
+    clearState: true
+- extendedWaitUntil:
+    visible: "Quên mật khẩu?"
+    timeout: 60000

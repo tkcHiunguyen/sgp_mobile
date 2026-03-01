@@ -1,0 +1,21 @@
+appId: hieunguyen130701iuh.com.ruby.sgpmobile
+---
+- runFlow: "common-open-settings.yaml"
+- swipe:
+    direction: UP
+- swipe:
+    direction: UP
+- tapOn: "Đặt lại mặc định"
+- extendedWaitUntil:
+    visible: "Xác nhận"
+    timeout: 30000
+- tapOn:
+    point: "72%,67%"
+- extendedWaitUntil:
+    visible: "Đã đặt lại thành công"
+    timeout: 30000
+- tapOn: "Tải lại dữ liệu"
+- extendedWaitUntil:
+    visible: "Đang kiểm tra dữ liệu"
+    timeout: 30000
+- takeScreenshot: "docs/screenshots/output/latest/tmp-reset-loading"

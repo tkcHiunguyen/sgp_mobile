@@ -1,0 +1,8 @@
+appId: hieunguyen130701iuh.com.ruby.sgpmobile
+---
+- runFlow: common-login-home.yaml
+- tapOn:
+    point: "74%,31%"
+- extendedWaitUntil:
+    visible: "Danh sách nhóm thiết bị"
+    timeout: 30000

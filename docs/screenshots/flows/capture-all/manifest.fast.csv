@@ -1,0 +1,16 @@
+# flow_file|output_file|section
+01-login-main.yaml|01-login-main.png|auth
+02-login-forgot-step1.yaml|02-login-forgot-step1.png|auth
+05-register-bottom.yaml|05-register-bottom.png|auth
+08-home-bottom.yaml|08-home-bottom.png|home
+11-device-bottom.yaml|11-device-bottom.png|devices
+12-device-acelli-modal.yaml|12-device-acelli-modal.png|devices
+14-history-acelli-main.yaml|14-history-acelli-main.png|history
+16-history-device-filter.yaml|16-history-device-filter.png|history
+19-info-bottom.yaml|19-info-bottom.png|info
+22-settings-bottom.yaml|22-settings-bottom.png|settings
+23-me-main.yaml|23-me-main.png|me
+24-adminusers-main.yaml|24-adminusers-main.png|admin
+25-kpi-main.yaml|25-kpi-main.png|admin
+26-kpi-clear-confirm.yaml|26-kpi-clear-confirm.png|admin
+27-loading-main.yaml|27-loading-main.png|system

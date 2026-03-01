@@ -1,0 +1,11 @@
+appId: hieunguyen130701iuh.com.ruby.sgpmobile
+---
+- runFlow: "common-open-history.yaml"
+- tapOn: "Chọn nhóm thiết bị"
+- extendedWaitUntil:
+    visible: "Chọn nhóm thiết bị"
+    timeout: 30000
+- tapOn: "ACELLI"
+- extendedWaitUntil:
+    visible: "Tổng số lần"
+    timeout: 30000

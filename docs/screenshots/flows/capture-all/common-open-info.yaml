@@ -1,0 +1,8 @@
+appId: hieunguyen130701iuh.com.ruby.sgpmobile
+---
+- runFlow: "common-go-home.yaml"
+- tapOn:
+    point: "25%,69%"
+- extendedWaitUntil:
+    visible: "Thông tin"
+    timeout: 30000

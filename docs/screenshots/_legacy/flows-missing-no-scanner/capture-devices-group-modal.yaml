@@ -1,0 +1,7 @@
+appId: hieunguyen130701iuh.com.ruby.sgpmobile
+---
+- runFlow: common-open-devices.yaml
+- tapOn: "ACELLI"
+- extendedWaitUntil:
+    visible: "Thiết bị trong nhóm ACELLI"
+    timeout: 30000

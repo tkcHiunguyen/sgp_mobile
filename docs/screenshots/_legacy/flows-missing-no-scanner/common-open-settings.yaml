@@ -1,0 +1,10 @@
+appId: hieunguyen130701iuh.com.ruby.sgpmobile
+---
+- runFlow: common-login-home.yaml
+- swipe:
+    direction: UP
+- tapOn:
+    point: "25%,83%"
+- extendedWaitUntil:
+    visible: "API Base URL"
+    timeout: 30000
