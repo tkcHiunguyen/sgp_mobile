@@ -36,12 +36,12 @@ import {
     isNewerVersion,
     type OtaInfo,
 } from "../services/otaService";
+import { componentMetrics, radius, type ThemeColors } from "../theme/theme";
 import { MIN_TOUCH_TARGET_SIZE } from "../theme/touchTargets";
 import { inputMetrics, textStyle } from "../theme/typography";
 import { useThemedStyles } from "../theme/useThemedStyles";
 import { logger } from "../utils/logger";
 
-import type { ThemeColors } from "../theme/theme";
 import type { RootStackParamList } from "../types/navigation";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 type Props = NativeStackScreenProps<RootStackParamList, "Settings">;
@@ -610,10 +610,10 @@ export default function SettingsScreen({ navigation }: Props) {
                                         : colors.warning
                                 }
                                 trackColor={{
-                                    false: "rgba(251,191,36,0.55)",
-                                    true: "rgba(37,99,235,0.65)",
+                                    false: colors.warningSoftBorder,
+                                    true: colors.primaryBorderStrong,
                                 }}
-                                ios_backgroundColor="rgba(148,163,184,0.35)"
+                                ios_backgroundColor={colors.backdropSoft}
                             />
                         </View>
                     </View>
@@ -805,7 +805,7 @@ const createStyles = (colors: ThemeColors) =>
     card: {
         backgroundColor: colors.surface,
         padding: 18,
-        borderRadius: 16,
+        borderRadius: radius.lg,
         marginBottom: 18,
         borderWidth: 1,
         borderColor: colors.primarySoftBorder,
@@ -831,7 +831,7 @@ const createStyles = (colors: ThemeColors) =>
     },
     input: {
         flex: 1,
-        borderRadius: 10,
+        borderRadius: radius.md,
         borderWidth: 1,
         borderColor: colors.primarySoftBorder,
         paddingHorizontal: 12,
@@ -844,7 +844,7 @@ const createStyles = (colors: ThemeColors) =>
     inputDisabled: {
         backgroundColor: colors.background,
         borderColor: colors.primarySoftBorder,
-        opacity: 0.6,
+        opacity: componentMetrics.buttonDisabledOpacity,
     },
     lockIconButton: {
         marginLeft: 8,
@@ -867,7 +867,7 @@ const createStyles = (colors: ThemeColors) =>
         flex: 1,
         paddingVertical: 12,
         minHeight: MIN_TOUCH_TARGET_SIZE,
-        borderRadius: 10,
+        borderRadius: radius.md,
         alignItems: "center",
         marginHorizontal: 4,
     },
@@ -878,7 +878,7 @@ const createStyles = (colors: ThemeColors) =>
         backgroundColor: colors.danger,
     },
     buttonText: {
-        color: "#FFFFFF",
+        color: colors.onPrimary,
         ...textStyle(14, { weight: "700", lineHeightPreset: "tight" }),
     },
 
@@ -901,7 +901,7 @@ const createStyles = (colors: ThemeColors) =>
         paddingVertical: 10,
         paddingHorizontal: 14,
         minHeight: MIN_TOUCH_TARGET_SIZE,
-        borderRadius: 999,
+        borderRadius: radius.pill,
         backgroundColor: colors.primary,
         marginLeft: 8,
         minWidth: 140,
@@ -909,10 +909,10 @@ const createStyles = (colors: ThemeColors) =>
         justifyContent: "center",
     },
     otaButtonDisabled: {
-        opacity: 0.6,
+        opacity: componentMetrics.buttonDisabledOpacity,
     },
     otaButtonText: {
-        color: "#F9FAFB",
+        color: colors.onPrimary,
         ...textStyle(13, { weight: "700", lineHeightPreset: "tight" }),
     },
 
@@ -922,13 +922,13 @@ const createStyles = (colors: ThemeColors) =>
     },
     progressBarBackground: {
         height: 6,
-        borderRadius: 999,
+        borderRadius: radius.pill,
         backgroundColor: colors.backgroundAlt,
         overflow: "hidden",
     },
     progressBarFill: {
         height: "100%",
-        borderRadius: 999,
+        borderRadius: radius.pill,
         backgroundColor: colors.primary,
     },
     progressText: {
@@ -978,7 +978,7 @@ const createStyles = (colors: ThemeColors) =>
         minHeight: MIN_TOUCH_TARGET_SIZE,
         paddingVertical: 6,
         paddingHorizontal: 10,
-        borderRadius: 999,
+        borderRadius: radius.pill,
         borderWidth: 1,
         borderColor: colors.primarySoftBorder,
         backgroundColor: colors.backgroundAlt,

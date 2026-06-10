@@ -11,8 +11,7 @@ import {
     Animated,
 } from "react-native";
 
-import { useTheme } from "../../context/ThemeContext";
-import { radius, spacing } from "../../theme/theme";
+import { componentMetrics, elevation, motion, spacing } from "../../theme/theme";
 import { useThemedStyles } from "../../theme/useThemedStyles";
 
 import type { ThemeColors } from "../../theme/theme";
@@ -44,7 +43,6 @@ export function BaseModal({
     width = "100%",
     style,
 }: Props) {
-    const { mode } = useTheme();
     const styles = useThemedStyles(createStyles);
     const [mounted, setMounted] = useState(visible);
     const anim = useRef(new Animated.Value(0)).current;
@@ -58,14 +56,14 @@ export function BaseModal({
             anim.stopAnimation();
             Animated.timing(anim, {
                 toValue: 1,
-                duration: 180,
+                duration: motion.modalInDuration,
                 useNativeDriver: true,
             }).start();
         } else {
             anim.stopAnimation();
             Animated.timing(anim, {
                 toValue: 0,
-                duration: 140,
+                duration: motion.modalOutDuration,
                 useNativeDriver: true,
             }).start(({ finished }) => {
                 if (finished) setMounted(false);
@@ -87,12 +85,12 @@ export function BaseModal({
 
     const containerScale = anim.interpolate({
         inputRange: [0, 1],
-        outputRange: [0.96, 1],
+        outputRange: [componentMetrics.modalInScaleFrom, 1],
     });
 
     const containerTranslateY = anim.interpolate({
         inputRange: [0, 1],
-        outputRange: [10, 0],
+        outputRange: [componentMetrics.modalInTranslateY, 0],
     });
 
     return (
@@ -105,13 +103,7 @@ export function BaseModal({
             <Animated.View
                 style={[
                     styles.overlay,
-                    {
-                        opacity: overlayOpacity,
-                        backgroundColor:
-                            mode === "dark"
-                                ? "rgba(15,23,42,0.85)"
-                                : "rgba(15,23,42,0.35)",
-                    },
+                    { opacity: overlayOpacity },
                 ]}
             >
                 {/* Backdrop bắt tap để đóng */}
@@ -147,18 +139,24 @@ const createStyles = (colors: ThemeColors) =>
         flex: 1,
         justifyContent: "center",
         alignItems: "center",
-        paddingHorizontal: 24,
+        paddingHorizontal: componentMetrics.modalOverlayPaddingHorizontal,
+        backgroundColor: colors.backdropCard,
     },
     backdrop: {
         ...StyleSheet.absoluteFillObject,
     },
     container: {
         backgroundColor: colors.surface,
-        borderRadius: radius.lg,
+        borderRadius: componentMetrics.modalCornerRadius,
         paddingVertical: spacing.lg,
-        paddingHorizontal: spacing.md,
-        borderWidth: 1,
-        borderColor: colors.primarySoftBorder,
-        maxHeight: "80%",
+        paddingHorizontal: spacing.lg,
+        borderWidth: componentMetrics.modalBorderWidth,
+        borderColor: colors.primaryBorderStrong,
+        maxHeight: componentMetrics.modalMaxHeight,
+        shadowColor: colors.accent,
+        shadowOpacity: elevation.modalShadowOpacity,
+        shadowRadius: elevation.modalShadowRadius,
+        shadowOffset: { width: 0, height: elevation.modalShadowOffsetY },
+        elevation: elevation.modalElevation,
     },
     });

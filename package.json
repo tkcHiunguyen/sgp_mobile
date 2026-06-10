@@ -6,6 +6,7 @@
     "scripts": {
         "android": "react-native run-android --active-arch-only",
         "ios": "react-native run-ios",
+        "screenshots": "bash docs/screenshots/capture.sh",
         "lint": "eslint . --ext .js,.jsx,.ts,.tsx",
         "lint:fix": "pnpm lint --fix",
         "start": "react-native start",
@@ -13,6 +14,9 @@
         "test:watch": "jest --watch",
         "test:coverage": "jest --coverage",
         "typecheck": "tsc --noEmit",
+        "ui:guard": "bash tools/ui-hardcode-guard.sh",
+        "ui:guard:update": "bash tools/ui-hardcode-guard.sh --update-baseline",
+        "ui:qaqc": "bash tools/ui-qaqc-without-screenshots.sh",
         "format": "prettier . --write",
         "format:check": "prettier . --check"
     },

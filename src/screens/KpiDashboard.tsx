@@ -1,5 +1,5 @@
 import { useFocusEffect } from "@react-navigation/native";
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useState } from "react";
 import {
     FlatList,
     Pressable,
@@ -21,10 +21,10 @@ import {
     getAnalyticsSummary,
     type AnalyticsSummaryItem,
 } from "../services/analytics";
+import { componentMetrics, radius, type ThemeColors } from "../theme/theme";
 import { textStyle } from "../theme/typography";
 import { useThemedStyles } from "../theme/useThemedStyles";
 
-import type { ThemeColors } from "../theme/theme";
 import type { RootStackParamList } from "../types/navigation";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 
@@ -87,6 +87,8 @@ export default function KpiDashboardScreen({ navigation }: Props) {
         }, [isAdmin, navigation, refresh])
     );
 
+    const totalEvents = summary.reduce((acc, item) => acc + item.count, 0);
+
     if (!isAdmin) {
         return (
             <AppScreen topPadding={0}>
@@ -98,11 +100,6 @@ export default function KpiDashboardScreen({ navigation }: Props) {
             </AppScreen>
         );
     }
-
-    const totalEvents = useMemo(
-        () => summary.reduce((acc, item) => acc + item.count, 0),
-        [summary]
-    );
 
     const renderItem = ({ item }: { item: AnalyticsSummaryItem }) => {
         return (
@@ -220,7 +217,7 @@ const createStyles = (colors: ThemeColors) =>
     totalBox: {
         flex: 1,
         minHeight: 42,
-        borderRadius: 12,
+        borderRadius: radius.base,
         borderWidth: 1,
         borderColor: colors.primarySoftBorder,
         backgroundColor: colors.surface,
@@ -236,7 +233,7 @@ const createStyles = (colors: ThemeColors) =>
     refreshBtn: {
         width: 42,
         height: 42,
-        borderRadius: 12,
+        borderRadius: radius.base,
         borderWidth: 1,
         borderColor: colors.primarySoftBorder,
         backgroundColor: colors.backgroundAlt,
@@ -244,7 +241,7 @@ const createStyles = (colors: ThemeColors) =>
         justifyContent: "center",
     },
     pressedSm: {
-        opacity: 0.9,
+        opacity: componentMetrics.pressFeedbackOpacity,
         transform: [{ scale: 0.99 }],
     },
     listContent: {
@@ -253,7 +250,7 @@ const createStyles = (colors: ThemeColors) =>
         gap: 8,
     },
     card: {
-        borderRadius: 14,
+        borderRadius: radius.chip,
         borderWidth: 1,
         borderColor: colors.primarySoftBorder,
         backgroundColor: colors.surface,
@@ -274,7 +271,7 @@ const createStyles = (colors: ThemeColors) =>
     countBadge: {
         minWidth: 36,
         height: 24,
-        borderRadius: 999,
+        borderRadius: radius.pill,
         paddingHorizontal: 8,
         borderWidth: 1,
         borderColor: colors.primarySoftBorder,

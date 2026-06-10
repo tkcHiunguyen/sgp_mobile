@@ -33,7 +33,13 @@ import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../context/ThemeContext";
 import Logo from "../logo.png";
 import { markLoginSuccess } from "../services/analytics";
-import { spacing, radius } from "../theme/theme";
+import {
+    border,
+    componentMetrics,
+    elevation,
+    radius,
+    spacing,
+} from "../theme/theme";
 import { MIN_TOUCH_TARGET_SIZE } from "../theme/touchTargets";
 import { inputMetrics, textStyle } from "../theme/typography";
 import { useThemedStyles } from "../theme/useThemedStyles";
@@ -446,7 +452,8 @@ export default function LoginScreen({ navigation, route }: Props) {
                                     styles.fpBtn,
                                     (!fpVerifyCanSubmit ||
                                         fpVerifySubmitting) && {
-                                        opacity: 0.6,
+                                        opacity:
+                                            componentMetrics.buttonDisabledOpacity,
                                     },
                                 ]}
                             >
@@ -640,7 +647,8 @@ export default function LoginScreen({ navigation, route }: Props) {
                                     styles.fpBtn,
                                     (!fpResetCanSubmit ||
                                         fpResetSubmitting) && {
-                                        opacity: 0.6,
+                                        opacity:
+                                            componentMetrics.buttonDisabledOpacity,
                                     },
                                 ]}
                             >
@@ -974,7 +982,8 @@ export default function LoginScreen({ navigation, route }: Props) {
                                     style={[
                                         styles.button,
                                         (!canSubmit || submitting) && {
-                                            opacity: 0.6,
+                                            opacity:
+                                                componentMetrics.buttonDisabledOpacity,
                                         },
                                     ]}
                                 >
@@ -1052,7 +1061,7 @@ const createStyles = (colors: ThemeColors) =>
     appTagline: {
         color: colors.textMuted,
         marginTop: 6,
-        ...textStyle(15),
+        ...textStyle(14, { weight: "600", lineHeightPreset: "tight" }),
     },
 
     welcomeBlock: {
@@ -1075,10 +1084,15 @@ const createStyles = (colors: ThemeColors) =>
     formCard: {
         marginTop: spacing.xl,
         backgroundColor: colors.surface,
-        borderRadius: radius.lg,
+        borderRadius: radius.xl,
         padding: spacing.lg,
-        borderWidth: 1,
-        borderColor: colors.primarySoftBorder,
+        borderWidth: border.strong,
+        borderColor: colors.primaryBorderStrong,
+        shadowColor: colors.accent,
+        shadowOpacity: elevation.cardShadowOpacity,
+        shadowRadius: elevation.cardShadowRadius,
+        shadowOffset: { width: 0, height: elevation.cardShadowOffsetY },
+        elevation: elevation.cardElevation,
     },
 
     label: {
@@ -1092,7 +1106,7 @@ const createStyles = (colors: ThemeColors) =>
         alignItems: "center",
         backgroundColor: colors.backgroundAlt,
         borderRadius: radius.md,
-        borderWidth: 1,
+        borderWidth: border.subtle,
         borderColor: colors.primaryBorderStrong,
     },
     leftIcon: { marginLeft: spacing.md },
@@ -1134,7 +1148,7 @@ const createStyles = (colors: ThemeColors) =>
     checkbox: {
         width: 18,
         height: 18,
-        borderRadius: 4,
+        borderRadius: radius.xs,
         borderWidth: 1,
         borderColor: colors.primaryBorderStrong,
         alignItems: "center",
@@ -1163,8 +1177,8 @@ const createStyles = (colors: ThemeColors) =>
         padding: spacing.md,
         borderRadius: radius.md,
         borderWidth: 1,
-        borderColor: "rgba(220,38,38,0.5)",
-        backgroundColor: "rgba(220,38,38,0.08)",
+        borderColor: colors.dangerSoftBorder,
+        backgroundColor: colors.dangerSubtleBg,
         flexDirection: "row",
         alignItems: "center",
         gap: 8,
@@ -1174,11 +1188,18 @@ const createStyles = (colors: ThemeColors) =>
     button: {
         marginTop: spacing.lg,
         backgroundColor: colors.primary,
+        borderWidth: border.strong,
+        borderColor: colors.primaryBorderStrong,
         paddingVertical: 14,
         minHeight: MIN_TOUCH_TARGET_SIZE,
         borderRadius: radius.md,
         alignItems: "center",
         justifyContent: "center",
+        shadowColor: colors.accent,
+        shadowOpacity: elevation.buttonShadowOpacity,
+        shadowRadius: elevation.buttonShadowRadius,
+        shadowOffset: { width: 0, height: elevation.buttonShadowOffsetY },
+        elevation: elevation.buttonElevation,
     },
     buttonRow: {
         flexDirection: "row",
@@ -1210,18 +1231,23 @@ const createStyles = (colors: ThemeColors) =>
     versionText: {
         color: colors.textMuted,
         ...textStyle(12),
-        opacity: 0.7,
+        opacity: componentMetrics.mutedContentOpacity,
     },
 
     logoWrap: {
         width: 96,
         height: 96,
-        borderRadius: 24,
+        borderRadius: radius.xxl,
         backgroundColor: colors.surface,
         alignItems: "center",
         justifyContent: "center",
-        borderWidth: 1,
-        borderColor: colors.primarySoftBorder,
+        borderWidth: border.strong,
+        borderColor: colors.primaryBorderStrong,
+        shadowColor: colors.accent,
+        shadowOpacity: elevation.cardShadowOpacity,
+        shadowRadius: elevation.cardShadowRadius,
+        shadowOffset: { width: 0, height: elevation.cardShadowOffsetY },
+        elevation: elevation.cardElevation,
     },
     logo: {
         width: 96,
@@ -1259,11 +1285,18 @@ const createStyles = (colors: ThemeColors) =>
     fpBtn: {
         marginTop: spacing.lg,
         backgroundColor: colors.primary,
+        borderWidth: border.strong,
+        borderColor: colors.primaryBorderStrong,
         paddingVertical: 12,
         minHeight: MIN_TOUCH_TARGET_SIZE,
         borderRadius: radius.md,
         alignItems: "center",
         justifyContent: "center",
+        shadowColor: colors.accent,
+        shadowOpacity: elevation.buttonShadowOpacity,
+        shadowRadius: elevation.buttonShadowRadius,
+        shadowOffset: { width: 0, height: elevation.buttonShadowOffsetY },
+        elevation: elevation.buttonElevation,
     },
     fpBtnText: {
         color: colors.text,
@@ -1272,8 +1305,8 @@ const createStyles = (colors: ThemeColors) =>
     fpBtnGhost: {
         marginTop: spacing.md,
         backgroundColor: colors.backgroundAlt,
-        borderWidth: 1,
-        borderColor: colors.primarySoftBorder,
+        borderWidth: border.subtle,
+        borderColor: colors.primaryBorderStrong,
         paddingVertical: 12,
         minHeight: MIN_TOUCH_TARGET_SIZE,
         borderRadius: radius.md,
@@ -1283,22 +1316,22 @@ const createStyles = (colors: ThemeColors) =>
     fpBtnGhostText: {
         color: colors.textSoft,
         ...textStyle(14, { weight: "800", lineHeightPreset: "tight" }),
-        opacity: 0.95,
+        opacity: componentMetrics.subtleTextOpacity,
     },
 
     fpSuccessWrap: {
         padding: spacing.lg,
         backgroundColor: colors.surface,
-        borderRadius: radius.lg,
-        borderWidth: 1,
-        borderColor: colors.primarySoftBorder,
+        borderRadius: radius.xl,
+        borderWidth: border.strong,
+        borderColor: colors.primaryBorderStrong,
         alignItems: "center",
     },
     fpSuccessIcon: {
         width: 56,
         height: 56,
-        borderRadius: 16,
-        backgroundColor: "rgba(22,163,74,0.2)",
+        borderRadius: radius.lg,
+        backgroundColor: colors.successStrongBg,
         borderWidth: 1,
         borderColor: colors.success,
         alignItems: "center",
@@ -1316,7 +1349,7 @@ const createStyles = (colors: ThemeColors) =>
         ...textStyle(13),
         textAlign: "center",
         maxWidth: 320,
-        opacity: 0.95,
+        opacity: componentMetrics.subtleTextOpacity,
     },
     modalKav: {
         width: "100%",

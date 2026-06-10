@@ -2,6 +2,7 @@ import React from "react";
 import { View, StyleSheet, ViewStyle, StyleProp } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { componentMetrics } from "../../theme/theme";
 import { useThemedStyles } from "../../theme/useThemedStyles";
 
 import type { ThemeColors } from "../../theme/theme";
@@ -17,7 +18,7 @@ export function AppScreen({
     children,
     style,
     withHorizontalPadding = true,
-    topPadding = 40,
+    topPadding = componentMetrics.screenTopPadding,
 }: Props) {
     const styles = useThemedStyles(createStyles);
 
@@ -48,6 +49,6 @@ const createStyles = (colors: ThemeColors) =>
         backgroundColor: colors.background,
     },
     horizontalPadding: {
-        paddingHorizontal: 0,
+        paddingHorizontal: componentMetrics.screenHorizontalPadding,
     },
     });

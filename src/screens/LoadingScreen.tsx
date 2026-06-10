@@ -18,11 +18,11 @@ import {
 } from "../config/apiConfig";
 import { useDeviceGroup } from "../context/DeviceGroupContext";
 import { useTheme } from "../context/ThemeContext";
+import { radius, type ThemeColors } from "../theme/theme";
 import { textStyle } from "../theme/typography";
 import { useThemedStyles } from "../theme/useThemedStyles";
 import { logger } from "../utils/logger";
 
-import type { ThemeColors } from "../theme/theme";
 import type { RootStackParamList } from "../types/navigation";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
@@ -365,7 +365,7 @@ const createStyles = (colors: ThemeColors) =>
     StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: colors.background, // thay #0A0F1C
+        backgroundColor: colors.background,
         alignItems: "center",
         justifyContent: "center",
     },
@@ -376,7 +376,7 @@ const createStyles = (colors: ThemeColors) =>
     circle: {
         width: 140,
         height: 140,
-        borderRadius: 70,
+        borderRadius: radius.pill,
         borderWidth: 3,
         borderColor: colors.primarySoftBorder,
         alignItems: "center",
@@ -407,12 +407,12 @@ const createStyles = (colors: ThemeColors) =>
         minWidth: 140,
         paddingVertical: 10,
         paddingHorizontal: 16,
-        borderRadius: 10,
+        borderRadius: radius.md,
         backgroundColor: colors.primary,
         alignItems: "center",
     },
     primaryButtonText: {
-        color: "#F8FAFC",
+        color: colors.onPrimary,
         ...textStyle(14, { weight: "700", lineHeightPreset: "tight" }),
     },
     secondaryButton: {
@@ -420,7 +420,7 @@ const createStyles = (colors: ThemeColors) =>
         minWidth: 140,
         paddingVertical: 10,
         paddingHorizontal: 16,
-        borderRadius: 10,
+        borderRadius: radius.md,
         borderWidth: 1,
         borderColor: colors.primary,
         alignItems: "center",

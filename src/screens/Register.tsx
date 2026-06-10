@@ -23,7 +23,7 @@ import { AppScreen } from "../components/ui/AppScreen";
 import { BaseModal } from "../components/ui/BaseModal";
 import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../context/ThemeContext";
-import { spacing, radius } from "../theme/theme";
+import { componentMetrics, spacing, radius } from "../theme/theme";
 import { MIN_TOUCH_TARGET_SIZE } from "../theme/touchTargets";
 import { inputMetrics, textStyle } from "../theme/typography";
 import { useThemedStyles } from "../theme/useThemedStyles";
@@ -421,7 +421,8 @@ export default function RegisterScreen({ navigation }: Props) {
                                     style={[
                                         styles.primaryBtn,
                                         (!canSubmit || submitting) && {
-                                            opacity: 0.6,
+                                            opacity:
+                                                componentMetrics.buttonDisabledOpacity,
                                         },
                                     ]}
                                 >
@@ -576,9 +577,9 @@ const createStyles = (colors: ThemeColors) =>
         flexDirection: "row",
         alignItems: "center",
         gap: 8,
-        paddingHorizontal: 12,
-        paddingVertical: 8,
-        borderRadius: 999,
+        paddingHorizontal: spacing.md,
+        paddingVertical: spacing.sm,
+        borderRadius: radius.pill,
         backgroundColor: colors.backgroundAlt,
         borderWidth: 1,
         borderColor: colors.primarySoftBorder,
@@ -586,7 +587,7 @@ const createStyles = (colors: ThemeColors) =>
     chipText: {
         color: colors.textSoft,
         ...textStyle(12.5, { weight: "800", lineHeightPreset: "tight" }),
-        opacity: 0.95,
+        opacity: componentMetrics.subtleTextOpacity,
     },
 
     // ===== Form Card =====
@@ -666,8 +667,8 @@ const createStyles = (colors: ThemeColors) =>
         padding: spacing.md,
         borderRadius: radius.md,
         borderWidth: 1,
-        borderColor: "rgba(220,38,38,0.5)",
-        backgroundColor: "rgba(220,38,38,0.08)",
+        borderColor: colors.dangerSoftBorder,
+        backgroundColor: colors.dangerSubtleBg,
         flexDirection: "row",
         alignItems: "center",
         gap: 8,
@@ -700,7 +701,7 @@ const createStyles = (colors: ThemeColors) =>
         flexDirection: "row",
         justifyContent: "center",
         gap: 4,
-        opacity: 0.95,
+        opacity: componentMetrics.subtleTextOpacity,
     },
     secondaryText: {
         color: colors.textMuted,
@@ -723,8 +724,8 @@ const createStyles = (colors: ThemeColors) =>
     modalIcon: {
         width: 56,
         height: 56,
-        borderRadius: 16,
-        backgroundColor: "rgba(22,163,74,0.2)",
+        borderRadius: radius.lg,
+        backgroundColor: colors.successStrongBg,
         borderWidth: 1,
         borderColor: colors.success,
         alignItems: "center",
@@ -742,7 +743,7 @@ const createStyles = (colors: ThemeColors) =>
         ...textStyle(13),
         textAlign: "center",
         maxWidth: 320,
-        opacity: 0.95,
+        opacity: componentMetrics.subtleTextOpacity,
     },
     modalHint: {
         marginTop: spacing.md,
@@ -784,6 +785,6 @@ const createStyles = (colors: ThemeColors) =>
     modalGhostText: {
         color: colors.textSoft,
         ...textStyle(14, { weight: "800", lineHeightPreset: "tight" }),
-        opacity: 0.95,
+        opacity: componentMetrics.subtleTextOpacity,
     },
     });

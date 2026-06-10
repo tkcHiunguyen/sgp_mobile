@@ -25,6 +25,7 @@ import HeaderBar from "../components/ui/HeaderBar";
 import { getSheetId, getApiBase } from "../config/apiConfig";
 import { useDeviceGroup } from "../context/DeviceGroupContext";
 import { useTheme } from "../context/ThemeContext";
+import { radius, type ThemeColors } from "../theme/theme";
 import { MIN_TOUCH_TARGET_SIZE } from "../theme/touchTargets";
 import { textStyle } from "../theme/typography";
 import { useThemedStyles } from "../theme/useThemedStyles";
@@ -34,7 +35,6 @@ import {
     useDevicesData,
 } from "./devices/hooks/useDevicesData";
 
-import type { ThemeColors } from "../theme/theme";
 import type { DeviceRow, HistoryRow } from "../types/deviceGroup";
 import type { RootStackParamList } from "../types/navigation";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
@@ -670,7 +670,7 @@ const createStyles = (colors: ThemeColors) =>
     card: {
         backgroundColor: colors.surface,
         paddingVertical: 22,
-        borderRadius: 16,
+        borderRadius: radius.lg,
         borderWidth: 1,
         borderColor: colors.primarySoftBorder,
         justifyContent: "center",
@@ -719,7 +719,7 @@ const createStyles = (colors: ThemeColors) =>
     searchInputRow: {
         flexDirection: "row",
         alignItems: "center",
-        borderRadius: 12,
+        borderRadius: radius.base,
         borderWidth: 1,
         borderColor: colors.primarySoftBorder,
         backgroundColor: colors.surface,
@@ -752,7 +752,7 @@ const createStyles = (colors: ThemeColors) =>
     filterBox: {
         width: MIN_TOUCH_TARGET_SIZE,
         height: MIN_TOUCH_TARGET_SIZE,
-        borderRadius: 12,
+        borderRadius: radius.base,
         borderWidth: 1,
         borderColor: colors.primarySoftBorder,
         backgroundColor: colors.surface,
@@ -773,7 +773,7 @@ const createStyles = (colors: ThemeColors) =>
         right: 6,
         width: 6,
         height: 6,
-        borderRadius: 999,
+        borderRadius: radius.pill,
         backgroundColor: colors.success,
     },
 
@@ -782,7 +782,7 @@ const createStyles = (colors: ThemeColors) =>
         top: 48,
         right: 0,
         width: 170,
-        borderRadius: 10,
+        borderRadius: radius.md,
         backgroundColor: colors.surface,
         borderWidth: 1,
         borderColor: colors.primarySoftBorder,
@@ -814,7 +814,7 @@ const createStyles = (colors: ThemeColors) =>
     checkbox: {
         width: 18,
         height: 18,
-        borderRadius: 4,
+        borderRadius: radius.xs,
         borderWidth: 1.5,
         borderColor: colors.primarySoftBorder,
         alignItems: "center",
@@ -823,7 +823,7 @@ const createStyles = (colors: ThemeColors) =>
     },
     checkboxActive: {
         borderColor: colors.success,
-        backgroundColor: "rgba(34,197,94,0.12)",
+        backgroundColor: colors.successSoftBg,
     },
     checkboxIcon: {
         fontSize: 14,
@@ -839,7 +839,7 @@ const createStyles = (colors: ThemeColors) =>
         width: "100%",
         borderWidth: 1,
         borderColor: colors.primarySoftBorder,
-        borderRadius: 10,
+        borderRadius: radius.md,
         paddingVertical: 10,
         paddingHorizontal: 12,
         backgroundColor: colors.surface,
@@ -861,7 +861,7 @@ const createStyles = (colors: ThemeColors) =>
     deviceTag: {
         paddingHorizontal: 8,
         paddingVertical: 3,
-        borderRadius: 999,
+        borderRadius: radius.pill,
         borderWidth: 1,
         borderColor: colors.primarySoftBorder,
         color: colors.textAccent,
@@ -889,7 +889,7 @@ const createStyles = (colors: ThemeColors) =>
     highlight: {
         backgroundColor: colors.warning,
         color: colors.background,
-        borderRadius: 3,
+        borderRadius: radius.xs,
         overflow: "hidden",
     },
 
@@ -898,7 +898,7 @@ const createStyles = (colors: ThemeColors) =>
         flexDirection: "row",
         padding: 10,
         backgroundColor: colors.surface,
-        borderRadius: 12,
+        borderRadius: radius.base,
         marginBottom: 8,
         borderWidth: 1,
         borderColor: colors.primarySoftBorder,
@@ -908,7 +908,7 @@ const createStyles = (colors: ThemeColors) =>
         justifyContent: "center",
         padding: 8,
         marginRight: 8,
-        borderRadius: 10,
+        borderRadius: radius.md,
         backgroundColor: colors.surfaceAlt,
         borderWidth: 1,
         borderColor: colors.primarySoftBorder,

@@ -37,7 +37,6 @@ const createStyles = (colors: ThemeColors) =>
     },
     caption: {
         ...textStyle(14),
-        color: colors.textMuted,
-        opacity: 0.7,
+        color: colors.textSoft,
     },
     });

@@ -1,7 +1,0 @@
-appId: hieunguyen130701iuh.com.ruby.sgpmobile
----
-- runFlow: "common-open-devices.yaml"
-- swipe:
-    direction: UP
-- swipe:
-    direction: UP

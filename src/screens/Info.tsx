@@ -1,15 +1,14 @@
 ﻿import React from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 
-
 import { AppScreen } from "../components/ui/AppScreen";
 import HeaderBar from "../components/ui/HeaderBar";
 import { VERSION } from "../config/apiConfig";
+import { radius, type ThemeColors } from "../theme/theme";
 import { textStyle } from "../theme/typography";
 import { useThemedStyles } from "../theme/useThemedStyles";
 import { RootStackParamList } from "../types/navigation";
 
-import type { ThemeColors } from "../theme/theme";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 
 const infoData = [
@@ -93,7 +92,7 @@ const createStyles = (colors: ThemeColors) =>
     card: {
         backgroundColor: colors.surface,
         padding: 18,
-        borderRadius: 16,
+        borderRadius: radius.lg,
         marginBottom: 16,
         borderWidth: 1,
         borderColor: colors.primarySoftBorder,

@@ -5,63 +5,199 @@ appId: hieunguyen130701iuh.com.ruby.sgpmobile
 
 - tapOn: "Quên mật khẩu?"
 - extendedWaitUntil:
-    visible: "Quên mật khẩu"
-    timeout: 30000
+      visible: "Quên mật khẩu"
+      timeout: 30000
 - takeScreenshot: "docs/screenshots/output/latest/02-login-forgot-step1"
 
 - tapOn:
-    point: "8%,8%"
+      point: "8%,11%"
 - extendedWaitUntil:
-    visible: "Quên mật khẩu?"
-    timeout: 30000
-- tapOn:
-    point: "74%,90%"
+      visible: "Quên mật khẩu?"
+      timeout: 30000
+- runFlow:
+      when:
+          visible: "Open debugger to view warnings."
+      commands:
+        - tapOn:
+              point: "94%,93%"
+- tapOn: ".*Đăng ký ngay"
 - extendedWaitUntil:
-    visible: "Tạo tài khoản"
-    timeout: 30000
+      visible: "Tạo tài khoản"
+      timeout: 30000
 - takeScreenshot: "docs/screenshots/output/latest/03-register-top"
 
 - swipe:
-    direction: UP
+      direction: UP
 - takeScreenshot: "docs/screenshots/output/latest/04-register-mid"
 
 - tapOn: "Đã có tài khoản.*Đăng nhập"
 - extendedWaitUntil:
-    visible: "Email hoặc ID nhân viên"
-    timeout: 30000
+      visible: "Email hoặc ID nhân viên"
+      timeout: 30000
 - tapOn: "Email hoặc ID nhân viên"
 - inputText: "admin"
 - pressKey: Enter
 - inputText: "000000"
 - pressKey: Enter
-- runFlow: "common-open-settings.yaml"
-- swipe:
-    direction: UP
-- swipe:
-    direction: UP
 - extendedWaitUntil:
-    visible: "Đặt lại mặc định"
-    timeout: 30000
-- tapOn: "Đặt lại mặc định"
-- extendedWaitUntil:
-    visible: "Xác nhận"
-    timeout: 30000
-- tapOn: "Xác nhận"
-- extendedWaitUntil:
-    visible: "Đã đặt lại thành công"
-    timeout: 30000
-- tapOn: "Tải lại dữ liệu"
-- extendedWaitUntil:
-    visible: "Đang kiểm tra dữ liệu"
-    timeout: 30000
-- takeScreenshot: "docs/screenshots/output/latest/05-loading-main"
-- extendedWaitUntil:
-    visible: "Industrial Manager"
-    timeout: 50000
+      visible: "Industrial Manager"
+      timeout: 50000
 - runFlow:
-    when:
-      visible: "Open debugger to view warnings."
-    commands:
-      - tapOn:
-          point: "94%,93%"
-- takeScreenshot: "docs/screenshots/output/latest/06-index-main"
+      when:
+          visible: "Open debugger to view warnings."
+      commands:
+        - tapOn:
+              point: "94%,93%"
+- takeScreenshot: "docs/screenshots/output/latest/05-main-menu"
+- swipe:
+      direction: UP
+- takeScreenshot: "docs/screenshots/output/latest/06-main-menu-2"
+
+# Scanner pilot screen
+- tapOn: ".*Quét mã QR.*"
+- waitForAnimationToEnd
+- takeScreenshot: "docs/screenshots/output/latest/06b-scanner-main"
+- tapOn:
+      point: "8%,11%"
+- extendedWaitUntil:
+      visible: "Industrial Manager"
+      timeout: 30000
+
+- swipe:
+      direction: DOWN
+- swipe:
+      direction: DOWN
+- runFlow:
+      when:
+          visible: "Open debugger to view warnings."
+      commands:
+        - tapOn:
+              point: "94%,93%"
+- tapOn:
+      point: "25%,69%"
+- extendedWaitUntil:
+      visible: "Thông tin"
+      timeout: 30000
+- takeScreenshot: "docs/screenshots/output/latest/07-info"
+
+- tapOn:
+      point: "8%,11%"
+- tapOn:
+      point: "25%,88%"
+- extendedWaitUntil:
+      visible: "Admin - Users"
+      timeout: 30000
+- takeScreenshot: "docs/screenshots/output/latest/08-adminusers"
+
+- tapOn:
+      point: "8%,11%"
+- swipe:
+      direction: UP
+- tapOn:
+      point: "74%,83%"
+- extendedWaitUntil:
+      visible: "Tài khoản"
+      timeout: 30000
+- takeScreenshot: "docs/screenshots/output/latest/09-account"
+
+- tapOn:
+      point: "8%,11%"
+- tapOn:
+      point: "25%,83%"
+- extendedWaitUntil:
+      visible: "API Base URL"
+      timeout: 30000
+- takeScreenshot: "docs/screenshots/output/latest/10-settings"
+- swipe:
+      direction: UP
+- takeScreenshot: "docs/screenshots/output/latest/11-settings-2"
+
+# Back to main menu (single continuous flow, no common-go-home)
+- tapOn:
+      point: "8%,11%"
+- swipe:
+      direction: DOWN
+- swipe:
+      direction: DOWN
+- swipe:
+      direction: DOWN
+- swipe:
+      direction: DOWN
+
+# Device screens
+- runFlow:
+      when:
+          visible: "Open debugger to view warnings."
+      commands:
+        - tapOn:
+              point: "94%,93%"
+- tapOn: ".*Quản lý thiết bị.*"
+- extendedWaitUntil:
+      visible: "Danh sách nhóm thiết bị"
+      timeout: 30000
+- takeScreenshot: "docs/screenshots/output/latest/12-device-top"
+- tapOn: "ACELLI"
+- extendedWaitUntil:
+      visible: "Thiết bị trong nhóm ACELLI"
+      timeout: 30000
+- takeScreenshot: "docs/screenshots/output/latest/15-device-acelli-modal"
+- tapOn:
+      point: "78%,27%"
+- extendedWaitUntil:
+      visible: "Thêm lịch sử"
+      timeout: 30000
+- takeScreenshot: "docs/screenshots/output/latest/15-device-add-history-modal"
+- tapOn: "Hủy"
+- extendedWaitUntil:
+      visible: "Thiết bị trong nhóm ACELLI"
+      timeout: 30000
+- tapOn: "Đóng"
+- extendedWaitUntil:
+      visible: "Danh sách nhóm thiết bị"
+      timeout: 30000
+
+# History screens
+- tapOn:
+      point: "8%,11%"
+- extendedWaitUntil:
+      visible: "Industrial Manager"
+      timeout: 30000
+- swipe:
+      direction: DOWN
+- swipe:
+      direction: DOWN
+- tapOn:
+      point: "26%,50%"
+- extendedWaitUntil:
+      visible: "Lịch sử bảo trì"
+      timeout: 30000
+- takeScreenshot: "docs/screenshots/output/latest/16-history-top"
+- tapOn: "Chọn nhóm thiết bị"
+- extendedWaitUntil:
+      visible: "Chọn nhóm thiết bị"
+      timeout: 30000
+- tapOn: "ACELLI"
+- extendedWaitUntil:
+      visible: "Tổng số lần"
+      timeout: 30000
+- takeScreenshot: "docs/screenshots/output/latest/17-history-acelli-main"
+- tapOn:
+      point: "78%,36%"
+- extendedWaitUntil:
+      visible: "Lọc thời gian"
+      timeout: 30000
+- takeScreenshot: "docs/screenshots/output/latest/18-history-date-filter"
+- pressKey: back
+- extendedWaitUntil:
+      visible: "Lịch sử bảo trì"
+      timeout: 30000
+- tapOn:
+      point: "50%,20%"
+- runFlow:
+      when:
+          visible: "Open debugger to view warnings."
+      commands:
+        - tapOn:
+              point: "94%,93%"
+- tapOn: ""
+- takeScreenshot: "docs/screenshots/output/latest/19-history-device-filter"

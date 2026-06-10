@@ -1,0 +1,63 @@
+appId: hieunguyen130701iuh.com.ruby.sgpmobile
+---
+- runFlow: "common-ensure-login-screen.yaml"
+
+# Login -> Home
+- tapOn: "Email hoặc ID nhân viên"
+- inputText: "admin"
+- pressKey: Enter
+- inputText: "000000"
+- pressKey: Enter
+- extendedWaitUntil:
+      visible: "Industrial Manager"
+      timeout: 50000
+- runFlow:
+      when:
+          visible: "Open debugger to view warnings."
+      commands:
+        - tapOn:
+              point: "94%,93%"
+
+# Switch to light mode in Settings
+- swipe:
+      direction: UP
+- runFlow:
+      when:
+          visible: "Open debugger to view warnings."
+      commands:
+        - tapOn:
+              point: "94%,93%"
+- tapOn:
+      point: "25%,83%"
+- extendedWaitUntil:
+      visible: "API Base URL"
+      timeout: 30000
+- swipe:
+      direction: UP
+- tapOn: ".*Sáng"
+- extendedWaitUntil:
+      visible: "Chế độ sáng"
+      timeout: 30000
+
+# Back to Home and capture
+- tapOn:
+      point: "8%,11%"
+- extendedWaitUntil:
+      visible: "Industrial Manager"
+      timeout: 30000
+- swipe:
+      direction: DOWN
+- swipe:
+      direction: DOWN
+- runFlow:
+      when:
+          visible: "Open debugger to view warnings."
+      commands:
+        - tapOn:
+              point: "94%,93%"
+- takeScreenshot: "docs/screenshots/output/latest/20-home-light"
+
+# Scanner (light)
+- tapOn: ".*Quét mã QR.*"
+- waitForAnimationToEnd
+- takeScreenshot: "docs/screenshots/output/latest/21-scanner-light"

@@ -1,5 +1,0 @@
-appId: hieunguyen130701iuh.com.ruby.sgpmobile
----
-- runFlow: "03-register-top.yaml"
-- swipe:
-    direction: UP

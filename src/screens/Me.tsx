@@ -24,6 +24,7 @@ import HeaderBar from "../components/ui/HeaderBar";
 import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../context/ThemeContext";
 import { createUserApi } from "../services/userApi";
+import { componentMetrics, spacing, radius } from "../theme/theme";
 import { textStyle } from "../theme/typography";
 import { useThemedStyles } from "../theme/useThemedStyles";
 
@@ -113,7 +114,9 @@ function ConfirmModal({
                             styles.btn,
                             state.danger ? styles.btnDanger : styles.btnPrimary,
                             pressed && styles.pressedSm,
-                            busy && { opacity: 0.7 },
+                            busy && {
+                                opacity: componentMetrics.buttonBusyOpacity,
+                            },
                         ]}
                         disabled={busy}
                     >
@@ -549,7 +552,7 @@ export default function MeScreen() {
 
             <ScrollView
                 style={{ flex: 1 }}
-                contentContainerStyle={{ padding: 12, paddingBottom: 28 }}
+                contentContainerStyle={styles.scrollContent}
                 showsVerticalScrollIndicator={false}
             >
                 <View style={styles.profileCardShadow}>
@@ -885,7 +888,10 @@ export default function MeScreen() {
                                     styles.btn,
                                     styles.btnPrimary,
                                     pressed && styles.pressedSm,
-                                    pwdBusy && { opacity: 0.7 },
+                                    pwdBusy && {
+                                        opacity:
+                                            componentMetrics.buttonBusyOpacity,
+                                    },
                                 ]}
                                 disabled={pwdBusy}
                             >
@@ -920,19 +926,24 @@ export default function MeScreen() {
 
 const createStyles = (colors: ThemeColors) =>
     StyleSheet.create({
+    scrollContent: {
+        padding: spacing.md,
+        paddingBottom: spacing.xl + spacing.xs,
+    },
+
     pressedSm: {
-        opacity: 0.9,
+        opacity: componentMetrics.pressFeedbackOpacity,
         transform: [{ scale: 0.99 }],
     },
 
     profileCard: {
-        borderRadius: 18,
+        borderRadius: radius.xl,
         borderWidth: 1,
         borderColor: colors.primarySoftBorder,
-        padding: 12,
+        padding: spacing.md,
     },
     profileCardShadow: {
-        borderRadius: 18,
+        borderRadius: radius.xl,
         shadowColor: colors.accent,
         shadowOpacity: 0.18,
         shadowRadius: 10,
@@ -948,12 +959,12 @@ const createStyles = (colors: ThemeColors) =>
     avatarWrap: {
         width: 62,
         height: 62,
-        borderRadius: 18,
+        borderRadius: radius.xl,
     },
     avatarImg: {
         width: 62,
         height: 62,
-        borderRadius: 18,
+        borderRadius: radius.xl,
         backgroundColor: colors.surface,
         borderWidth: 1,
         borderColor: colors.primarySoftBorder,
@@ -961,7 +972,7 @@ const createStyles = (colors: ThemeColors) =>
     avatarFallback: {
         width: 62,
         height: 62,
-        borderRadius: 18,
+        borderRadius: radius.xl,
         backgroundColor: colors.backgroundAlt,
         borderWidth: 1,
         borderColor: colors.primarySoftBorder,
@@ -974,7 +985,7 @@ const createStyles = (colors: ThemeColors) =>
         bottom: -6,
         width: 28,
         height: 28,
-        borderRadius: 14,
+        borderRadius: radius.chip,
         backgroundColor: colors.background,
         borderWidth: 1,
         borderColor: colors.primarySoftBorder,
@@ -1006,7 +1017,7 @@ const createStyles = (colors: ThemeColors) =>
     chip: {
         paddingHorizontal: 10,
         height: 26,
-        borderRadius: 999,
+        borderRadius: radius.pill,
         borderWidth: 1,
         borderColor: colors.primarySoftBorder,
         backgroundColor: colors.backgroundAlt,
@@ -1014,8 +1025,8 @@ const createStyles = (colors: ThemeColors) =>
         justifyContent: "center",
     },
     chipOk: {
-        backgroundColor: "rgba(22,163,74,0.14)",
-        borderColor: "rgba(22,163,74,0.35)",
+        backgroundColor: colors.successSoftBg,
+        borderColor: colors.successSoftBorder,
     },
     chipText: {
         color: colors.text,
@@ -1056,16 +1067,16 @@ const createStyles = (colors: ThemeColors) =>
         alignItems: "center",
         gap: 10,
         height: 52,
-        borderRadius: 14,
+        borderRadius: radius.chip,
         borderWidth: 1,
         borderColor: colors.primarySoftBorder,
         backgroundColor: colors.surface,
-        paddingHorizontal: 12,
+        paddingHorizontal: spacing.md,
     },
     actionIconWrap: {
         width: 34,
         height: 34,
-        borderRadius: 12,
+        borderRadius: radius.base,
         backgroundColor: colors.backgroundAlt,
         borderWidth: 1,
         borderColor: colors.primarySoftBorder,
@@ -1080,11 +1091,11 @@ const createStyles = (colors: ThemeColors) =>
 
     logoutCard: {
         marginTop: 16,
-        borderRadius: 16,
+        borderRadius: radius.lg,
         borderWidth: 1,
-        borderColor: "rgba(220,38,38,0.35)",
-        backgroundColor: "rgba(220,38,38,0.08)",
-        padding: 12,
+        borderColor: colors.dangerSubtleBorder,
+        backgroundColor: colors.dangerSubtleBg,
+        padding: spacing.md,
     },
     logoutBtn: {
         flexDirection: "row",
@@ -1092,10 +1103,10 @@ const createStyles = (colors: ThemeColors) =>
         justifyContent: "center",
         gap: 8,
         height: 46,
-        borderRadius: 14,
+        borderRadius: radius.chip,
         borderWidth: 1,
-        borderColor: "rgba(220,38,38,0.45)",
-        backgroundColor: "rgba(220,38,38,0.18)",
+        borderColor: colors.dangerSoftBorder,
+        backgroundColor: colors.dangerSoftBg,
     },
     logoutText: {
         color: colors.text,
@@ -1117,7 +1128,7 @@ const createStyles = (colors: ThemeColors) =>
     // ===== Overlays / Modals =====
     modalOverlay: {
         ...StyleSheet.absoluteFillObject,
-        backgroundColor: "rgba(2,6,23,0.72)",
+        backgroundColor: colors.backdropCard,
     },
 
     // ===== Change password modal =====
@@ -1126,11 +1137,11 @@ const createStyles = (colors: ThemeColors) =>
         left: 12,
         right: 12,
         top: "22%",
-        borderRadius: 16,
+        borderRadius: radius.lg,
         backgroundColor: colors.background,
         borderWidth: 1,
         borderColor: colors.primarySoftBorder,
-        padding: 12,
+        padding: spacing.md,
     },
     pwdHeader: {
         flexDirection: "row",
@@ -1146,9 +1157,9 @@ const createStyles = (colors: ThemeColors) =>
         flexDirection: "row",
         alignItems: "center",
         gap: 8,
-        paddingHorizontal: 12,
+        paddingHorizontal: spacing.md,
         height: 46,
-        borderRadius: 14,
+        borderRadius: radius.chip,
         backgroundColor: colors.surfaceAlt,
         borderWidth: 1,
         borderColor: colors.primarySoftBorder,
@@ -1171,11 +1182,11 @@ const createStyles = (colors: ThemeColors) =>
         left: 12,
         right: 12,
         top: "22%",
-        borderRadius: 16,
+        borderRadius: radius.lg,
         backgroundColor: colors.background,
         borderWidth: 1,
         borderColor: colors.primarySoftBorder,
-        padding: 12,
+        padding: spacing.md,
         maxHeight: "70%",
     },
 
@@ -1185,11 +1196,11 @@ const createStyles = (colors: ThemeColors) =>
         left: 12,
         right: 12,
         top: "30%",
-        borderRadius: 16,
+        borderRadius: radius.lg,
         backgroundColor: colors.background,
         borderWidth: 1,
         borderColor: colors.primarySoftBorder,
-        padding: 12,
+        padding: spacing.md,
     },
 
     confirmHeader: {
@@ -1214,7 +1225,7 @@ const createStyles = (colors: ThemeColors) =>
 
     confirmMessageBox: {
         marginTop: 6,
-        borderRadius: 12,
+        borderRadius: radius.base,
         borderWidth: 1,
         borderColor: colors.primarySoftBorder,
         backgroundColor: colors.backgroundAlt,
@@ -1242,10 +1253,10 @@ const createStyles = (colors: ThemeColors) =>
     btn: {
         minWidth: 110,
         height: 42,
-        borderRadius: 12,
+        borderRadius: radius.base,
         alignItems: "center",
         justifyContent: "center",
-        paddingHorizontal: 12,
+        paddingHorizontal: spacing.md,
         borderWidth: 1,
     },
     btnGhost: {
@@ -1261,8 +1272,8 @@ const createStyles = (colors: ThemeColors) =>
         borderColor: colors.primaryBorderStrong,
     },
     btnDanger: {
-        backgroundColor: "rgba(220,38,38,0.18)",
-        borderColor: "rgba(220,38,38,0.45)",
+        backgroundColor: colors.dangerSoftBg,
+        borderColor: colors.dangerSoftBorder,
     },
     btnPrimaryText: {
         color: colors.text,

@@ -19,10 +19,10 @@ import { ScreenTitle } from "../components/ui/ScreenTitle";
 import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../context/ThemeContext";
 import { trackTimeToHomeIfPending } from "../services/analytics";
+import { border, elevation, motion, radius, type ThemeColors } from "../theme/theme";
 import { textStyle } from "../theme/typography";
 import { useThemedStyles } from "../theme/useThemedStyles";
 
-import type { ThemeColors } from "../theme/theme";
 import type { RootStackParamList } from "../types/navigation";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
@@ -160,7 +160,7 @@ function FeatureTile({
 
     const handlePressIn = () => {
         Animated.spring(scale, {
-            toValue: 0.97,
+            toValue: motion.pressScale,
             friction: 4,
             tension: 150,
             useNativeDriver: true,
@@ -313,8 +313,9 @@ export default function IndexScreen() {
 const createStyles = (colors: ThemeColors) =>
     StyleSheet.create({
     header: {
-        paddingTop: 8,
+        paddingTop: 12,
         marginBottom: 8,
+        gap: 2,
     },
     headerTopRow: {
         flexDirection: "row",
@@ -325,7 +326,7 @@ const createStyles = (colors: ThemeColors) =>
 
     listContent: {
         paddingBottom: 80,
-        paddingTop: 4,
+        paddingTop: 6,
         alignItems: "center",
     },
     row: {
@@ -335,18 +336,19 @@ const createStyles = (colors: ThemeColors) =>
         minWidth: 0,
     },
     tileShadow: {
-        borderRadius: 18,
+        borderRadius: radius.xl,
         shadowColor: colors.accent,
-        shadowOpacity: 0.22,
-        shadowRadius: 10,
-        elevation: 5,
+        shadowOpacity: elevation.cardShadowOpacity,
+        shadowRadius: elevation.cardShadowRadius,
+        shadowOffset: { width: 0, height: elevation.cardShadowOffsetY },
+        elevation: elevation.cardElevation,
     },
     tile: {
-        minHeight: 136,
-        borderRadius: 18,
+        minHeight: 140,
+        borderRadius: radius.xl,
         justifyContent: "center",
         alignItems: "stretch",
-        borderWidth: 1,
+        borderWidth: border.strong,
         paddingVertical: 12,
         paddingHorizontal: 10,
     },
@@ -358,15 +360,15 @@ const createStyles = (colors: ThemeColors) =>
     },
     iconContainer: {
         position: "relative",
-        backgroundColor: colors.backgroundAlt,
+        backgroundColor: colors.surfaceAlt,
         width: 48,
         height: 48,
-        borderRadius: 14,
+        borderRadius: radius.chip,
         alignItems: "center",
         justifyContent: "center",
         marginBottom: 8,
         borderWidth: 1,
-        borderColor: colors.primarySoftBorder,
+        borderColor: colors.primaryBorderStrong,
         transform: [{ translateX: IOS_MENU_CENTER_OFFSET }],
     },
     tileIcon: {

@@ -1,7 +1,7 @@
 import React from "react";
 import { View, StyleSheet, ViewStyle, StyleProp } from "react-native";
 
-import { radius } from "../../theme/theme";
+import { componentMetrics, elevation } from "../../theme/theme";
 import { useThemedStyles } from "../../theme/useThemedStyles";
 
 import type { ThemeColors } from "../../theme/theme";
@@ -20,13 +20,14 @@ const createStyles = (colors: ThemeColors) =>
     StyleSheet.create({
     card: {
         backgroundColor: colors.surface,
-        padding: 18,
-        borderRadius: radius.lg,
-        borderWidth: 1,
-        borderColor: colors.primarySoftBorder,
+        padding: componentMetrics.appCardPadding,
+        borderRadius: componentMetrics.appCardCornerRadius,
+        borderWidth: componentMetrics.appCardBorderWidth,
+        borderColor: colors.primaryBorderStrong,
         shadowColor: colors.accent,
-        shadowOpacity: 0.18,
-        shadowRadius: 8,
-        elevation: 4,
+        shadowOpacity: elevation.cardShadowOpacity,
+        shadowRadius: elevation.cardShadowRadius,
+        shadowOffset: { width: 0, height: elevation.cardShadowOffsetY },
+        elevation: elevation.cardElevation,
     },
     });

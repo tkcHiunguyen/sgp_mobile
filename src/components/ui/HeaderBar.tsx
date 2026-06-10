@@ -1,6 +1,7 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 
+import { componentMetrics } from "../../theme/theme";
 import { textStyle } from "../../theme/typography";
 import { useThemedStyles } from "../../theme/useThemedStyles";
 import BackButton from "../backButton";
@@ -40,9 +41,9 @@ const createStyles = (colors: ThemeColors) =>
     StyleSheet.create({
     wrapper: {
         width: "100%",
-        paddingHorizontal: 12, // ↓ giảm từ 20 xuống 12
-        paddingTop: 6, // mỏng hơn xíu
-        paddingBottom: 10,
+        paddingHorizontal: componentMetrics.headerPaddingHorizontal,
+        paddingTop: componentMetrics.headerPaddingTop,
+        paddingBottom: componentMetrics.headerPaddingBottom,
         backgroundColor: colors.background,
     },
 
@@ -57,7 +58,6 @@ const createStyles = (colors: ThemeColors) =>
         alignItems: "center",
     },
 
-    // Override style của BackButton để dùng inline, sát viền hơn
     backInline: {
         position: "relative",
         top: 0,
@@ -65,7 +65,7 @@ const createStyles = (colors: ThemeColors) =>
     },
 
     title: {
-        marginTop: 8,
+        marginTop: componentMetrics.headerTitleMarginTop,
         ...textStyle(22, { weight: "900", lineHeightPreset: "tight", letterSpacing: 0.7 }),
         textAlign: "center",
         color: colors.text,

@@ -43,6 +43,9 @@ jobs:
             - name: Lint
               run: pnpm lint
 
+            - name: UI hardcode guard
+              run: pnpm ui:guard
+
             - name: Unit tests
               run: pnpm test --runInBand
 

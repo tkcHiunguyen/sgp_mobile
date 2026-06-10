@@ -20,6 +20,11 @@ import HeaderBar from "../components/ui/HeaderBar";
 import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../context/ThemeContext";
 import { createUserApi } from "../services/userApi";
+import {
+    componentMetrics,
+    radius,
+    type ThemeColors,
+} from "../theme/theme";
 import { textStyle } from "../theme/typography";
 import { useThemedStyles } from "../theme/useThemedStyles";
 import {
@@ -36,7 +41,6 @@ import {
 } from "./adminUsers/hooks/useAdminUsersFilters";
 
 import type { AdminUserRow } from "../services/userApi";
-import type { ThemeColors } from "../theme/theme";
 import type { RootStackParamList } from "../types/navigation";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
@@ -122,7 +126,7 @@ function ConfirmModal({
                             styles.btn,
                             state.danger ? styles.btnDanger : styles.btnPrimary,
                             pressed && styles.pressedSm,
-                            busy && { opacity: 0.7 },
+                            busy && styles.busyDisabled,
                         ]}
                         disabled={busy}
                     >
@@ -188,7 +192,7 @@ function SessionExpiredModal({
                             styles.btn,
                             styles.btnPrimary,
                             pressed && styles.pressedSm,
-                            busy && { opacity: 0.7 },
+                            busy && styles.busyDisabled,
                         ]}
                         disabled={busy}
                     >
@@ -760,7 +764,7 @@ const createStyles = (colors: ThemeColors) =>
         gap: 8,
         paddingHorizontal: 12,
         height: 44,
-        borderRadius: 14,
+        borderRadius: radius.chip,
         backgroundColor: colors.surfaceAlt,
         borderWidth: 1,
         borderColor: colors.primarySoftBorder,
@@ -774,7 +778,7 @@ const createStyles = (colors: ThemeColors) =>
     refreshBtnSm: {
         width: 44,
         height: 44,
-        borderRadius: 14,
+        borderRadius: radius.chip,
         borderWidth: 1,
         borderColor: colors.primarySoftBorder,
         backgroundColor: colors.backgroundAlt,
@@ -790,7 +794,7 @@ const createStyles = (colors: ThemeColors) =>
     tabBtn: {
         flex: 1,
         height: 38,
-        borderRadius: 12,
+        borderRadius: radius.base,
         borderWidth: 1,
         borderColor: colors.primarySoftBorder,
         backgroundColor: colors.backgroundAlt,
@@ -819,7 +823,7 @@ const createStyles = (colors: ThemeColors) =>
         marginHorizontal: 12,
         marginBottom: 10,
         padding: 12,
-        borderRadius: 16,
+        borderRadius: radius.lg,
         backgroundColor: colors.surface,
         borderWidth: 1,
         borderColor: colors.primarySoftBorder,
@@ -851,7 +855,7 @@ const createStyles = (colors: ThemeColors) =>
         gap: 6,
         paddingHorizontal: 10,
         height: 28,
-        borderRadius: 999,
+        borderRadius: radius.pill,
         borderWidth: 1,
         borderColor: colors.primarySoftBorder,
         backgroundColor: colors.backgroundAlt,
@@ -883,18 +887,18 @@ const createStyles = (colors: ThemeColors) =>
     badge: {
         paddingHorizontal: 10,
         height: 28,
-        borderRadius: 999,
+        borderRadius: radius.pill,
         alignItems: "center",
         justifyContent: "center",
         borderWidth: 1,
     },
     badgeOk: {
-        backgroundColor: "rgba(22,163,74,0.14)",
-        borderColor: "rgba(22,163,74,0.4)",
+        backgroundColor: colors.successSoftBg,
+        borderColor: colors.successSoftBorder,
     },
     badgePending: {
-        backgroundColor: "rgba(220,38,38,0.14)",
-        borderColor: "rgba(220,38,38,0.4)",
+        backgroundColor: colors.dangerSoftBg,
+        borderColor: colors.dangerSoftBorder,
     },
     badgeText: {
         color: colors.text,
@@ -902,14 +906,17 @@ const createStyles = (colors: ThemeColors) =>
     },
 
     pressedSm: {
-        opacity: 0.9,
+        opacity: componentMetrics.pressFeedbackOpacity,
         transform: [{ scale: 0.99 }],
+    },
+    busyDisabled: {
+        opacity: componentMetrics.buttonDisabledOpacity,
     },
 
     // ===== Overlays / Modals =====
     modalOverlay: {
         ...StyleSheet.absoluteFillObject,
-        backgroundColor: "rgba(2,6,23,0.72)",
+        backgroundColor: colors.backdropCard,
     },
 
     roleModalCard: {
@@ -917,7 +924,7 @@ const createStyles = (colors: ThemeColors) =>
         left: 12,
         right: 12,
         top: "18%",
-        borderRadius: 16,
+        borderRadius: radius.lg,
         backgroundColor: colors.background,
         borderWidth: 1,
         borderColor: colors.primaryBorderStrong,
@@ -954,7 +961,7 @@ const createStyles = (colors: ThemeColors) =>
         gap: 10,
         paddingHorizontal: 12,
         height: 44,
-        borderRadius: 12,
+        borderRadius: radius.base,
         backgroundColor: colors.surfaceAlt,
         borderWidth: 1,
         borderColor: colors.primarySoftBorder,
@@ -972,7 +979,7 @@ const createStyles = (colors: ThemeColors) =>
         left: 12,
         right: 12,
         top: "32%",
-        borderRadius: 16,
+        borderRadius: radius.lg,
         backgroundColor: colors.background,
         borderWidth: 1,
         borderColor: colors.primarySoftBorder,
@@ -1004,7 +1011,7 @@ const createStyles = (colors: ThemeColors) =>
     btn: {
         minWidth: 110,
         height: 42,
-        borderRadius: 12,
+        borderRadius: radius.base,
         alignItems: "center",
         justifyContent: "center",
         paddingHorizontal: 12,
@@ -1023,8 +1030,8 @@ const createStyles = (colors: ThemeColors) =>
         borderColor: colors.primaryBorderStrong,
     },
     btnDanger: {
-        backgroundColor: "rgba(220,38,38,0.18)",
-        borderColor: "rgba(220,38,38,0.45)",
+        backgroundColor: colors.dangerSoftBg,
+        borderColor: colors.dangerSoftBorder,
     },
     btnPrimaryText: {
         color: colors.text,
@@ -1037,7 +1044,7 @@ const createStyles = (colors: ThemeColors) =>
         left: 12,
         right: 12,
         top: "32%",
-        borderRadius: 16,
+        borderRadius: radius.lg,
         backgroundColor: colors.background,
         borderWidth: 1,
         borderColor: colors.primaryBorderStrong,

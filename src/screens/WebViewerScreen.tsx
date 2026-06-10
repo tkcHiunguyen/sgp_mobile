@@ -2,7 +2,6 @@ import React from "react";
 import { StyleSheet, View } from "react-native";
 import { WebView } from "react-native-webview";
 
-
 import BackButton from "../components/backButton";
 import { useThemedStyles } from "../theme/useThemedStyles";
 import { RootStackParamList } from "../types/navigation";

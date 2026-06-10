@@ -25,6 +25,7 @@ import { getApiBase, getSheetId } from "../config/apiConfig";
 import { useDeviceGroup } from "../context/DeviceGroupContext";
 import { useTheme } from "../context/ThemeContext";
 import { trackScanSuccess } from "../services/analytics";
+import { border, elevation, motion, radius } from "../theme/theme";
 import { textStyle } from "../theme/typography";
 import { useThemedStyles } from "../theme/useThemedStyles";
 import { RootStackParamList } from "../types/navigation";
@@ -162,12 +163,12 @@ export default function ScannerScreen({ navigation }: Props) {
             Animated.sequence([
                 Animated.timing(captureAnim, {
                     toValue: 1,
-                    duration: 220,
+                    duration: motion.baseDuration,
                     useNativeDriver: true,
                 }),
                 Animated.timing(captureAnim, {
                     toValue: 0,
-                    duration: 180,
+                    duration: motion.fastDuration,
                     useNativeDriver: true,
                 }),
             ]).start(() => {
@@ -459,6 +460,12 @@ export default function ScannerScreen({ navigation }: Props) {
                 <View style={styles.overlayBottom} />
             </View>
 
+            <View style={styles.scanHintWrap}>
+                <Text style={styles.scanHintText}>
+                    Dua ma QR vao khung de quet nhanh
+                </Text>
+            </View>
+
             {/* ✅ FIX: đặt theo top động */}
             <TouchableOpacity
                 style={[styles.flashBtn, { top: flashTop }]}
@@ -496,27 +503,27 @@ const createStyles = (colors: ThemeColors) =>
     overlayTop: {
         flex: 1,
         width: "100%",
-        backgroundColor: "rgba(0,0,0,0.6)",
+        backgroundColor: colors.overlayStrong,
     },
     overlayBottom: {
         flex: 1,
         width: "100%",
-        backgroundColor: "rgba(0,0,0,0.6)",
+        backgroundColor: colors.overlayStrong,
     },
     overlayCenter: {
         flexDirection: "row",
     },
     overlaySide: {
         flex: 1,
-        backgroundColor: "rgba(0,0,0,0.6)",
+        backgroundColor: colors.overlayStrong,
     },
 
     scannerBox: {
         width: SCAN_SIZE,
         height: SCAN_SIZE,
-        borderWidth: 2,
+        borderWidth: border.focus,
         borderColor: colors.success,
-        borderRadius: 20,
+        borderRadius: radius.xl,
         backgroundColor: "transparent",
         position: "relative",
     },
@@ -532,28 +539,28 @@ const createStyles = (colors: ThemeColors) =>
         left: -2,
         borderLeftWidth: 4,
         borderTopWidth: 4,
-        borderTopLeftRadius: 16,
+        borderTopLeftRadius: radius.lg,
     },
     cornerTR: {
         top: -2,
         right: -2,
         borderRightWidth: 4,
         borderTopWidth: 4,
-        borderTopRightRadius: 16,
+        borderTopRightRadius: radius.lg,
     },
     cornerBL: {
         bottom: -2,
         left: -2,
         borderLeftWidth: 4,
         borderBottomWidth: 4,
-        borderBottomLeftRadius: 16,
+        borderBottomLeftRadius: radius.lg,
     },
     cornerBR: {
         bottom: -2,
         right: -2,
         borderRightWidth: 4,
         borderBottomWidth: 4,
-        borderBottomRightRadius: 16,
+        borderBottomRightRadius: radius.lg,
     },
 
     flashBtn: {
@@ -561,19 +568,25 @@ const createStyles = (colors: ThemeColors) =>
         alignSelf: "center",
         width: 70,
         height: 70,
-        borderRadius: 35,
-        backgroundColor: "rgba(0,0,0,0.6)",
+        borderRadius: radius.pill,
+        backgroundColor: colors.overlayStrong,
+        borderWidth: border.subtle,
+        borderColor: colors.primaryBorderStrong,
         justifyContent: "center",
         alignItems: "center",
+        shadowColor: colors.accent,
+        shadowOpacity: elevation.buttonShadowOpacity,
+        shadowRadius: elevation.buttonShadowRadius,
+        shadowOffset: { width: 0, height: elevation.buttonShadowOffsetY },
+        elevation: elevation.buttonElevation,
         zIndex: 50,
-        elevation: 50,
     },
 
     modalBackground: {
         flex: 1,
         justifyContent: "center",
         alignItems: "center",
-        backgroundColor: "rgba(0,0,0,0.5)",
+        backgroundColor: colors.overlayMedium,
     },
     addCornerBtn: {
         position: "absolute",
@@ -596,7 +609,9 @@ const createStyles = (colors: ThemeColors) =>
     btnBase: {
         paddingVertical: 14,
         paddingHorizontal: 12,
-        borderRadius: 10,
+        borderRadius: radius.md,
+        borderWidth: border.subtle,
+        borderColor: colors.primaryBorderStrong,
         alignItems: "center",
         justifyContent: "center",
         minHeight: 44,
@@ -620,9 +635,19 @@ const createStyles = (colors: ThemeColors) =>
     },
     okBtn: {
         backgroundColor: colors.success,
+        shadowColor: colors.success,
+        shadowOpacity: elevation.buttonShadowOpacity,
+        shadowRadius: elevation.buttonShadowRadius,
+        shadowOffset: { width: 0, height: elevation.buttonShadowOffsetY },
+        elevation: elevation.buttonElevation,
     },
     cancelBtn: {
         backgroundColor: colors.danger,
+        shadowColor: colors.danger,
+        shadowOpacity: elevation.buttonShadowOpacity,
+        shadowRadius: elevation.buttonShadowRadius,
+        shadowOffset: { width: 0, height: elevation.buttonShadowOffsetY },
+        elevation: elevation.buttonElevation,
     },
     closeBtn: {
         backgroundColor: colors.danger,
@@ -647,7 +672,7 @@ const createStyles = (colors: ThemeColors) =>
     },
     historyContainer: {
         maxHeight: 260,
-        borderRadius: 12,
+        borderRadius: radius.base,
         borderWidth: 1,
         borderColor: colors.primarySoftBorder,
         backgroundColor: colors.background,
@@ -681,15 +706,15 @@ const createStyles = (colors: ThemeColors) =>
     popup: {
         width: "90%",
         padding: 26,
-        borderRadius: 18,
+        borderRadius: radius.xl,
         backgroundColor: colors.surface,
         shadowColor: colors.accent,
-        shadowOpacity: 0.35,
-        shadowRadius: 12,
-        shadowOffset: { width: 0, height: 6 },
-        elevation: 12,
-        borderWidth: 1,
-        borderColor: colors.primarySoftBorder,
+        shadowOpacity: elevation.modalShadowOpacity,
+        shadowRadius: elevation.modalShadowRadius,
+        shadowOffset: { width: 0, height: elevation.modalShadowOffsetY },
+        elevation: elevation.modalElevation,
+        borderWidth: border.strong,
+        borderColor: colors.primaryBorderStrong,
         maxHeight: "80%",
         position: "relative",
         overflow: "visible",
@@ -719,10 +744,10 @@ const createStyles = (colors: ThemeColors) =>
         alignItems: "flex-start",
         justifyContent: "space-between",
         padding: 14,
-        borderRadius: 16,
-        backgroundColor: colors.backgroundAlt,
-        borderWidth: 1,
-        borderColor: colors.primarySoftBorder,
+        borderRadius: radius.lg,
+        backgroundColor: colors.surfaceAlt,
+        borderWidth: border.subtle,
+        borderColor: colors.primaryBorderStrong,
         marginBottom: 12,
     },
     headerLeft: {
@@ -737,12 +762,12 @@ const createStyles = (colors: ThemeColors) =>
     headerIconWrap: {
         width: 36,
         height: 36,
-        borderRadius: 12,
+        borderRadius: radius.base,
         alignItems: "center",
         justifyContent: "center",
         backgroundColor: colors.backgroundAlt,
-        borderWidth: 1,
-        borderColor: colors.primarySoftBorder,
+        borderWidth: border.subtle,
+        borderColor: colors.primaryBorderStrong,
         marginRight: 10,
     },
 
@@ -771,10 +796,10 @@ const createStyles = (colors: ThemeColors) =>
         alignItems: "center",
         paddingHorizontal: 10,
         paddingVertical: 6,
-        borderRadius: 999,
-        backgroundColor: "rgba(22,163,74,0.18)",
+        borderRadius: radius.pill,
+        backgroundColor: colors.successSoftBg,
         borderWidth: 1,
-        borderColor: "rgba(22,163,74,0.35)",
+        borderColor: colors.successSoftBorder,
         marginRight: 8,
         marginBottom: 8,
     },
@@ -788,10 +813,10 @@ const createStyles = (colors: ThemeColors) =>
         alignItems: "center",
         paddingHorizontal: 10,
         paddingVertical: 6,
-        borderRadius: 999,
-        backgroundColor: colors.backgroundAlt,
-        borderWidth: 1,
-        borderColor: colors.primarySoftBorder,
+        borderRadius: radius.pill,
+        backgroundColor: colors.surfaceAlt,
+        borderWidth: border.subtle,
+        borderColor: colors.primaryBorderStrong,
         marginBottom: 8,
     },
     badgeCountText: {
@@ -801,10 +826,10 @@ const createStyles = (colors: ThemeColors) =>
     },
 
     historyWrap2: {
-        borderRadius: 16,
-        backgroundColor: colors.backgroundAlt,
-        borderWidth: 1,
-        borderColor: colors.primarySoftBorder,
+        borderRadius: radius.lg,
+        backgroundColor: colors.surfaceAlt,
+        borderWidth: border.subtle,
+        borderColor: colors.primaryBorderStrong,
         padding: 12,
         marginBottom: 10,
     },
@@ -817,10 +842,10 @@ const createStyles = (colors: ThemeColors) =>
         alignItems: "center",
         paddingVertical: 14,
         paddingHorizontal: 12,
-        borderRadius: 12,
-        backgroundColor: colors.backgroundAlt,
-        borderWidth: 1,
-        borderColor: colors.primarySoftBorder,
+        borderRadius: radius.base,
+        backgroundColor: colors.surfaceAlt,
+        borderWidth: border.subtle,
+        borderColor: colors.primaryBorderStrong,
     },
     emptyText: {
         marginLeft: 8,
@@ -830,11 +855,27 @@ const createStyles = (colors: ThemeColors) =>
 
     historyCard: {
         padding: 12,
-        borderRadius: 14,
-        backgroundColor: colors.surfaceAlt,
-        borderWidth: 1,
-        borderColor: colors.primarySoftBorder,
+        borderRadius: radius.chip,
+        backgroundColor: colors.surface,
+        borderWidth: border.subtle,
+        borderColor: colors.primaryBorderStrong,
         marginBottom: 10,
+    },
+    scanHintWrap: {
+        position: "absolute",
+        bottom: 146,
+        alignSelf: "center",
+        paddingHorizontal: 14,
+        paddingVertical: 8,
+        borderRadius: radius.pill,
+        borderWidth: border.subtle,
+        borderColor: colors.primaryBorderStrong,
+        backgroundColor: colors.backdropCard,
+    },
+    scanHintText: {
+        color: colors.onPrimary,
+        ...textStyle(12.5, { weight: "700", lineHeightPreset: "tight" }),
+        textAlign: "center",
     },
     historyCardTop: {
         flexDirection: "row",

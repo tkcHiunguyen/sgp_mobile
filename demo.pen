@@ -1,0 +1,857 @@
+{
+  "version": "2.8",
+  "children": [
+    {
+      "type": "frame",
+      "id": "bi8Au",
+      "x": 0,
+      "y": 0,
+      "name": "Frame",
+      "clip": true,
+      "width": 800,
+      "height": 600,
+      "fill": "#FFFFFF",
+      "layout": "none"
+    },
+    {
+      "type": "frame",
+      "id": "eW7yC",
+      "x": 120,
+      "y": 120,
+      "name": "Starter Project",
+      "width": 1200,
+      "height": 760,
+      "fill": "#F8FAFC",
+      "layout": "vertical",
+      "gap": 20,
+      "padding": 24,
+      "children": [
+        {
+          "type": "frame",
+          "id": "jd2ys",
+          "name": "Header",
+          "width": "fill_container",
+          "height": 88,
+          "fill": "#FFFFFF",
+          "cornerRadius": 14,
+          "padding": 20,
+          "justifyContent": "space_between",
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "frame",
+              "id": "UBiOs",
+              "name": "titleWrap",
+              "layout": "vertical",
+              "gap": 6,
+              "children": [
+                {
+                  "type": "text",
+                  "id": "uf6oQ",
+                  "name": "title",
+                  "fill": "#0F172A",
+                  "content": "Pencil Project",
+                  "fontFamily": "Inter",
+                  "fontSize": 30,
+                  "fontWeight": "700"
+                },
+                {
+                  "type": "text",
+                  "id": "E9aei",
+                  "name": "subtitle",
+                  "fill": "#64748B",
+                  "content": "Current app baseline documented",
+                  "fontFamily": "Inter",
+                  "fontSize": 14,
+                  "fontWeight": "500"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "KWKyx",
+              "name": "status",
+              "width": 130,
+              "height": 38,
+              "fill": "#DCFCE7",
+              "cornerRadius": 999,
+              "justifyContent": "center",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "dRtos",
+                  "name": "statusText",
+                  "fill": "#166534",
+                  "content": "Ready",
+                  "fontFamily": "Inter",
+                  "fontSize": 14,
+                  "fontWeight": "700"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "NirxD",
+          "name": "Content",
+          "width": "fill_container",
+          "height": "fill_container",
+          "gap": 20,
+          "children": [
+            {
+              "type": "frame",
+              "id": "f6v5T",
+              "name": "leftCol",
+              "width": "fill_container",
+              "height": "fill_container",
+              "layout": "vertical",
+              "gap": 16,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "juxWF",
+                  "name": "cardA",
+                  "width": "fill_container",
+                  "height": 220,
+                  "fill": "#FFFFFF",
+                  "cornerRadius": 14,
+                  "layout": "vertical",
+                  "gap": 12,
+                  "padding": 18,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "p89kL",
+                      "name": "cardATitle",
+                      "fill": "#0F172A",
+                      "content": "Project Information",
+                      "fontFamily": "Inter",
+                      "fontSize": 22,
+                      "fontWeight": "700"
+                    },
+                    {
+                      "type": "text",
+                      "id": "fWcfD",
+                      "name": "cardABody",
+                      "fill": "#334155",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "Dự án đã import đầy đủ các màn hình hiện tại để làm baseline. Từ đây có thể chuẩn hóa UI system và dựng flow prototype.",
+                      "lineHeight": 1.4,
+                      "fontFamily": "Inter",
+                      "fontSize": 15,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "CU2UN",
+                  "name": "cardB",
+                  "width": "fill_container",
+                  "height": "fill_container",
+                  "fill": "#FFFFFF",
+                  "cornerRadius": 14,
+                  "layout": "vertical",
+                  "gap": 10,
+                  "padding": 18,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "2aofH",
+                      "name": "cardBTitle",
+                      "fill": "#0F172A",
+                      "content": "Scope",
+                      "fontFamily": "Inter",
+                      "fontSize": 20,
+                      "fontWeight": "700"
+                    },
+                    {
+                      "type": "text",
+                      "id": "8yuG2",
+                      "name": "task1",
+                      "fill": "#1E293B",
+                      "content": "• Auth: login, quên mật khẩu, đăng ký",
+                      "fontFamily": "Inter",
+                      "fontSize": 15,
+                      "fontWeight": "500"
+                    },
+                    {
+                      "type": "text",
+                      "id": "AIbBM",
+                      "name": "task2",
+                      "fill": "#1E293B",
+                      "content": "• Navigation + Profile + Info + Admin",
+                      "fontFamily": "Inter",
+                      "fontSize": 15,
+                      "fontWeight": "500"
+                    },
+                    {
+                      "type": "text",
+                      "id": "0SH2K",
+                      "name": "task3",
+                      "fill": "#1E293B",
+                      "content": "• Device + History + Settings",
+                      "fontFamily": "Inter",
+                      "fontSize": 15,
+                      "fontWeight": "500"
+                    },
+                    {
+                      "type": "text",
+                      "id": "RT7Q0",
+                      "name": "scope4",
+                      "fill": "#1E293B",
+                      "content": "• Tổng cộng: 18 màn hình hiện tại",
+                      "fontFamily": "Inter",
+                      "fontSize": 15,
+                      "fontWeight": "500"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "78mTG",
+              "name": "rightCol",
+              "width": 330,
+              "height": "fill_container",
+              "layout": "vertical",
+              "gap": 16,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "Ta3Tb",
+                  "name": "sideCard",
+                  "width": "fill_container",
+                  "fill": "#0F172A",
+                  "cornerRadius": 14,
+                  "layout": "vertical",
+                  "gap": 10,
+                  "padding": 18,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "XTT1G",
+                      "name": "sideTitle",
+                      "fill": "#E2E8F0",
+                      "content": "Next Actions",
+                      "fontFamily": "Inter",
+                      "fontSize": 18,
+                      "fontWeight": "700"
+                    },
+                    {
+                      "type": "text",
+                      "id": "X0P40",
+                      "name": "sideBody",
+                      "fill": "#CBD5E1",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "1) Chốt design tokens (màu, typography, spacing)\n2) Tạo components chuẩn (button, input, card, modal)\n3) Dựng lại flow chính thành prototype có thể demo",
+                      "lineHeight": 1.45,
+                      "fontFamily": "Inter",
+                      "fontSize": 14,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "A8rDj",
+      "x": 1360,
+      "y": 120,
+      "name": "App Screenshots",
+      "width": 430,
+      "height": 900,
+      "fill": "#F1F5F9",
+      "layout": "vertical",
+      "gap": 12,
+      "padding": 16,
+      "children": [
+        {
+          "type": "text",
+          "id": "zouzk",
+          "name": "cap",
+          "fill": "#0F172A",
+          "content": "Imported Screens",
+          "fontFamily": "Inter",
+          "fontSize": 18,
+          "fontWeight": "700"
+        },
+        {
+          "type": "frame",
+          "id": "quy2f",
+          "name": "imgWrap",
+          "width": "fill_container",
+          "height": "fill_container",
+          "layout": "vertical",
+          "padding": 8,
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "frame",
+              "id": "s1PJi",
+              "name": "img",
+              "width": 270,
+              "height": 540,
+              "fill": {
+                "type": "image",
+                "enabled": true,
+                "url": "/Users/ruby/sgp_mobile/app_screenshots_project/renamed/auth/auth-login-main.png",
+                "mode": "fit"
+              },
+              "cornerRadius": 12
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "TU0eN",
+      "x": 120,
+      "y": 940,
+      "name": "App Current Screens",
+      "width": 1800,
+      "height": 1240,
+      "fill": "#E2E8F0",
+      "layout": "vertical",
+      "gap": 14,
+      "padding": 20,
+      "children": [
+        {
+          "type": "text",
+          "id": "wxZZG",
+          "name": "libTitle",
+          "fill": "#0F172A",
+          "content": "Current App Frames",
+          "fontFamily": "Inter",
+          "fontSize": 24,
+          "fontWeight": "700"
+        },
+        {
+          "type": "frame",
+          "id": "ifjNd",
+          "name": "Redesign Plan",
+          "width": "fill_container",
+          "fill": "#FFFFFF",
+          "cornerRadius": 12,
+          "stroke": {
+            "thickness": 1,
+            "fill": "#CBD5E1"
+          },
+          "layout": "vertical",
+          "gap": 10,
+          "padding": 16,
+          "children": [
+            {
+              "type": "text",
+              "id": "nTUPF",
+              "name": "line1",
+              "fill": "#0F172A",
+              "content": "Ke hoach thiet ke lai giao dien",
+              "fontFamily": "Inter",
+              "fontSize": 20,
+              "fontWeight": "700"
+            },
+            {
+              "type": "text",
+              "id": "AECAH",
+              "name": "line2",
+              "fill": "#1E293B",
+              "content": "1. Khao sat: tong hop man hinh hien tai, pain points, hanh vi nguoi dung.",
+              "fontFamily": "Inter",
+              "fontSize": 14,
+              "fontWeight": "500"
+            },
+            {
+              "type": "text",
+              "id": "EVur0",
+              "name": "line3",
+              "fill": "#1E293B",
+              "content": "2. Dinh huong visual: mau chu dao, typography, component va quy tac spacing.",
+              "fontFamily": "Inter",
+              "fontSize": 14,
+              "fontWeight": "500"
+            },
+            {
+              "type": "text",
+              "id": "m4TSs",
+              "name": "line4",
+              "fill": "#1E293B",
+              "content": "3. Uu tien UX: don gian hoa luong chinh, toi uu dieu huong, tang kha nang doc.",
+              "fontFamily": "Inter",
+              "fontSize": 14,
+              "fontWeight": "500"
+            },
+            {
+              "type": "text",
+              "id": "E0DnH",
+              "name": "line5",
+              "fill": "#1E293B",
+              "content": "4. Prototype + test nhanh voi 5-7 nguoi dung, do completion rate va time-on-task.",
+              "fontFamily": "Inter",
+              "fontSize": 14,
+              "fontWeight": "500"
+            },
+            {
+              "type": "text",
+              "id": "8NpMU",
+              "name": "line6",
+              "fill": "#1E293B",
+              "content": "5. Chot ban UI moi, ban giao design system va roadmap implement theo sprint.",
+              "fontFamily": "Inter",
+              "fontSize": 14,
+              "fontWeight": "500"
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "0toPu",
+          "name": "Buoc 1 - Khao sat",
+          "width": "fill_container",
+          "fill": "#FFFFFF",
+          "cornerRadius": 12,
+          "stroke": {
+            "thickness": 1,
+            "fill": "#CBD5E1"
+          },
+          "layout": "vertical",
+          "gap": 12,
+          "padding": 16,
+          "children": [
+            {
+              "type": "text",
+              "id": "gzbLj",
+              "name": "title",
+              "fill": "#0F172A",
+              "content": "Buoc 1 - Khao sat hien trang",
+              "fontFamily": "Inter",
+              "fontSize": 18,
+              "fontWeight": "700"
+            },
+            {
+              "type": "text",
+              "id": "3m09H",
+              "name": "objective",
+              "fill": "#334155",
+              "content": "Muc tieu: hieu ro van de UX/UI hien tai truoc khi thiet ke lai.",
+              "fontFamily": "Inter",
+              "fontSize": 13,
+              "fontWeight": "500"
+            },
+            {
+              "type": "text",
+              "id": "HJ91z",
+              "name": "check1",
+              "fill": "#1E293B",
+              "content": "[ ] Tong hop tat ca man hinh hien tai va nhom theo luong (onboarding, giao dich, cai dat...).",
+              "fontFamily": "Inter",
+              "fontSize": 14,
+              "fontWeight": "500"
+            },
+            {
+              "type": "text",
+              "id": "vHvpu",
+              "name": "check2",
+              "fill": "#1E293B",
+              "content": "[ ] Danh dau pain points: roi man hinh, thao tac lap, kho doc, kho tim tinh nang.",
+              "fontFamily": "Inter",
+              "fontSize": 14,
+              "fontWeight": "500"
+            },
+            {
+              "type": "text",
+              "id": "aW01l",
+              "name": "check3",
+              "fill": "#1E293B",
+              "content": "[ ] Thu thap du lieu: completion rate, time-on-task, ti le bo giua chung.",
+              "fontFamily": "Inter",
+              "fontSize": 14,
+              "fontWeight": "500"
+            },
+            {
+              "type": "text",
+              "id": "YEyrI",
+              "name": "check4",
+              "fill": "#1E293B",
+              "content": "[ ] Phong van nhanh 5-7 nguoi dung theo 3 nhiem vu chinh cua app.",
+              "fontFamily": "Inter",
+              "fontSize": 14,
+              "fontWeight": "500"
+            },
+            {
+              "type": "text",
+              "id": "a1Ib7",
+              "name": "check5",
+              "fill": "#1E293B",
+              "content": "[ ] Chot danh sach 5 van de uu tien cao nhat de dua vao redesign scope.",
+              "fontFamily": "Inter",
+              "fontSize": 14,
+              "fontWeight": "500"
+            },
+            {
+              "type": "frame",
+              "id": "x3IWG",
+              "name": "Survey Notes",
+              "width": "fill_container",
+              "fill": "#F8FAFC",
+              "cornerRadius": 10,
+              "stroke": {
+                "thickness": 1,
+                "fill": "#E2E8F0"
+              },
+              "layout": "vertical",
+              "gap": 8,
+              "padding": 12,
+              "children": [
+                {
+                  "type": "text",
+                  "id": "oCI0W",
+                  "name": "resultTitle",
+                  "fill": "#0F172A",
+                  "content": "Ket qua tom tat (dien sau khi khao sat)",
+                  "fontFamily": "Inter",
+                  "fontSize": 13,
+                  "fontWeight": "700"
+                },
+                {
+                  "type": "text",
+                  "id": "Ct8yt",
+                  "name": "resultLine1",
+                  "fill": "#334155",
+                  "content": "- Van de 1:",
+                  "fontFamily": "Inter",
+                  "fontSize": 13,
+                  "fontWeight": "500"
+                },
+                {
+                  "type": "text",
+                  "id": "uLMIK",
+                  "name": "resultLine2",
+                  "fill": "#334155",
+                  "content": "- Van de 2:",
+                  "fontFamily": "Inter",
+                  "fontSize": 13,
+                  "fontWeight": "500"
+                },
+                {
+                  "type": "text",
+                  "id": "YwAez",
+                  "name": "resultLine3",
+                  "fill": "#334155",
+                  "content": "- Van de 3:",
+                  "fontFamily": "Inter",
+                  "fontSize": 13,
+                  "fontWeight": "500"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "vqWaE",
+          "name": "rows",
+          "width": "fill_container",
+          "height": "fill_container",
+          "layout": "vertical",
+          "gap": 14,
+          "children": [
+            {
+              "type": "frame",
+              "id": "msyrA",
+              "name": "r1",
+              "width": "fill_container",
+              "height": "fill_container",
+              "gap": 14,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "91eRU",
+                  "name": "i1",
+                  "width": "fill_container",
+                  "height": "fill_container",
+                  "fill": {
+                    "type": "image",
+                    "enabled": true,
+                    "url": "/Users/ruby/sgp_mobile/app_screenshots_project/renamed/admin/admin-users-list.png",
+                    "mode": "fit"
+                  },
+                  "cornerRadius": 10
+                },
+                {
+                  "type": "frame",
+                  "id": "6oJre",
+                  "name": "i2",
+                  "width": "fill_container",
+                  "height": "fill_container",
+                  "fill": {
+                    "type": "image",
+                    "enabled": true,
+                    "url": "/Users/ruby/sgp_mobile/app_screenshots_project/renamed/auth/auth-login-forgot-password-step1.png",
+                    "mode": "fit"
+                  },
+                  "cornerRadius": 10
+                },
+                {
+                  "type": "frame",
+                  "id": "zPG8y",
+                  "name": "i3",
+                  "width": "fill_container",
+                  "height": "fill_container",
+                  "fill": {
+                    "type": "image",
+                    "enabled": true,
+                    "url": "/Users/ruby/sgp_mobile/app_screenshots_project/renamed/auth/auth-login-main.png",
+                    "mode": "fit"
+                  },
+                  "cornerRadius": 10
+                },
+                {
+                  "type": "frame",
+                  "id": "9Jv8R",
+                  "name": "i4",
+                  "width": "fill_container",
+                  "height": "fill_container",
+                  "fill": {
+                    "type": "image",
+                    "enabled": true,
+                    "url": "/Users/ruby/sgp_mobile/app_screenshots_project/renamed/auth/auth-register-form-middle.png",
+                    "mode": "fit"
+                  },
+                  "cornerRadius": 10
+                },
+                {
+                  "type": "frame",
+                  "id": "lVfmT",
+                  "name": "i5",
+                  "width": "fill_container",
+                  "height": "fill_container",
+                  "fill": {
+                    "type": "image",
+                    "enabled": true,
+                    "url": "/Users/ruby/sgp_mobile/app_screenshots_project/renamed/auth/auth-register-form-top.png",
+                    "mode": "fit"
+                  },
+                  "cornerRadius": 10
+                },
+                {
+                  "type": "frame",
+                  "id": "d4tNm",
+                  "name": "i6",
+                  "width": "fill_container",
+                  "height": "fill_container",
+                  "fill": {
+                    "type": "image",
+                    "enabled": true,
+                    "url": "/Users/ruby/sgp_mobile/app_screenshots_project/renamed/device/device-acelli-modal.png",
+                    "mode": "fit"
+                  },
+                  "cornerRadius": 10
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "inhC9",
+              "name": "r2",
+              "width": "fill_container",
+              "height": "fill_container",
+              "gap": 14,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "7uKQ1",
+                  "name": "i7",
+                  "width": "fill_container",
+                  "height": "fill_container",
+                  "fill": {
+                    "type": "image",
+                    "enabled": true,
+                    "url": "/Users/ruby/sgp_mobile/app_screenshots_project/renamed/device/device-add-history-modal.png",
+                    "mode": "fit"
+                  },
+                  "cornerRadius": 10
+                },
+                {
+                  "type": "frame",
+                  "id": "tQGCc",
+                  "name": "i8",
+                  "width": "fill_container",
+                  "height": "fill_container",
+                  "fill": {
+                    "type": "image",
+                    "enabled": true,
+                    "url": "/Users/ruby/sgp_mobile/app_screenshots_project/renamed/device/device-list-top.png",
+                    "mode": "fit"
+                  },
+                  "cornerRadius": 10
+                },
+                {
+                  "type": "frame",
+                  "id": "PB1OO",
+                  "name": "i9",
+                  "width": "fill_container",
+                  "height": "fill_container",
+                  "fill": {
+                    "type": "image",
+                    "enabled": true,
+                    "url": "/Users/ruby/sgp_mobile/app_screenshots_project/renamed/history/history-acelli-main.png",
+                    "mode": "fit"
+                  },
+                  "cornerRadius": 10
+                },
+                {
+                  "type": "frame",
+                  "id": "XfPxp",
+                  "name": "i10",
+                  "width": "fill_container",
+                  "height": "fill_container",
+                  "fill": {
+                    "type": "image",
+                    "enabled": true,
+                    "url": "/Users/ruby/sgp_mobile/app_screenshots_project/renamed/history/history-filter-date.png",
+                    "mode": "fit"
+                  },
+                  "cornerRadius": 10
+                },
+                {
+                  "type": "frame",
+                  "id": "NdnQY",
+                  "name": "i11",
+                  "width": "fill_container",
+                  "height": "fill_container",
+                  "fill": {
+                    "type": "image",
+                    "enabled": true,
+                    "url": "/Users/ruby/sgp_mobile/app_screenshots_project/renamed/history/history-filter-device.png",
+                    "mode": "fit"
+                  },
+                  "cornerRadius": 10
+                },
+                {
+                  "type": "frame",
+                  "id": "mRSSa",
+                  "name": "i12",
+                  "width": "fill_container",
+                  "height": "fill_container",
+                  "fill": {
+                    "type": "image",
+                    "enabled": true,
+                    "url": "/Users/ruby/sgp_mobile/app_screenshots_project/renamed/history/history-list-top.png",
+                    "mode": "fit"
+                  },
+                  "cornerRadius": 10
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "92Jcr",
+              "name": "r3",
+              "width": "fill_container",
+              "height": "fill_container",
+              "gap": 14,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "d3F7n",
+                  "name": "i13",
+                  "width": "fill_container",
+                  "height": "fill_container",
+                  "fill": {
+                    "type": "image",
+                    "enabled": true,
+                    "url": "/Users/ruby/sgp_mobile/app_screenshots_project/renamed/info/info-about-app.png",
+                    "mode": "fit"
+                  },
+                  "cornerRadius": 10
+                },
+                {
+                  "type": "frame",
+                  "id": "2Wiid",
+                  "name": "i14",
+                  "width": "fill_container",
+                  "height": "fill_container",
+                  "fill": {
+                    "type": "image",
+                    "enabled": true,
+                    "url": "/Users/ruby/sgp_mobile/app_screenshots_project/renamed/navigation/navigation-main-menu-primary.png",
+                    "mode": "fit"
+                  },
+                  "cornerRadius": 10
+                },
+                {
+                  "type": "frame",
+                  "id": "E8IUc",
+                  "name": "i15",
+                  "width": "fill_container",
+                  "height": "fill_container",
+                  "fill": {
+                    "type": "image",
+                    "enabled": true,
+                    "url": "/Users/ruby/sgp_mobile/app_screenshots_project/renamed/navigation/navigation-main-menu-secondary.png",
+                    "mode": "fit"
+                  },
+                  "cornerRadius": 10
+                },
+                {
+                  "type": "frame",
+                  "id": "5rWwA",
+                  "name": "i16",
+                  "width": "fill_container",
+                  "height": "fill_container",
+                  "fill": {
+                    "type": "image",
+                    "enabled": true,
+                    "url": "/Users/ruby/sgp_mobile/app_screenshots_project/renamed/profile/profile-account-overview.png",
+                    "mode": "fit"
+                  },
+                  "cornerRadius": 10
+                },
+                {
+                  "type": "frame",
+                  "id": "Cpbnz",
+                  "name": "i17",
+                  "width": "fill_container",
+                  "height": "fill_container",
+                  "fill": {
+                    "type": "image",
+                    "enabled": true,
+                    "url": "/Users/ruby/sgp_mobile/app_screenshots_project/renamed/settings/settings-general-main.png",
+                    "mode": "fit"
+                  },
+                  "cornerRadius": 10
+                },
+                {
+                  "type": "frame",
+                  "id": "IvDpA",
+                  "name": "i18",
+                  "width": "fill_container",
+                  "height": "fill_container",
+                  "fill": {
+                    "type": "image",
+                    "enabled": true,
+                    "url": "/Users/ruby/sgp_mobile/app_screenshots_project/renamed/settings/settings-general-secondary.png",
+                    "mode": "fit"
+                  },
+                  "cornerRadius": 10
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

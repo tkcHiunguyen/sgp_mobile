@@ -9,7 +9,7 @@ import {
     ViewStyle,
 } from "react-native";
 
-import { radius } from "../../theme/theme";
+import { componentMetrics, elevation, radius } from "../../theme/theme";
 import { MIN_TOUCH_TARGET_SIZE } from "../../theme/touchTargets";
 import { textStyle } from "../../theme/typography";
 import { useThemedStyles } from "../../theme/useThemedStyles";
@@ -38,7 +38,7 @@ export function AppButton({
 
     return (
         <TouchableOpacity
-            activeOpacity={0.8}
+            activeOpacity={componentMetrics.buttonActiveOpacity}
             onPress={onPress}
             disabled={disabled}
             style={[
@@ -63,34 +63,46 @@ export function AppButton({
 const createStyles = (colors: ThemeColors) =>
     StyleSheet.create({
     base: {
-        paddingVertical: 12,
-        paddingHorizontal: 14,
+        paddingVertical: componentMetrics.buttonPaddingVertical,
+        paddingHorizontal: componentMetrics.buttonPaddingHorizontal,
         minHeight: MIN_TOUCH_TARGET_SIZE,
         borderRadius: radius.md,
-        borderWidth: 1,
+        borderWidth: componentMetrics.buttonBorderWidth,
         alignItems: "center",
         justifyContent: "center",
     },
     primary: {
         backgroundColor: colors.primary,
-        borderColor: colors.primary,
+        borderColor: colors.primaryBorderStrong,
+        shadowColor: colors.accent,
+        shadowOpacity: elevation.buttonShadowOpacity,
+        shadowRadius: elevation.buttonShadowRadius,
+        shadowOffset: { width: 0, height: elevation.buttonShadowOffsetY },
+        elevation: elevation.buttonElevation,
     },
     danger: {
         backgroundColor: colors.danger,
-        borderColor: colors.danger,
+        borderColor: colors.dangerSoftBorder,
+        shadowColor: colors.danger,
+        shadowOpacity: elevation.buttonShadowOpacity,
+        shadowRadius: elevation.buttonShadowRadius,
+        shadowOffset: { width: 0, height: elevation.buttonShadowOffsetY },
+        elevation: elevation.buttonElevation,
     },
     secondary: {
-        backgroundColor: colors.surface,
+        backgroundColor: colors.surfaceAlt,
         borderColor: colors.primarySoftBorder,
     },
     disabled: {
-        opacity: 0.6,
+        opacity: componentMetrics.buttonDisabledOpacity,
+        shadowOpacity: 0,
+        elevation: 0,
     },
     textBase: {
         ...textStyle(14, { weight: "700", lineHeightPreset: "tight" }),
     },
     textOnSolid: {
-        color: "#F8FAFC",
+        color: colors.onPrimary,
     },
     textSecondary: {
         color: colors.text,

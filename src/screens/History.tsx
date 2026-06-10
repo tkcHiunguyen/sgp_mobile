@@ -11,7 +11,6 @@ import {
 } from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
 
-
 import { DateRangeNativePicker } from "../components/DateRangeFilter";
 import { AppButton } from "../components/ui/AppButton";
 import { AppScreen } from "../components/ui/AppScreen";
@@ -20,11 +19,11 @@ import { EmptyState } from "../components/ui/EmptyState";
 import HeaderBar from "../components/ui/HeaderBar";
 import { useDeviceGroup } from "../context/DeviceGroupContext";
 import { useTheme } from "../context/ThemeContext";
+import { radius, type ThemeColors } from "../theme/theme";
 import { textStyle } from "../theme/typography";
 import { useThemedStyles } from "../theme/useThemedStyles";
 import { RootStackParamList } from "../types/navigation";
 
-import type { ThemeColors } from "../theme/theme";
 import type { DeviceGroup, DeviceRow, HistoryRow } from "../types/deviceGroup";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 
@@ -798,7 +797,7 @@ const createStyles = (colors: ThemeColors) =>
         backgroundColor: colors.surface,
         paddingVertical: 14,
         paddingHorizontal: 16,
-        borderRadius: 12,
+        borderRadius: radius.base,
         borderWidth: 1,
         borderColor: colors.primarySoftBorder,
         marginBottom: 12,
@@ -821,7 +820,7 @@ const createStyles = (colors: ThemeColors) =>
         paddingVertical: 12,
         paddingHorizontal: 12,
         marginVertical: 6,
-        borderRadius: 10,
+        borderRadius: radius.md,
         borderWidth: 1,
         borderColor: colors.primarySoftBorder,
     },
@@ -840,7 +839,7 @@ const createStyles = (colors: ThemeColors) =>
         justifyContent: "space-between",
         paddingVertical: 10,
         paddingHorizontal: 10,
-        borderRadius: 12,
+        borderRadius: radius.base,
         backgroundColor: colors.surface,
         borderWidth: 1,
         borderColor: colors.primarySoftBorder,
@@ -888,7 +887,7 @@ const createStyles = (colors: ThemeColors) =>
     searchInputRow: {
         flexDirection: "row",
         alignItems: "center",
-        borderRadius: 12,
+        borderRadius: radius.base,
         borderWidth: 1,
         borderColor: colors.primarySoftBorder,
         backgroundColor: colors.surface,
@@ -922,7 +921,7 @@ const createStyles = (colors: ThemeColors) =>
     filterBox: {
         width: 42,
         height: 40,
-        borderRadius: 12,
+        borderRadius: radius.base,
         borderWidth: 1,
         borderColor: colors.primarySoftBorder,
         backgroundColor: colors.surface,
@@ -948,7 +947,7 @@ const createStyles = (colors: ThemeColors) =>
         top: 48,
         right: 0,
         width: 180,
-        borderRadius: 10,
+        borderRadius: radius.md,
         backgroundColor: colors.surface,
         borderWidth: 1,
         borderColor: colors.primarySoftBorder,
@@ -975,7 +974,7 @@ const createStyles = (colors: ThemeColors) =>
         top: 48,
         right: 0,
         width: 220,
-        borderRadius: 10,
+        borderRadius: radius.md,
         backgroundColor: colors.surface,
         borderWidth: 1,
         borderColor: colors.primarySoftBorder,
@@ -1001,7 +1000,7 @@ const createStyles = (colors: ThemeColors) =>
     dateInput: {
         flex: 1,
         height: 32,
-        borderRadius: 8,
+        borderRadius: radius.sm,
         borderWidth: 1,
         borderColor: colors.primarySoftBorder,
         paddingHorizontal: 8,
@@ -1041,7 +1040,7 @@ const createStyles = (colors: ThemeColors) =>
         paddingVertical: 10,
         paddingHorizontal: 12,
         backgroundColor: colors.surface,
-        borderRadius: 12,
+        borderRadius: radius.base,
         marginBottom: 8,
         borderWidth: 1,
         borderColor: colors.primarySoftBorder,
@@ -1055,7 +1054,7 @@ const createStyles = (colors: ThemeColors) =>
     deviceTag: {
         paddingHorizontal: 8,
         paddingVertical: 3,
-        borderRadius: 999,
+        borderRadius: radius.pill,
         borderWidth: 1,
         borderColor: colors.primarySoftBorder,
         color: colors.textAccent,
@@ -1078,7 +1077,7 @@ const createStyles = (colors: ThemeColors) =>
         marginTop: 4,
         paddingVertical: 6,
         paddingHorizontal: 8,
-        borderRadius: 8,
+        borderRadius: radius.sm,
         backgroundColor: colors.backgroundAlt,
     },
     historyContent: {
@@ -1089,7 +1088,7 @@ const createStyles = (colors: ThemeColors) =>
     highlight: {
         backgroundColor: colors.warning,
         color: colors.background,
-        borderRadius: 10,
+        borderRadius: radius.md,
         overflow: "hidden",
     },
 
@@ -1113,7 +1112,7 @@ const createStyles = (colors: ThemeColors) =>
         paddingVertical: 10,
         paddingHorizontal: 10,
         marginVertical: 6,
-        borderRadius: 10,
+        borderRadius: radius.md,
         borderWidth: 1,
         borderColor: colors.primarySoftBorder,
     },
@@ -1131,7 +1130,7 @@ const createStyles = (colors: ThemeColors) =>
     checkbox: {
         width: 18,
         height: 18,
-        borderRadius: 4,
+        borderRadius: radius.xs,
         borderWidth: 1.5,
         borderColor: colors.primarySoftBorder,
         alignItems: "center",
@@ -1140,7 +1139,7 @@ const createStyles = (colors: ThemeColors) =>
     },
     checkboxActive: {
         borderColor: colors.success,
-        backgroundColor: "rgba(34,197,94,0.12)",
+        backgroundColor: colors.successSoftBg,
     },
     checkboxIcon: {
         ...textStyle(14, { lineHeightPreset: "tight" }),
